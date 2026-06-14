@@ -35,10 +35,9 @@ mcp = ["mcp>=1.2"]  # Claude Code / MCP server (mcp_server.py)
 [project.scripts]
 ai-act = "app.cli:main"
 
-# TODO: replace USERNAME with your GitHub handle once the repo is created.
 [project.urls]
-Homepage = "https://github.com/USERNAME/ai-act-companion"
-Repository = "https://github.com/USERNAME/ai-act-companion"
+Homepage = "https://github.com/JKasteele/ai-act-companion"
+Repository = "https://github.com/JKasteele/ai-act-companion"
 
 [tool.setuptools]
 packages = ["app", "app.knowledge", "app.llm"]

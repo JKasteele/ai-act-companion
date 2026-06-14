@@ -2,7 +2,7 @@
 
 > Local-first, explainable **EU AI Act** risk classifier + **AI risk assessment / DPIA / bias-audit** generator, mapped to the **NIST AI Risk Management Framework** — with an optional, human-in-the-loop AI assistant.
 
-[![CI](https://github.com/USERNAME/ai-act-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/ai-act-companion/actions/workflows/ci.yml)
+[![CI](https://github.com/JKasteele/ai-act-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/JKasteele/ai-act-companion/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Code style: ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
@@ -114,7 +114,7 @@ server automatically; approve it when Claude Code prompts, then ask:
 **Option B — install as a plugin** (works in any project):
 
 ```text
-/plugin marketplace add USERNAME/ai-act-companion
+/plugin marketplace add JKasteele/ai-act-companion
 /plugin install ai-act-companion@ai-act-companion
 ```
 
