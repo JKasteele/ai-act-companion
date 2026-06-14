@@ -66,15 +66,16 @@ def classify_ai_security(answers: dict) -> dict:
 @mcp.tool()
 def generate_report(
     answers: dict,
-    report_type: Literal["risk", "dpia", "bias", "security"] = "risk",
+    report_type: Literal["risk", "dpia", "bias", "security", "fria"] = "risk",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
 
     report_type: 'risk' (AI risk assessment), 'dpia' (DPIA skeleton, GDPR
-    Art. 35), 'bias' (bias-audit checklist) or 'security' (AI security
-    assessment: OWASP LLM Top 10 + MITRE ATLAS). The system is classified
-    deterministically first, then the report is rendered. Present the draft to
-    the user for review before treating it as final.
+    Art. 35), 'bias' (bias-audit checklist), 'security' (AI security
+    assessment: OWASP LLM Top 10 + MITRE ATLAS) or 'fria' (fundamental rights
+    impact assessment, Art. 27). The system is classified deterministically
+    first, then the report is rendered. Present the draft to the user for review
+    before treating it as final.
     """
     assessment = {
         "id": "(unsaved)",

@@ -8,7 +8,7 @@ Python strings, fed by the classifier output.
 from .knowledge import eu_ai_act as eu
 from .security import assess_security
 
-REPORT_TYPES = ("risk", "dpia", "bias", "security")
+REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria")
 
 
 # --- helpers ---------------------------------------------------------------
@@ -329,6 +329,70 @@ def render_security_assessment(assessment):
     return "".join(md)
 
 
+# --- 5. FRIA - fundamental rights impact assessment (Art. 27) ---------------
+def render_fria(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+
+    md = []
+    md.append(f"# Fundamental Rights Impact Assessment (FRIA) - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        "FRIA skeleton under **EU AI Act Art. 27**. Required, before first use, "
+        "for deployers that are bodies governed by public law or private "
+        "entities providing public services, and for deployers of the high-risk "
+        "systems in **Annex III point 5(b) and (c)** (creditworthiness/credit "
+        "scoring and risk assessment/pricing in life & health insurance). "
+        "Complements any GDPR DPIA (Art. 27(4)); the result must be notified to "
+        "the market surveillance authority (Art. 27(3)).\n"
+    )
+
+    md.append("\n## (a) Deployer's processes using the system\n")
+    md.append(f"Intended purpose: {_a(answers,'intended_purpose')}\n\n")
+    md.append(f"Description: {_a(answers,'sys_description')}\n")
+
+    md.append("\n## (b) Period and frequency of intended use\n")
+    md.append("_To be completed (how long, how often, in which context)._\n")
+
+    md.append("\n## (c) Categories of natural persons and groups affected\n")
+    md.append(
+        f"- Affects vulnerable groups: {_a(answers,'affects_vulnerable')}\n"
+        "- Categories of affected persons/groups: _to be completed_\n"
+    )
+
+    md.append("\n## (d) Specific risks of harm to those persons/groups\n")
+    md.append(
+        "Consider the provider information (Art. 13). See also the bias-audit "
+        "and AI security reports.\n\n"
+        "| # | Right/freedom at risk | Specific harm | Affected group | Likelihood | Severity |\n"
+        "|---|---|---|---|---|---|\n"
+        "| 1 | _non-discrimination_ | | | | |\n"
+        "| 2 | _privacy / data protection_ | | | | |\n"
+        "| 3 | _human dignity / effective remedy_ | | | | |\n"
+    )
+
+    md.append("\n## (e) Human oversight measures\n")
+    md.append(f"{_a(answers,'human_oversight')}\n")
+    md.append(f"\n- A human can override/stop the system: {_a(answers,'can_override')}\n")
+
+    md.append("\n## (f) Measures if risks materialise\n")
+    md.append(
+        "- Internal governance arrangements: _to be completed_\n"
+        "- Complaint / redress mechanism for affected persons: _to be completed_\n"
+        "- Escalation and incident handling: _to be completed_\n"
+    )
+
+    md.append("\n## Notification & sign-off\n")
+    md.append(
+        "| Item | Content |\n|---|---|\n"
+        "| Market surveillance authority notified (Art. 27(3)) | |\n"
+        "| Related GDPR DPIA reference (Art. 27(4)) | |\n"
+        "| Responsible deployer | |\n"
+        "| Date / signature | |\n"
+    )
+    return "".join(md)
+
+
 # --- dispatcher ------------------------------------------------------------
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
@@ -341,4 +405,6 @@ def render(report_type, assessment):
         return "bias", f"bias-checklist-{slug}.md", render_bias_checklist(assessment)
     if report_type == "security":
         return "security", f"ai-security-{slug}.md", render_security_assessment(assessment)
+    if report_type == "fria":
+        return "fria", f"fria-{slug}.md", render_fria(assessment)
     raise ValueError(f"Unknown report type: {report_type}")
