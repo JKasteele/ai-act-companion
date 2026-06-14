@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Local config / secrets
+.env
+
+# Saved assessments (synthetic, but kept out of git by default)
+data/*.json
+!data/.gitkeep
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test / build
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/

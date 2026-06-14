@@ -1,0 +1,18 @@
+{
+  "_comment": "Synthetic example - limited risk (Art. 50 transparency).",
+  "sys_name": "HelpBot customer service",
+  "sys_version": "2.3",
+  "sys_owner": "Example Ltd.",
+  "sys_description": "A conversational chatbot that answers frequently asked customer questions and performs simple actions.",
+  "intended_purpose": "Automate first-line customer service on the website.",
+  "provider_role": "deployer",
+  "eu_market": true,
+  "lifecycle_stage": "production",
+  "t_interacts_humans": true,
+  "t_synthetic_content": true,
+  "data_personal": true,
+  "data_scale": "large",
+  "autonomy_level": "human_on_the_loop",
+  "can_override": true,
+  "human_oversight": "Conversations can be escalated to a human agent."
+}

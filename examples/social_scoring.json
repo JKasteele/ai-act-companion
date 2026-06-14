@@ -1,0 +1,19 @@
+{
+  "_comment": "Synthetic example - prohibited practice (Art. 5(1)(c) social scoring).",
+  "sys_name": "CivicScore citizen rating",
+  "sys_version": "0.9",
+  "sys_owner": "Example Government (fictional)",
+  "sys_description": "A system that assigns citizens a general 'trustworthiness score' based on unrelated social behaviour.",
+  "intended_purpose": "Differentiate access to services based on the score.",
+  "provider_role": "provider",
+  "eu_market": true,
+  "lifecycle_stage": "concept",
+  "p_social_scoring": true,
+  "data_personal": true,
+  "data_special_category": true,
+  "automated_decision": true,
+  "affects_vulnerable": true,
+  "data_scale": "large",
+  "autonomy_level": "fully_autonomous",
+  "can_override": false
+}

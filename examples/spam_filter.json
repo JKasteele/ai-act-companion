@@ -1,0 +1,15 @@
+{
+  "_comment": "Synthetic example - minimal risk (no triggers).",
+  "sys_name": "SpamGuard email filter",
+  "sys_version": "4.1",
+  "sys_owner": "Example Ltd.",
+  "sys_description": "A classifier that flags incoming email as spam or ham.",
+  "intended_purpose": "Filter unwanted email out of the inbox.",
+  "provider_role": "provider",
+  "eu_market": true,
+  "lifecycle_stage": "production",
+  "data_personal": true,
+  "data_scale": "medium",
+  "autonomy_level": "human_on_the_loop",
+  "can_override": true
+}

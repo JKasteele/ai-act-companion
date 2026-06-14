@@ -1,0 +1,20 @@
+{
+  "_comment": "Synthetic example - high risk (Annex III-4, employment & workforce management).",
+  "sys_name": "TalentMatch CV screening",
+  "sys_version": "1.0",
+  "sys_owner": "Example Ltd.",
+  "sys_description": "A machine-learning model that automatically ranks incoming job application CVs by suitability for a vacancy.",
+  "intended_purpose": "Support recruiters in pre-selecting candidates.",
+  "provider_role": "provider",
+  "eu_market": true,
+  "lifecycle_stage": "production",
+  "hr_usecases": ["employment"],
+  "hr_does_profiling": true,
+  "data_personal": true,
+  "automated_decision": true,
+  "data_scale": "medium",
+  "data_sources": "Internal ATS database with synthetic example CVs.",
+  "autonomy_level": "advisory",
+  "can_override": true,
+  "human_oversight": "A recruiter manually reviews every suggested shortlist."
+}

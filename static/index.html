@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Act Companion</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/print.css" media="print" />
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="wrap">
+      <h1>AI Act Companion</h1>
+      <p class="tagline">Local, rule-based AI risk assessment &mdash; EU AI Act &amp; NIST AI RMF</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="disclaimer no-print">
+      An aid for a structured self-assessment &mdash; <strong>not legal advice</strong>.
+      Use synthetic/example data only.
+    </p>
+
+    <!-- Saved assessments -->
+    <details class="saved no-print" id="saved-box">
+      <summary>Saved assessments (<span id="saved-count">0</span>)</summary>
+      <ul id="saved-list"></ul>
+    </details>
+
+    <!-- STEP 1: intake -->
+    <section id="intake-section" class="no-print">
+
+      <!-- AI assist (phase 4) -->
+      <div id="ai-panel" class="ai-panel hidden">
+        <div class="ai-head">
+          <span class="ai-title">✨ AI assist</span>
+          <span id="ai-provider" class="ai-provider"></span>
+        </div>
+        <p class="ai-sub">
+          Describe the AI system in free text; the assistant fills in a
+          <strong>draft</strong> that you then review. Nothing is submitted
+          automatically.
+        </p>
+        <textarea id="ai-desc" rows="4"
+          placeholder="e.g. We are building MediTriage, a system that prioritises ER patients based on symptoms and vital signs. A nurse makes the final decision..."></textarea>
+        <div class="actions">
+          <button type="button" id="btn-ai-prefill" class="primary">Pre-fill questionnaire with AI</button>
+          <span id="ai-spinner" class="ai-spinner hidden">⏳ working…</span>
+        </div>
+
+        <!-- manual provider: show prompt + paste answer back -->
+        <div id="ai-manual" class="hidden">
+          <hr/>
+          <p class="ai-sub" id="ai-manual-instructions"></p>
+          <label class="q">Prompt for your own LLM session</label>
+          <textarea id="ai-manual-prompt" rows="6" readonly></textarea>
+          <div class="actions">
+            <button type="button" id="btn-ai-copy" class="secondary">Copy prompt</button>
+          </div>
+          <label class="q">Paste the JSON answer back here</label>
+          <textarea id="ai-manual-answer" rows="5" placeholder='{ "answers": { ... }, "assumptions": [ ... ] }'></textarea>
+          <div class="actions">
+            <button type="button" id="btn-ai-parse" class="primary">Process answer</button>
+          </div>
+        </div>
+
+        <div id="ai-result" class="hidden"></div>
+      </div>
+
+      <div id="form-intro"></div>
+      <form id="intake-form"></form>
+      <div class="actions">
+        <button type="button" id="btn-example" class="secondary">Load example</button>
+        <button type="button" id="btn-reset" class="secondary">Clear</button>
+        <button type="button" id="btn-assess" class="primary">Classify &amp; generate</button>
+      </div>
+    </section>
+
+    <!-- STEP 2: result -->
+    <section id="result-section" class="hidden">
+      <h2>Classification result</h2>
+      <div id="result-content"></div>
+      <div class="actions no-print">
+        <button type="button" id="btn-back" class="secondary">&larr; Back to intake</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: reports -->
+    <section id="reports-section" class="hidden no-print">
+      <h2>Documentation</h2>
+      <div class="report-tabs">
+        <button type="button" class="tab active" data-type="risk">Risk assessment</button>
+        <button type="button" class="tab" data-type="dpia">DPIA skeleton</button>
+        <button type="button" class="tab" data-type="bias">Bias checklist</button>
+      </div>
+      <div class="report-actions">
+        <button type="button" id="btn-download" class="secondary">Download .md</button>
+        <button type="button" id="btn-print" class="secondary">Print / PDF</button>
+      </div>
+    </section>
+
+    <!-- Render target for preview + print -->
+    <article id="report-preview" class="report hidden"></article>
+  </main>
+
+  <footer class="no-print wrap">
+    <small>AI Act Companion v0.1 &middot; rule-based core + optional AI layer &middot; MIT license</small>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

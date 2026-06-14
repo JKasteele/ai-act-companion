@@ -1,0 +1,25 @@
+/* Print-to-PDF: show only the report preview, on white. */
+@page { margin: 18mm 16mm; }
+
+.no-print { display: none !important; }
+
+body { background: #fff !important; color: #000 !important; }
+
+.report {
+  background: #fff !important;
+  color: #1a1a1a !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 11pt;
+  max-width: none;
+}
+
+.report h1 { font-size: 18pt; }
+.report h2 { font-size: 13pt; page-break-after: avoid; }
+.report h3 { font-size: 11.5pt; page-break-after: avoid; }
+.report table { page-break-inside: avoid; font-size: 9.5pt; }
+.report tr, .report blockquote, .report li { page-break-inside: avoid; }
+
+/* Hide all top navigation/sections except the report */
+.topbar, footer, .disclaimer, .saved,
+#intake-section, #result-section, #reports-section { display: none !important; }
