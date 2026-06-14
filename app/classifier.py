@@ -97,10 +97,12 @@ def _check_high_risk(answers):
                 "high-risk until this is substantiated and recorded."
             )
             refs = [info["ref"], "Art. 6(2)", eu.ART_6_3["ref"], "Art. 6(4)"]
-        elif minor_task and does_profiling:
+        elif does_profiling:
             rationale += (
-                " The Art. 6(3) derogation is NOT available HERE because the "
-                "system performs profiling of natural persons."
+                " Note: the Art. 6(3) derogation is NEVER available here because "
+                "the system performs profiling of natural persons - an Annex III "
+                "system that profiles is always high-risk (Art. 6(3) final "
+                "subparagraph)."
             )
             refs = [info["ref"], "Art. 6(2)", "Art. 6(3)"]
         else:
@@ -245,5 +247,6 @@ def _build_summary(tier, primary, transparency, gpai):
     if tier != eu.TIER_LIMITED and transparency:
         s += " In addition, transparency obligations apply (Art. 50)."
     if gpai:
-        s += " GPAI obligations apply on top of this (Chapter V)."
+        s += (" Note: regardless of the system risk tier, general-purpose AI "
+              "*model* obligations apply independently (Chapter V).")
     return s

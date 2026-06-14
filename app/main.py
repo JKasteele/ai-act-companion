@@ -13,6 +13,7 @@ Endpoints:
 
 import csv
 import io
+import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -101,6 +102,27 @@ def ai_narrative(req: NarrativeRequest):
 @app.get("/api/questionnaire")
 def get_questionnaire():
     return QUESTIONNAIRE
+
+
+@app.get("/api/examples")
+def list_examples():
+    """Ready-made synthetic examples (one per risk tier) users can load."""
+    out = []
+    ex_dir = BASE_DIR / "examples"
+    if ex_dir.exists():
+        for path in sorted(ex_dir.glob("*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            answers = {k: v for k, v in data.items() if not k.startswith("_")}
+            out.append({
+                "id": path.stem,
+                "name": answers.get("sys_name", path.stem),
+                "tier_label": classify(answers)["tier_label"],
+                "answers": answers,
+            })
+    return out
 
 
 @app.post("/api/assess", response_model=AssessResponse)

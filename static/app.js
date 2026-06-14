@@ -7,6 +7,7 @@ let REPORT_TYPE = "risk";
 let REPORT_MD = "";
 let REPORT_FILENAME = "report.md";
 let AI_STATUS = null;       // { enabled, provider, interactive, available, model, ... }
+let EXAMPLES = [];          // ready-made example systems
 
 const NARRATIVE_FIELDS = ["sys_description", "intended_purpose", "human_oversight", "data_sources"];
 
@@ -58,7 +59,8 @@ async function init() {
 
   $("#btn-assess").addEventListener("click", assess);
   $("#btn-reset").addEventListener("click", () => { renderForm(); });
-  $("#btn-example").addEventListener("click", fillExample);
+  $("#example-select").addEventListener("change", onExampleSelected);
+  await loadExamples();
   $("#btn-back").addEventListener("click", showIntake);
   $("#btn-download").addEventListener("click", downloadMarkdown);
   $("#btn-print").addEventListener("click", () => window.print());
@@ -534,7 +536,25 @@ function showIntake() {
   $("#report-preview").classList.add("hidden");
 }
 
-// --- example ----------------------------------------------------------------
+// --- examples ---------------------------------------------------------------
+async function loadExamples() {
+  try { EXAMPLES = await (await fetch("/api/examples")).json(); }
+  catch { EXAMPLES = []; }
+  const sel = $("#example-select");
+  EXAMPLES.forEach((ex) => {
+    sel.append(el("option", { value: ex.id }, `${ex.name} — ${ex.tier_label}`));
+  });
+}
+
+function onExampleSelected(e) {
+  const ex = EXAMPLES.find((x) => x.id === e.target.value);
+  e.target.value = "";   // reset so the same example can be re-picked
+  if (!ex) return;
+  setAnswers(ex.answers);
+  showIntake();
+  toast(`Loaded example: ${ex.name}`);
+}
+
 function fillExample() {
   setAnswers({
     sys_name: "TalentMatch CV screening",

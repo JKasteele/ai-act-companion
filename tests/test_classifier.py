@@ -66,7 +66,17 @@ def test_art_6_3_unavailable_with_profiling():
                "hr_art6_3_minor": True, "hr_does_profiling": True}
     r = classify(answers)
     rationale = " ".join(f["rationale"] for f in r["findings"])
-    assert "NOT available" in rationale
+    assert "always high-risk" in rationale
+
+
+def test_art_6_3_profiling_note_without_minor_task():
+    # Profiling + Annex III but no minor-task claim must still surface the
+    # "derogation never available" warning (review finding M2).
+    answers = {"eu_market": True, "hr_usecases": ["employment"],
+               "hr_does_profiling": True, "hr_art6_3_minor": False}
+    r = classify(answers)
+    rationale = " ".join(f["rationale"] for f in r["findings"])
+    assert "always high-risk" in rationale
 
 
 def test_reports_render_for_all_types():
