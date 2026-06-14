@@ -1,0 +1,13 @@
+{
+  "version": "1",
+  "name": "ai-act-companion",
+  "displayName": "AI Act Companion",
+  "description": "EU AI Act governance assistant for Claude Code.",
+  "plugins": [
+    {
+      "name": "ai-act-companion",
+      "source": ".",
+      "description": "Deterministic EU AI Act risk classifier + risk-assessment/DPIA/bias generators, exposed to Claude Code as MCP tools with a human-in-the-loop assessment skill."
+    }
+  ]
+}

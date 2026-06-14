@@ -30,6 +30,10 @@ This project focuses on three things that are uncommon in free tooling:
 - **Local & private, with honest AI.** Optional AI assist runs locally (Ollama)
   or via a paste-into-your-own-LLM flow — and **never** decides for you: a
   human-in-the-loop review is mandatory by design (EU AI Act Art. 14 in spirit).
+- **Claude-native.** Ships as a **Claude Code plugin**: an MCP server exposes
+  the deterministic engine as tools, and a skill orchestrates a full
+  human-in-the-loop assessment. Claude becomes the interface; the audited rule
+  engine stays the ground truth. See [Use inside Claude Code](#use-inside-claude-code).
 
 > **On the roadmap (next milestone):** an **AI security lens** that maps each
 > result to the **OWASP LLM Top 10** and **MITRE ATLAS** alongside NIST AI RMF —
@@ -90,6 +94,52 @@ docker build -t ai-act-companion .
 docker run --rm -p 8000:8000 -v "$PWD/data:/app/data" ai-act-companion
 ```
 
+## Use inside Claude Code
+
+AI Act Companion is also a **Claude Code plugin**. An MCP server
+(`mcp_server.py`) exposes the deterministic engine as tools
+(`classify_ai_system`, `generate_report`, `get_questionnaire`, …), and the
+`ai-act-assessment` skill drives a full, human-in-the-loop assessment — Claude
+runs the intake and writes the narrative, but the **risk tier and citations come
+only from the engine**, and nothing is saved without your confirmation.
+
+```bash
+pip install -e ".[mcp]"            # install the MCP dependency
+```
+
+**Option A — just open the repo.** The project-scoped `.mcp.json` registers the
+server automatically; approve it when Claude Code prompts, then ask:
+*"Run an EU AI Act assessment for my CV-screening system."*
+
+**Option B — install as a plugin** (works in any project):
+
+```text
+/plugin marketplace add USERNAME/ai-act-companion
+/plugin install ai-act-companion@ai-act-companion
+```
+
+Then invoke the skill with `/ai-act-companion:ai-act-assessment` or just
+describe a system and let Claude pick it up.
+
+> The MCP server runs `python mcp_server.py`; make sure the `python` on your
+> PATH has the dependencies installed (`pip install -e ".[mcp]"`).
+
+## CLI
+
+A scriptable entry point over the same engine (used by the MCP server and handy
+on its own):
+
+```bash
+ai-act questionnaire                                   # print the intake schema
+ai-act classify --answers examples/hiring_cv_screening.json
+cat answers.json | ai-act classify --answers -         # read from stdin
+ai-act classify --answers a.json --save                # persist + print id
+ai-act report --answers a.json --type dpia --out dpia.md
+ai-act list
+```
+
+(`ai-act` is installed via `pip install -e .`; or run `python -m app.cli …`.)
+
 ## Tests
 
 ```bash
@@ -103,15 +153,18 @@ ruff check .                        # lint
 ai-act-companion/
 ├── app/
 │   ├── main.py            FastAPI app + endpoints
+│   ├── cli.py             scriptable CLI over the engine
 │   ├── questionnaire.py   intake definition (single source of truth)
 │   ├── classifier.py      rule-based EU AI Act classifier
 │   ├── reports.py         risk assessment / DPIA / bias generators
 │   ├── storage.py         JSON persistence
 │   ├── models.py          pydantic models
-│   ├── knowledge/
-│   │   ├── eu_ai_act.py   articles/annexes as data
-│   │   └── nist_rmf.py    NIST AI RMF + crosswalk
-│   └── llm/               (phase 4) optional AI agent layer
+│   ├── knowledge/         EU AI Act + NIST AI RMF as data
+│   └── llm/               optional local/manual AI assist (web app)
+├── mcp_server.py          MCP server (Claude Code tools over the engine)
+├── skills/                Claude Code skill (ai-act-assessment playbook)
+├── .claude-plugin/        plugin.json + marketplace.json
+├── .mcp.json              project-scoped MCP registration
 ├── static/                frontend (index.html, app.js, style.css, print.css)
 ├── examples/              synthetic example assessments
 ├── data/                  saved assessments (JSON, gitignored)
@@ -171,6 +224,7 @@ concrete article/annex per conclusion:
 - [x] Risk assessment + DPIA skeleton + bias-audit checklist, mapped to NIST AI RMF
 - [x] Optional AI layer (Ollama + manual-prompt provider) with mandatory human-in-the-loop
 - [x] Unit tests + CI + Docker
+- [x] **Claude Code plugin** — MCP server + skill + CLI (Claude as interface, engine as ground truth)
 - [ ] **AI security lens** — map findings to OWASP LLM Top 10 + MITRE ATLAS
 - [ ] Threat model of the tool itself (`THREAT_MODEL.md`) + `pip-audit`/`bandit` in CI
 - [ ] Article text + EUR-Lex deep links + phased applicability timeline
