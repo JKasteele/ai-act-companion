@@ -201,6 +201,36 @@ QUESTIONNAIRE = {
                  "help": "Who oversees, with which means, and at what thresholds?"},
             ],
         },
+        {
+            "id": "security",
+            "title": "8. AI security context",
+            "description": (
+                "Feeds the AI security lens: maps the system to the OWASP Top 10 "
+                "for LLM Applications and MITRE ATLAS, linked to EU AI Act Art. 15."
+            ),
+            "questions": [
+                {"id": "sec_is_llm", "type": "boolean", "required": False,
+                 "label": "Is it an LLM / generative-AI system (generates text, "
+                          "code, images, audio, …)?"},
+                {"id": "sec_third_party_models", "type": "boolean", "required": False,
+                 "label": "Does it rely on third-party or foundation models, or "
+                          "external ML components/datasets?",
+                 "help": "Supply-chain exposure."},
+                {"id": "sec_external_data", "type": "boolean", "required": False,
+                 "label": "Does it ingest untrusted external or user-supplied "
+                          "content (at training or inference)?",
+                 "help": "Prompt-injection and data-poisoning exposure."},
+                {"id": "sec_agentic", "type": "boolean", "required": False,
+                 "label": "Can it autonomously take actions, call tools/APIs or "
+                          "trigger downstream effects (agentic)?"},
+                {"id": "sec_public", "type": "boolean", "required": False,
+                 "label": "Is it accessible to untrusted/external users (e.g. the "
+                          "public internet)?"},
+                {"id": "sec_outputs_to_systems", "type": "boolean", "required": False,
+                 "label": "Is its output passed to other systems (code execution, "
+                          "SQL, downstream automation) without human review?"},
+            ],
+        },
     ],
 }
 

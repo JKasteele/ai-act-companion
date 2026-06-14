@@ -26,6 +26,7 @@ from mcp.server.fastmcp import FastMCP  # noqa: E402
 from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
 from app.questionnaire import QUESTIONNAIRE  # noqa: E402
+from app.security import assess_security as _assess_security  # noqa: E402
 
 mcp = FastMCP("ai-act-companion")
 
@@ -54,14 +55,24 @@ def classify_ai_system(answers: dict) -> dict:
 
 
 @mcp.tool()
+def classify_ai_security(answers: dict) -> dict:
+    """Map the AI system to the applicable OWASP Top 10 for LLM Applications
+    (2025) risks, each with the relevant MITRE ATLAS techniques and EU AI Act /
+    NIST AI RMF controls. Deterministic security lens that complements
+    `classify_ai_system`. Relevance is driven by the `sec_*` intake fields."""
+    return _assess_security(answers)
+
+
+@mcp.tool()
 def generate_report(
     answers: dict,
-    report_type: Literal["risk", "dpia", "bias"] = "risk",
+    report_type: Literal["risk", "dpia", "bias", "security"] = "risk",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
 
     report_type: 'risk' (AI risk assessment), 'dpia' (DPIA skeleton, GDPR
-    Art. 35) or 'bias' (bias-audit checklist). The system is classified
+    Art. 35), 'bias' (bias-audit checklist) or 'security' (AI security
+    assessment: OWASP LLM Top 10 + MITRE ATLAS). The system is classified
     deterministically first, then the report is rendered. Present the draft to
     the user for review before treating it as final.
     """
@@ -70,6 +81,7 @@ def generate_report(
         "created_at": storage.now_iso(),
         "answers": answers,
         "classification": _classify(answers),
+        "security": _assess_security(answers),
     }
     _rtype, _filename, markdown = reports.render(report_type, assessment)
     return markdown
@@ -85,6 +97,7 @@ def save_assessment(answers: dict) -> dict:
         "created_at": storage.now_iso(),
         "answers": answers,
         "classification": _classify(answers),
+        "security": _assess_security(answers),
     }
     storage.save(assessment)
     return {"id": assessment["id"], "classification": assessment["classification"]}

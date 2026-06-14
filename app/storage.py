@@ -37,7 +37,18 @@ def save(assessment):
     return path
 
 
+# Assessment ids are slug-<hex>; reject anything else to prevent path traversal
+# when an id arrives from the API / MCP tools.
+_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+def is_valid_id(assessment_id):
+    return bool(isinstance(assessment_id, str) and _ID_RE.match(assessment_id))
+
+
 def load(assessment_id):
+    if not is_valid_id(assessment_id):
+        return None
     path = DATA_DIR / f"{assessment_id}.json"
     if not path.exists():
         return None

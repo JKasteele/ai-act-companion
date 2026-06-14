@@ -34,11 +34,10 @@ This project focuses on three things that are uncommon in free tooling:
   the deterministic engine as tools, and a skill orchestrates a full
   human-in-the-loop assessment. Claude becomes the interface; the audited rule
   engine stays the ground truth. See [Use inside Claude Code](#use-inside-claude-code).
-
-> **On the roadmap (next milestone):** an **AI security lens** that maps each
-> result to the **OWASP LLM Top 10** and **MITRE ATLAS** alongside NIST AI RMF —
-> the governance × security intersection that today only exists in commercial
-> tools. See [Roadmap](#roadmap).
+- **A security lens, not just compliance.** Maps the system to the **OWASP Top
+  10 for LLM Applications (2025)** and **MITRE ATLAS**, linked to EU AI Act
+  Art. 15 and NIST AI RMF — the governance × security intersection that
+  otherwise lives only in commercial tools. See [AI security lens](#ai-security-lens).
 
 ## Screenshots
 
@@ -57,6 +56,7 @@ This project focuses on three things that are uncommon in free tooling:
    - AI risk assessment report
    - DPIA skeleton (GDPR Art. 35, linked to the AI Act)
    - bias audit checklist
+   - AI security assessment (OWASP LLM Top 10 + MITRE ATLAS)
    all mapped to EU AI Act + NIST AI RMF, exportable to **Markdown** and **PDF**
    (via browser print-to-PDF).
 4. **Optional AI layer** (human-in-the-loop): turn a free-text system description
@@ -207,6 +207,30 @@ invalid options are visibly ignored.
 > the `manual` provider. The frontend has a timeout and degrades to a clear
 > error message.
 
+## AI security lens
+
+Governance and security are complementary, but free tools rarely connect them.
+AI Act Companion adds a **security lens**: from the system's answers it derives
+the applicable **OWASP Top 10 for LLM Applications (2025)** items and, for each,
+the relevant **MITRE ATLAS** technique(s), the EU AI Act control (chiefly
+Art. 15 — whose para. 5 explicitly names data/model poisoning, adversarial
+examples, model evasion and confidentiality attacks), the NIST AI RMF
+subcategory (anchored on **MEASURE 2.7**), and a mitigation.
+
+It surfaces in the result view, as a `security` report
+(`ai-act report --type security`), and via the `classify_ai_security` MCP tool.
+The lens adapts: a non-generative ML system still maps to disclosure, poisoning
+and supply-chain items, while an exposed LLM additionally maps to prompt
+injection, system-prompt leakage and misinformation.
+
+> Identifiers are verified against genai.owasp.org and the MITRE ATLAS data; the
+> cross-mappings are a **Companion-derived analytical alignment** traceable to
+> those identifiers, not an official published crosswalk.
+
+The tool also has its own [THREAT_MODEL.md](THREAT_MODEL.md) — including the
+OWASP LLM Top 10 applied to its *own* AI layer — and a
+[SECURITY.md](SECURITY.md) policy; `bandit` and `pip-audit` run in CI.
+
 ## Legal grounding
 
 References are modelled as data in `app/knowledge/`. The classifier cites the
@@ -225,8 +249,8 @@ concrete article/annex per conclusion:
 - [x] Optional AI layer (Ollama + manual-prompt provider) with mandatory human-in-the-loop
 - [x] Unit tests + CI + Docker
 - [x] **Claude Code plugin** — MCP server + skill + CLI (Claude as interface, engine as ground truth)
-- [ ] **AI security lens** — map findings to OWASP LLM Top 10 + MITRE ATLAS
-- [ ] Threat model of the tool itself (`THREAT_MODEL.md`) + `pip-audit`/`bandit` in CI
+- [x] **AI security lens** — findings mapped to OWASP LLM Top 10 (2025) + MITRE ATLAS
+- [x] Threat model of the tool itself (`THREAT_MODEL.md`) + `bandit`/`pip-audit` in CI
 - [ ] Article text + EUR-Lex deep links + phased applicability timeline
 - [ ] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
 - [ ] ISO/IEC 42001 mapping

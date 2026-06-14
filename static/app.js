@@ -304,7 +304,7 @@ async function assess() {
   });
   if (!res.ok) { toast("Classification failed."); return; }
   const data = await res.json();
-  CURRENT = { id: data.id, created_at: data.created_at, answers, classification: data.classification };
+  CURRENT = { id: data.id, created_at: data.created_at, answers, classification: data.classification, security: data.security };
   renderClassification();
   await loadSaved();
   await selectReport("risk");
@@ -350,6 +350,30 @@ function renderClassification() {
     c.recommended_artifacts.forEach((x) => ul.append(el("li", {}, x)));
     box.append(el("div", { class: "result-block" },
       el("h3", {}, "Recommended documentation"), ul));
+  }
+
+  // AI security lens
+  const secp = CURRENT.security;
+  if (secp && secp.risks && secp.risks.length) {
+    const blk = el("div", { class: "result-block" },
+      el("h3", {}, "AI security lens — OWASP LLM Top 10 + MITRE ATLAS"));
+    blk.append(el("p", { class: "section-desc" }, secp.summary || ""));
+    secp.risks.forEach((r) => {
+      let atlas = (r.atlas || []).map((t) => `${t.id} (${t.name})`).join(", ") || "—";
+      if (r.atlas_note) atlas += ` — ${r.atlas_note}`;
+      blk.append(el("div", { class: "finding security" },
+        el("span", { class: "refs sec" }, r.id),
+        el("div", {}, el("strong", {}, r.name)),
+        el("div", {}, r.summary),
+        el("div", { class: "sec-meta" },
+          el("div", {}, el("em", {}, "Why: "), r.why),
+          el("div", {}, el("em", {}, "MITRE ATLAS: "), atlas),
+          el("div", {}, el("em", {}, "EU AI Act: "), (r.ai_act_refs || []).join(", ")),
+          el("div", {}, el("em", {}, "NIST AI RMF: "), (r.nist_refs || []).join(", ")),
+          el("div", {}, el("em", {}, "Mitigation: "), r.mitigation))));
+    });
+    if (secp.provenance) blk.append(el("p", { class: "section-desc" }, secp.provenance));
+    box.append(blk);
   }
 }
 
@@ -433,6 +457,12 @@ function fillExample() {
     autonomy_level: "advisory",
     can_override: true,
     human_oversight: "A recruiter manually reviews every shortlist suggested by the model before candidates are invited.",
+    sec_is_llm: false,
+    sec_third_party_models: true,
+    sec_external_data: true,
+    sec_agentic: false,
+    sec_public: false,
+    sec_outputs_to_systems: false,
   });
   toast("Example loaded — adjust and classify.");
 }

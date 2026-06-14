@@ -16,5 +16,11 @@
   "data_sources": "Internal ATS database with synthetic example CVs.",
   "autonomy_level": "advisory",
   "can_override": true,
-  "human_oversight": "A recruiter manually reviews every suggested shortlist."
+  "human_oversight": "A recruiter manually reviews every suggested shortlist.",
+  "sec_is_llm": false,
+  "sec_third_party_models": true,
+  "sec_external_data": true,
+  "sec_agentic": false,
+  "sec_public": false,
+  "sec_outputs_to_systems": false
 }

@@ -126,6 +126,10 @@ button.secondary:hover { background: var(--panel); }
 .finding .refs { display: inline-block; font-size: .78rem; color: var(--accent); background: var(--panel-2);
   border-radius: 4px; padding: 2px 8px; margin-bottom: 4px; }
 .finding .refs.gpai { color: var(--limited); }
+.finding.security { border-left-color: #a877ff; }
+.finding .refs.sec { color: #c9a9ff; }
+.sec-meta { margin-top: 8px; font-size: .82rem; color: var(--muted); display: grid; gap: 3px; }
+.sec-meta em { color: var(--text); font-style: normal; font-weight: 600; }
 
 .result-block h3 { margin: 22px 0 8px; font-size: 1.05rem; }
 ul.obligations { padding-left: 20px; }

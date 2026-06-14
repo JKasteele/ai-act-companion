@@ -14,5 +14,11 @@
   "data_scale": "large",
   "autonomy_level": "human_on_the_loop",
   "can_override": true,
-  "human_oversight": "Conversations can be escalated to a human agent."
+  "human_oversight": "Conversations can be escalated to a human agent.",
+  "sec_is_llm": true,
+  "sec_third_party_models": true,
+  "sec_external_data": true,
+  "sec_agentic": true,
+  "sec_public": true,
+  "sec_outputs_to_systems": false
 }

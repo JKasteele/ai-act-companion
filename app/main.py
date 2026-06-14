@@ -30,6 +30,7 @@ from .models import (
     ReportResponse,
 )
 from .questionnaire import QUESTIONNAIRE
+from .security import assess_security
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
@@ -104,17 +105,20 @@ def get_questionnaire():
 def assess(req: AssessRequest):
     answers = req.answers or {}
     classification = classify(answers)
+    security = assess_security(answers)
     assessment = {
         "id": storage.new_id(answers.get("sys_name")),
         "created_at": storage.now_iso(),
         "answers": answers,
         "classification": classification,
+        "security": security,
     }
     storage.save(assessment)
     return AssessResponse(
         id=assessment["id"],
         created_at=assessment["created_at"],
         classification=Classification(**classification),
+        security=security,
     )
 
 

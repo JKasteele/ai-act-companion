@@ -151,6 +151,10 @@ def _recommended_artifacts(tier, answers):
         arts.append("Fundamental rights impact assessment - FRIA (AI Act Art. 27)")
     else:
         arts.append("Bias audit checklist (good practice)")
+    sec_signals = ("sec_is_llm", "sec_agentic", "sec_third_party_models",
+                   "sec_public", "gpai_model")
+    if tier in (eu.TIER_HIGH, eu.TIER_PROHIBITED) or any(_truthy(answers.get(k)) for k in sec_signals):
+        arts.append("AI security assessment (OWASP LLM Top 10 + MITRE ATLAS)")
     return arts
 
 

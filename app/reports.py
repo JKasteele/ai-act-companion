@@ -6,8 +6,9 @@ Python strings, fed by the classifier output.
 """
 
 from .knowledge import eu_ai_act as eu
+from .security import assess_security
 
-REPORT_TYPES = ("risk", "dpia", "bias")
+REPORT_TYPES = ("risk", "dpia", "bias", "security")
 
 
 # --- helpers ---------------------------------------------------------------
@@ -275,6 +276,59 @@ def render_bias_checklist(assessment):
     return "".join(md)
 
 
+# --- 4. AI security assessment (OWASP LLM Top 10 + MITRE ATLAS) -------------
+def render_security_assessment(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    profile = assessment.get("security") or assess_security(answers)
+
+    md = []
+    md.append(f"# AI Security Assessment - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        "Maps the system to the **OWASP Top 10 for LLM Applications (2025)** and "
+        "**MITRE ATLAS**, linked to EU AI Act Art. 15 (accuracy, robustness and "
+        "cybersecurity) and the NIST AI RMF.\n"
+    )
+    md.append(f"\n{profile.get('summary','')}\n")
+    md.append(f"\n> {profile.get('disclaimer','')}\n")
+    if profile.get("provenance"):
+        md.append(f">\n> _{profile['provenance']}_\n")
+
+    risks = profile.get("risks", [])
+    if not risks:
+        md.append("\n_No AI-security items were triggered by the current answers._\n")
+    else:
+        md.append("\n## Applicable risks\n")
+        for r in risks:
+            atlas = ", ".join(f"{t['id']} ({t['name']})" for t in r.get("atlas", [])) or "-"
+            if r.get("atlas_note"):
+                atlas += f" — {r['atlas_note']}"
+            md.append(f"\n### {r['id']} - {r['name']}\n")
+            md.append(f"{r['summary']}\n\n")
+            md.append(
+                f"| Aspect | Detail |\n|---|---|\n"
+                f"| Why it applies | {r['why']} |\n"
+                f"| MITRE ATLAS | {atlas} |\n"
+                f"| EU AI Act | {', '.join(r['ai_act_refs'])} |\n"
+                f"| NIST AI RMF | {', '.join(r['nist_refs'])} |\n"
+                f"| Mitigation | {r['mitigation']} |\n"
+            )
+
+    md.append("\n## Security control checklist (to be completed)\n")
+    md.append(
+        "| ✓ | Control | Owner | Evidence |\n|---|---|---|---|\n"
+        "| ☐ | Inputs from untrusted sources validated/sandboxed | | |\n"
+        "| ☐ | Model output treated as untrusted before downstream use | | |\n"
+        "| ☐ | Least-privilege tool/permission scopes | | |\n"
+        "| ☐ | Secrets kept out of prompts; controls enforced server-side | | |\n"
+        "| ☐ | Supply chain (models/data/deps) vetted and pinned | | |\n"
+        "| ☐ | Rate limiting / quotas / abuse monitoring | | |\n"
+        "| ☐ | Adversarial / red-team testing performed | | |\n"
+    )
+    return "".join(md)
+
+
 # --- dispatcher ------------------------------------------------------------
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
@@ -285,4 +339,6 @@ def render(report_type, assessment):
         return "dpia", f"dpia-{slug}.md", render_dpia(assessment)
     if report_type == "bias":
         return "bias", f"bias-checklist-{slug}.md", render_bias_checklist(assessment)
+    if report_type == "security":
+        return "security", f"ai-security-{slug}.md", render_security_assessment(assessment)
     raise ValueError(f"Unknown report type: {report_type}")

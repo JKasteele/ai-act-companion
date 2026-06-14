@@ -54,6 +54,7 @@ class AssessResponse(BaseModel):
     id: str
     created_at: str
     classification: Classification
+    security: dict[str, Any] = Field(default_factory=dict)
 
 
 class AssessmentSummary(BaseModel):
