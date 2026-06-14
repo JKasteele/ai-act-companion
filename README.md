@@ -172,12 +172,21 @@ ai-act list
 
 (`ai-act` is installed via `pip install -e .`; or run `python -m app.cli …`.)
 
-## Tests
+## Tests & validation
 
 ```bash
 pytest                              # or: python tests/test_classifier.py
 ruff check .                        # lint
 ```
+
+The suite includes a **25-case golden-set accuracy evaluation**
+(`tests/test_accuracy.py` against `examples/golden_set.json`, 100% — expected
+tiers labelled by independent regulatory reasoning) and an **adversarial
+red-team suite** (`tests/test_red_team.py`) that proves prompt-injection /
+jailbreak input cannot move the deterministic risk tier.
+
+See **[DESIGN.md](DESIGN.md)** for the architecture and the design rationale
+(the deterministic-engine + LLM-interface + human-in-the-loop safety pattern).
 
 ## Project structure
 

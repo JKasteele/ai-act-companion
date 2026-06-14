@@ -1,0 +1,400 @@
+[
+  {
+    "name": "NudgeMaster behavioural ad engine",
+    "expected_tier": "prohibited",
+    "rationale": "Uses subliminal/manipulative techniques that materially distort behaviour beyond awareness causing harm -> Art. 5(1)(a) prohibited.",
+    "answers": {
+      "sys_name": "NudgeMaster behavioural ad engine",
+      "sys_description": "Optimises ad timing and audio cues below the threshold of conscious perception to push impulse purchases.",
+      "intended_purpose": "Maximise conversions by covertly steering user behaviour.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_manipulation": true,
+      "data_personal": true,
+      "autonomy_level": "fully_autonomous"
+    }
+  },
+  {
+    "name": "ElderHelper subscription upseller",
+    "expected_tier": "prohibited",
+    "rationale": "Exploits vulnerabilities due to age/cognitive decline to distort behaviour with harm -> Art. 5(1)(b) prohibited.",
+    "answers": {
+      "sys_name": "ElderHelper subscription upseller",
+      "sys_description": "Targets elderly users with confusing prompts that exploit reduced digital literacy to lock them into costly subscriptions.",
+      "intended_purpose": "Increase recurring revenue from elderly customers.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_vulnerability": true,
+      "affects_vulnerable": true,
+      "data_personal": true,
+      "autonomy_level": "human_on_the_loop"
+    }
+  },
+  {
+    "name": "CivicTrust national citizen score",
+    "expected_tier": "prohibited",
+    "rationale": "General-purpose social scoring leading to detrimental treatment in unrelated contexts -> Art. 5(1)(c) prohibited.",
+    "answers": {
+      "sys_name": "CivicTrust national citizen score",
+      "sys_description": "Aggregates unrelated social behaviour into a single trust score used to gate access to housing and loans.",
+      "intended_purpose": "Differentiate citizen access to services by behaviour score.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "p_social_scoring": true,
+      "data_personal": true,
+      "automated_decision": true,
+      "data_scale": "large"
+    }
+  },
+  {
+    "name": "PreCrime offender risk profiler",
+    "expected_tier": "prohibited",
+    "rationale": "Predicts criminal behaviour based solely on profiling/personality traits -> Art. 5(1)(d) prohibited.",
+    "answers": {
+      "sys_name": "PreCrime offender risk profiler",
+      "sys_description": "Estimates the probability that an individual will commit a crime using only personality traits and profiling, with no objective verifiable facts.",
+      "intended_purpose": "Flag individuals to police before any offence occurs.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_predictive_policing": true,
+      "data_personal": true,
+      "data_special_category": true
+    }
+  },
+  {
+    "name": "FaceVault scraping crawler",
+    "expected_tier": "prohibited",
+    "rationale": "Untargeted scraping of facial images from internet/CCTV to build a recognition database -> Art. 5(1)(e) prohibited.",
+    "answers": {
+      "sys_name": "FaceVault scraping crawler",
+      "sys_description": "Crawls the public web and CCTV feeds to harvest facial images and expand a facial-recognition database.",
+      "intended_purpose": "Build a large searchable facial-recognition index.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_facial_scraping": true,
+      "data_personal": true,
+      "data_biometric": true,
+      "data_scale": "large"
+    }
+  },
+  {
+    "name": "MoodMeter workplace emotion monitor",
+    "expected_tier": "prohibited",
+    "rationale": "Emotion recognition of employees in the workplace (not medical/safety) -> Art. 5(1)(f) prohibited.",
+    "answers": {
+      "sys_name": "MoodMeter workplace emotion monitor",
+      "sys_description": "Uses webcam analysis to infer employee emotions during work and reports engagement levels to managers.",
+      "intended_purpose": "Track staff emotional engagement at their desks.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "p_emotion_work_edu": true,
+      "data_personal": true,
+      "data_biometric": true,
+      "affects_vulnerable": false
+    }
+  },
+  {
+    "name": "BioSort sensitive-attribute classifier",
+    "expected_tier": "prohibited",
+    "rationale": "Biometric categorisation inferring sensitive attributes (religion, sexual orientation) -> Art. 5(1)(g) prohibited.",
+    "answers": {
+      "sys_name": "BioSort sensitive-attribute classifier",
+      "sys_description": "Analyses face and voice biometrics to infer a person's religion, political opinion and sexual orientation.",
+      "intended_purpose": "Categorise individuals by inferred sensitive attributes.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_biometric_categorization_sensitive": true,
+      "data_personal": true,
+      "data_special_category": true,
+      "data_biometric": true
+    }
+  },
+  {
+    "name": "StreetWatch live face ID for police",
+    "expected_tier": "prohibited",
+    "rationale": "Real-time remote biometric identification in public spaces for law enforcement -> Art. 5(1)(h) prohibited.",
+    "answers": {
+      "sys_name": "StreetWatch live face ID for police",
+      "sys_description": "Performs real-time remote biometric identification of people in public squares for general policing without a listed exception.",
+      "intended_purpose": "Continuously identify passers-by for law enforcement.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "p_realtime_rbi_le": true,
+      "data_personal": true,
+      "data_biometric": true,
+      "data_scale": "large"
+    }
+  },
+  {
+    "name": "GridGuard substation safety controller",
+    "expected_tier": "high",
+    "rationale": "Safety component of an Annex I regulated product requiring third-party conformity assessment -> Art. 6(1) high-risk.",
+    "answers": {
+      "sys_name": "GridGuard substation safety controller",
+      "sys_description": "An ML safety component embedded in industrial machinery that trips breakers to prevent overload faults.",
+      "intended_purpose": "Act as the safety controller of regulated electrical machinery.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_safety_component": true,
+      "autonomy_level": "human_on_the_loop",
+      "can_override": true
+    }
+  },
+  {
+    "name": "ExamProctor learning assessment",
+    "expected_tier": "high",
+    "rationale": "Used in education to evaluate learning outcomes (Annex III-3) -> Art. 6(2) high-risk.",
+    "answers": {
+      "sys_name": "ExamProctor learning assessment",
+      "sys_description": "Scores student exam answers and determines progression to the next education level.",
+      "intended_purpose": "Evaluate learning outcomes and assign grades.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_usecases": ["education"],
+      "hr_does_profiling": false,
+      "data_personal": true,
+      "affects_vulnerable": true,
+      "automated_decision": true
+    }
+  },
+  {
+    "name": "CreditDecide loan scorer",
+    "expected_tier": "high",
+    "rationale": "Creditworthiness/credit scoring is an essential service (Annex III-5) -> Art. 6(2) high-risk.",
+    "answers": {
+      "sys_name": "CreditDecide loan scorer",
+      "sys_description": "Assesses creditworthiness of consumer loan applicants and recommends approve/deny.",
+      "intended_purpose": "Score applicants for consumer credit decisions.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_usecases": ["essential_services"],
+      "hr_does_profiling": true,
+      "data_personal": true,
+      "automated_decision": true,
+      "data_scale": "large"
+    }
+  },
+  {
+    "name": "BorderCheck visa risk triage",
+    "expected_tier": "high",
+    "rationale": "Risk assessment for visa/asylum applications (Annex III-7) -> Art. 6(2) high-risk.",
+    "answers": {
+      "sys_name": "BorderCheck visa risk triage",
+      "sys_description": "Assigns a risk score to visa and asylum applications to prioritise case handling.",
+      "intended_purpose": "Triage migration applications by estimated risk.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "hr_usecases": ["migration_border"],
+      "hr_does_profiling": true,
+      "data_personal": true,
+      "data_special_category": true
+    }
+  },
+  {
+    "name": "RouteSentry traffic safety component",
+    "expected_tier": "high",
+    "rationale": "Safety component for road-traffic management is critical infrastructure (Annex III-2) -> Art. 6(2) high-risk.",
+    "answers": {
+      "sys_name": "RouteSentry traffic safety component",
+      "sys_description": "Manages traffic-signal timing as a safety component of the road-traffic control system.",
+      "intended_purpose": "Control traffic flow safely at city intersections.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_usecases": ["critical_infra"],
+      "hr_does_profiling": false,
+      "autonomy_level": "human_on_the_loop"
+    }
+  },
+  {
+    "name": "ShiftPlanner internal vacancy ranker (preparatory only)",
+    "expected_tier": "high",
+    "rationale": "Annex III-4 employment AND a narrow preparatory task without profiling: Art. 6(3) derogation may apply but is NOT yet documented, so it stays high-risk in this tool (correct: high until Art. 6(4) assessment is recorded).",
+    "answers": {
+      "sys_name": "ShiftPlanner internal vacancy ranker",
+      "sys_description": "Performs a narrow preparatory de-duplication and formatting step on internal job postings before a human recruiter ranks candidates.",
+      "intended_purpose": "Pre-format vacancy data for human review only.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_usecases": ["employment"],
+      "hr_art6_3_minor": true,
+      "hr_does_profiling": false,
+      "autonomy_level": "advisory",
+      "can_override": true
+    }
+  },
+  {
+    "name": "PromoPicker employment profiler (minor-task claim + profiling)",
+    "expected_tier": "high",
+    "rationale": "Annex III-4 employment with profiling of natural persons: Art. 6(3) derogation is never available where profiling occurs -> always high-risk.",
+    "answers": {
+      "sys_name": "PromoPicker employment profiler",
+      "sys_description": "Profiles employees on behaviour and traits to recommend promotions, while claiming to be only a preparatory step.",
+      "intended_purpose": "Recommend promotion candidates from staff profiles.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "hr_usecases": ["employment"],
+      "hr_art6_3_minor": true,
+      "hr_does_profiling": true,
+      "data_personal": true,
+      "automated_decision": true
+    }
+  },
+  {
+    "name": "JusticeAssist case-law summariser",
+    "expected_tier": "high",
+    "rationale": "Assists a judicial authority in interpreting facts and law (Annex III-8) -> Art. 6(2) high-risk.",
+    "answers": {
+      "sys_name": "JusticeAssist case-law summariser",
+      "sys_description": "Helps judges research and interpret facts and applicable law for pending cases.",
+      "intended_purpose": "Support judicial decision-making with legal analysis.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_usecases": ["justice_democracy"],
+      "hr_does_profiling": false,
+      "data_personal": true
+    }
+  },
+  {
+    "name": "SupportPal customer chatbot",
+    "expected_tier": "limited",
+    "rationale": "Interacts directly with natural persons; no Art. 5/6 trigger. Transparency only -> Art. 50(1) limited.",
+    "answers": {
+      "sys_name": "SupportPal customer chatbot",
+      "sys_description": "A conversational assistant that answers customer FAQs on a website.",
+      "intended_purpose": "Automate first-line customer support.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "t_interacts_humans": true,
+      "data_personal": true,
+      "autonomy_level": "human_on_the_loop",
+      "sec_is_llm": true,
+      "sec_public": true
+    }
+  },
+  {
+    "name": "DeepCast video synthesis studio",
+    "expected_tier": "limited",
+    "rationale": "Generates deepfakes/synthetic media; no Art. 5/6 trigger. Transparency only -> Art. 50(2)+(4) limited.",
+    "answers": {
+      "sys_name": "DeepCast video synthesis studio",
+      "sys_description": "Creates realistic synthetic video and audio of people for entertainment clips.",
+      "intended_purpose": "Produce deepfake entertainment content.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "t_synthetic_content": true,
+      "t_deepfake": true,
+      "sec_is_llm": true
+    }
+  },
+  {
+    "name": "SentiGauge permitted sentiment analyser",
+    "expected_tier": "limited",
+    "rationale": "Permitted (non-workplace, non-prohibited) emotion recognition on opted-in survey respondents -> Art. 50(3) transparency only, limited.",
+    "answers": {
+      "sys_name": "SentiGauge permitted sentiment analyser",
+      "sys_description": "Infers sentiment from voluntary product-review videos submitted by consenting reviewers, outside any workplace or education setting.",
+      "intended_purpose": "Summarise reviewer sentiment for marketing research.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "t_emotion_or_biometric_cat": true,
+      "data_personal": true
+    }
+  },
+  {
+    "name": "InboxGuard spam filter",
+    "expected_tier": "minimal",
+    "rationale": "No prohibited, high-risk or transparency trigger -> minimal risk.",
+    "answers": {
+      "sys_name": "InboxGuard spam filter",
+      "sys_description": "Classifies incoming email as spam or not spam.",
+      "intended_purpose": "Filter unwanted email from the inbox.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "data_personal": true,
+      "autonomy_level": "human_on_the_loop",
+      "can_override": true
+    }
+  },
+  {
+    "name": "ShopSuggest product recommender",
+    "expected_tier": "minimal",
+    "rationale": "A back-office recommender with no Art. 5/6/50 trigger and no direct human interaction declared -> minimal risk.",
+    "answers": {
+      "sys_name": "ShopSuggest product recommender",
+      "sys_description": "Recommends related products on an e-commerce site based on browsing history.",
+      "intended_purpose": "Increase basket size with product suggestions.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "data_personal": true,
+      "data_scale": "medium",
+      "autonomy_level": "advisory"
+    }
+  },
+  {
+    "name": "OffshoreScore credit model (non-EU)",
+    "expected_tier": "minimal",
+    "rationale": "Would be Annex III-5 high-risk, BUT not placed on the EU market and does not affect EU persons -> Art. 2 out of scope -> minimal.",
+    "answers": {
+      "sys_name": "OffshoreScore credit model",
+      "sys_description": "A credit-scoring model used only by a non-EU bank for non-EU customers.",
+      "intended_purpose": "Score loan applicants outside the EU.",
+      "provider_role": "provider",
+      "eu_market": false,
+      "hr_usecases": ["essential_services"],
+      "hr_does_profiling": true,
+      "data_personal": true
+    }
+  },
+  {
+    "name": "OpenFoundation general-purpose model",
+    "expected_tier": "minimal",
+    "rationale": "A standalone GPAI model with no Art. 5/6/50 trigger: GPAI obligations (Ch. V) apply independently but do NOT set a risk tier, so the tier itself is minimal.",
+    "answers": {
+      "sys_name": "OpenFoundation general-purpose model",
+      "sys_description": "A broadly applicable foundation language model offered to downstream developers.",
+      "intended_purpose": "Serve as a general-purpose base model for downstream apps.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "gpai_model": true,
+      "gpai_systemic": false,
+      "sec_is_llm": true,
+      "sec_third_party_models": false
+    }
+  },
+  {
+    "name": "FrontierLM systemic GPAI + manipulation",
+    "expected_tier": "prohibited",
+    "rationale": "Combines multiple triggers: systemic GPAI (Ch. V, independent) AND an Art. 5(1)(a) manipulation practice. Highest tier wins -> prohibited.",
+    "answers": {
+      "sys_name": "FrontierLM systemic GPAI",
+      "sys_description": "A frontier-scale general-purpose model fine-tuned to deploy subliminal manipulative prompts that distort user decisions to their detriment.",
+      "intended_purpose": "Maximise engagement via covert manipulation.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_manipulation": true,
+      "gpai_model": true,
+      "gpai_systemic": true,
+      "t_interacts_humans": true,
+      "sec_is_llm": true,
+      "sec_public": true
+    }
+  },
+  {
+    "name": "BioRecruit biometric hiring chatbot",
+    "expected_tier": "high",
+    "rationale": "Multiple triggers but no Art. 5: Annex III-1 biometrics + Annex III-4 employment (Art. 6(2) high) AND Art. 50 transparency (interacts with humans). Highest applicable tier is high-risk.",
+    "answers": {
+      "sys_name": "BioRecruit biometric hiring chatbot",
+      "sys_description": "A hiring assistant that interacts with candidates by chat and uses permitted biometric verification to confirm identity during selection.",
+      "intended_purpose": "Verify candidate identity and assist recruitment selection.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_usecases": ["biometrics", "employment"],
+      "hr_does_profiling": true,
+      "t_interacts_humans": true,
+      "data_personal": true,
+      "data_biometric": true,
+      "automated_decision": true
+    }
+  }
+]
