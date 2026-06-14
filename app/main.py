@@ -11,10 +11,12 @@ Endpoints:
   GET  /api/ai/status, POST /api/ai/{prefill,parse,narrative} -> optional AI layer
 """
 
+import csv
+import io
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__, reports, storage
@@ -127,12 +129,33 @@ def list_assessments():
     return [AssessmentSummary(**s) for s in storage.list_all()]
 
 
+@app.get("/api/export.csv")
+def export_csv():
+    """Export the assessment inventory as a CSV register."""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["id", "sys_name", "tier", "tier_label", "security_risks", "created_at"])
+    for r in storage.list_all():
+        writer.writerow([r["id"], r["sys_name"], r["tier"], r["tier_label"],
+                         r.get("security_risks", 0), r["created_at"]])
+    return PlainTextResponse(
+        buf.getvalue(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=ai-act-inventory.csv"})
+
+
 @app.get("/api/assessments/{assessment_id}")
 def get_assessment(assessment_id: str):
     data = storage.load(assessment_id)
     if not data:
         raise HTTPException(status_code=404, detail="Assessment not found")
     return data
+
+
+@app.delete("/api/assessments/{assessment_id}")
+def delete_assessment(assessment_id: str):
+    if not storage.delete(assessment_id):
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    return {"deleted": assessment_id}
 
 
 @app.get("/api/assessments/{assessment_id}/report", response_model=ReportResponse)

@@ -72,6 +72,17 @@ def test_storage_rejects_path_traversal_ids():
     assert storage.is_valid_id("talentmatch-cv-screening-5ea377b9") is True
 
 
+def test_storage_save_load_delete_roundtrip():
+    aid = storage.new_id("Test Delete System")
+    storage.save({"id": aid, "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": {"sys_name": "Test Delete System"},
+                  "classification": {}, "security": {"risks": []}})
+    assert storage.load(aid) is not None
+    assert storage.delete(aid) is True
+    assert storage.load(aid) is None
+    assert storage.delete("does-not-exist-xyz") is False
+
+
 def _run_standalone():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     passed = 0

@@ -21,10 +21,16 @@
       Use synthetic/example data only.
     </p>
 
-    <!-- Saved assessments -->
+    <!-- AI system inventory -->
     <details class="saved no-print" id="saved-box">
-      <summary>Saved assessments (<span id="saved-count">0</span>)</summary>
-      <ul id="saved-list"></ul>
+      <summary>AI system inventory (<span id="saved-count">0</span>)</summary>
+      <div class="inv-toolbar">
+        <button type="button" id="btn-export-csv" class="secondary">Export register (CSV)</button>
+        <label class="import-btn">Import JSON
+          <input type="file" id="import-file" accept="application/json,.json" hidden />
+        </label>
+      </div>
+      <div id="saved-list"></div>
     </details>
 
     <!-- STEP 1: intake -->

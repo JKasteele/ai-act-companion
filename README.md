@@ -177,9 +177,11 @@ ai-act-companion/
 |---|---|---|
 | GET | `/api/questionnaire` | questionnaire definition |
 | POST | `/api/assess` | classify + store |
-| GET | `/api/assessments` | list stored assessments |
-| GET | `/api/assessments/{id}` | full assessment |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias` | report (markdown) |
+| GET | `/api/assessments` | list stored assessments (inventory) |
+| GET | `/api/assessments/{id}` | full assessment (JSON export) |
+| DELETE | `/api/assessments/{id}` | delete an assessment |
+| GET | `/api/export.csv` | inventory as a CSV register |
+| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria` | report (markdown) |
 | GET | `/api/ai/status` | AI layer status (provider, model, reachability) |
 | POST | `/api/ai/prefill` | free text → draft answers (or a prompt for manual mode) |
 | POST | `/api/ai/parse` | pasted-back LLM answer → validated draft |
@@ -253,6 +255,7 @@ concrete article/annex per conclusion:
 - [x] Threat model of the tool itself (`THREAT_MODEL.md`) + `bandit`/`pip-audit` in CI
 - [x] EUR-Lex / AI Act Explorer deep links + phased applicability timeline (Art. 113)
 - [x] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
+- [x] AI system inventory (dashboard) + CSV register and JSON export/import
 - [ ] ISO/IEC 42001 mapping
 
 ## License

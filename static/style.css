@@ -62,6 +62,22 @@ h2 { font-size: 1.25rem; margin-top: 28px; border-bottom: 1px solid var(--border
 .saved a { color: var(--accent); cursor: pointer; text-decoration: none; }
 .saved a:hover { text-decoration: underline; }
 
+.inv-toolbar { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+.import-btn {
+  display: inline-block; background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 9px 16px;
+  cursor: pointer; font-size: inherit;
+}
+.import-btn:hover { background: var(--panel); }
+.inv-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.inv-table th, .inv-table td { text-align: left; padding: 7px 10px; border-top: 1px solid var(--border); }
+.inv-table th { color: var(--muted); font-weight: 600; border-top: none; }
+.inv-date { color: var(--muted); white-space: nowrap; }
+.inv-actions { display: flex; gap: 12px; }
+.inv-actions a { color: var(--accent); cursor: pointer; }
+.inv-actions a.danger { color: var(--prohibited); }
+.inv-actions a:hover { text-decoration: underline; }
+
 /* Formulier */
 fieldset {
   border: 1px solid var(--border);

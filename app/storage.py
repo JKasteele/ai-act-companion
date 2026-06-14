@@ -55,6 +55,17 @@ def load(assessment_id):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def delete(assessment_id):
+    """Delete a stored assessment. Returns True if a file was removed."""
+    if not is_valid_id(assessment_id):
+        return False
+    path = DATA_DIR / f"{assessment_id}.json"
+    if path.exists():
+        path.unlink()
+        return True
+    return False
+
+
 def list_all():
     """All assessments as short summaries, newest first."""
     _ensure_dir()
@@ -65,11 +76,13 @@ def list_all():
         except (json.JSONDecodeError, OSError):
             continue
         cls = data.get("classification", {})
+        security = data.get("security") or {}
         items.append({
             "id": data.get("id", path.stem),
             "sys_name": data.get("answers", {}).get("sys_name", "(unnamed)"),
             "tier": cls.get("tier", ""),
             "tier_label": cls.get("tier_label", ""),
+            "security_risks": len(security.get("risks", [])),
             "created_at": data.get("created_at", ""),
         })
     items.sort(key=lambda x: x["created_at"], reverse=True)

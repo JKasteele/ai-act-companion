@@ -63,6 +63,7 @@ class AssessmentSummary(BaseModel):
     sys_name: str
     tier: str
     tier_label: str
+    security_risks: int = 0
     created_at: str
 
 

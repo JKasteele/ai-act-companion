@@ -68,6 +68,12 @@ async function init() {
   $("#btn-ai-prefill").addEventListener("click", aiPrefill);
   $("#btn-ai-copy").addEventListener("click", aiCopyPrompt);
   $("#btn-ai-parse").addEventListener("click", aiParse);
+
+  $("#btn-export-csv").addEventListener("click", exportCsv);
+  $("#import-file").addEventListener("change", (e) => {
+    if (e.target.files[0]) importJson(e.target.files[0]);
+    e.target.value = "";
+  });
 }
 
 // --- AI layer (phase 4) ----------------------------------------------------
@@ -437,12 +443,72 @@ async function loadSaved() {
   $("#saved-count").textContent = items.length;
   const list = $("#saved-list");
   list.innerHTML = "";
+  if (!items.length) {
+    list.append(el("p", { class: "section-desc" }, "No saved assessments yet."));
+    return;
+  }
+  const table = el("table", { class: "inv-table" });
+  table.append(el("thead", {}, el("tr", {},
+    el("th", {}, "System"), el("th", {}, "Risk tier"), el("th", {}, "Security"),
+    el("th", {}, "Created"), el("th", {}, "Actions"))));
+  const tbody = el("tbody", {});
   items.forEach((it) => {
-    list.append(el("li", {},
-      el("span", { class: `tier-badge tier-${it.tier}`, style: "font-size:.72rem;padding:2px 10px;" }, it.tier_label || it.tier),
-      el("a", { onclick: () => openSaved(it.id) }, it.sys_name),
-      el("small", { style: "color:var(--muted)" }, it.created_at)));
+    const actions = el("td", { class: "inv-actions" });
+    actions.append(el("a", { onclick: () => openSaved(it.id) }, "Open"));
+    actions.append(el("a", { onclick: () => exportJson(it.id) }, "JSON"));
+    const del = el("a", { class: "danger" }, "Delete");
+    del.addEventListener("click", () => confirmDelete(del, it.id));
+    actions.append(del);
+    tbody.append(el("tr", {},
+      el("td", {}, it.sys_name || "(unnamed)"),
+      el("td", {}, el("span", {
+        class: `tier-badge tier-${it.tier}`, style: "font-size:.72rem;padding:2px 9px;",
+      }, it.tier_label || it.tier || "—")),
+      el("td", {}, String(it.security_risks ?? 0)),
+      el("td", { class: "inv-date" },
+        (it.created_at || "").replace("T", " ").replace("+00:00", "")),
+      actions));
   });
+  table.append(tbody);
+  list.append(table);
+}
+
+function confirmDelete(linkEl, id) {
+  if (linkEl.dataset.armed === "1") { deleteAssessment(id); return; }
+  linkEl.dataset.armed = "1";
+  const orig = linkEl.textContent;
+  linkEl.textContent = "Confirm?";
+  setTimeout(() => { linkEl.dataset.armed = ""; linkEl.textContent = orig; }, 3000);
+}
+
+async function deleteAssessment(id) {
+  const res = await fetch(`/api/assessments/${id}`, { method: "DELETE" });
+  if (!res.ok) { toast("Delete failed."); return; }
+  toast("Deleted.");
+  await loadSaved();
+}
+
+async function exportJson(id) {
+  const data = await (await fetch(`/api/assessments/${id}`)).json();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = el("a", { href: url, download: `${id}.json` });
+  document.body.append(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportCsv() {
+  const a = el("a", { href: "/api/export.csv", download: "ai-act-inventory.csv" });
+  document.body.append(a); a.click(); a.remove();
+}
+
+async function importJson(file) {
+  try {
+    const data = JSON.parse(await file.text());
+    setAnswers(data.answers || data);   // accept a full assessment or bare answers
+    showIntake();
+    toast("Imported — review and classify.");
+  } catch { toast("Import failed — invalid JSON."); }
 }
 
 async function openSaved(id) {
