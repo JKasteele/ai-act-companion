@@ -41,9 +41,9 @@ This project focuses on three things that are uncommon in free tooling:
 
 ## Screenshots
 
-| Classification result | Generated report | AI assist (human-in-the-loop) |
-|---|---|---|
-| ![Classification](docs/img/result.png) | ![Report](docs/img/report.png) | ![AI assist](docs/img/ai-assist.png) |
+| Classification result | AI security lens | Generated report | AI assist (human-in-the-loop) |
+|---|---|---|---|
+| ![Classification](docs/img/result.png) | ![Security lens](docs/img/security.png) | ![Report](docs/img/report.png) | ![AI assist](docs/img/ai-assist.png) |
 
 ## What it does
 
