@@ -23,6 +23,28 @@ const el = (tag, props = {}, ...kids) => {
   return n;
 };
 
+// Resolve a citation (e.g. "Art. 6(2)", "Annex III(4)") to an AI Act Explorer URL.
+const ROMAN = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10, XI: 11 };
+function refUrl(ref) {
+  if (!ref) return null;
+  let m = ref.match(/Art\.?\s*(\d+)/);
+  if (m) return `https://artificialintelligenceact.eu/article/${parseInt(m[1], 10)}/`;
+  m = ref.match(/Annex\s+([IVX]+)/);
+  if (m && ROMAN[m[1]]) return `https://artificialintelligenceact.eu/annex/${ROMAN[m[1]]}/`;
+  return null;
+}
+function refsSpan(refs, cls) {
+  const span = el("span", { class: cls });
+  (refs || []).forEach((r, i) => {
+    if (i) span.append(", ");
+    const url = refUrl(r);
+    span.append(url
+      ? el("a", { href: url, target: "_blank", rel: "noopener" }, r)
+      : document.createTextNode(r));
+  });
+  return span;
+}
+
 // --- init ------------------------------------------------------------------
 async function init() {
   QUESTIONNAIRE = await (await fetch("/api/questionnaire")).json();
@@ -320,6 +342,15 @@ function renderClassification() {
   box.append(el("p", {}, c.tier_description));
   box.append(el("p", {}, c.summary));
 
+  const app = c.applicability;
+  if (app && app.date) {
+    const basisEl = refUrl(app.basis)
+      ? el("a", { href: refUrl(app.basis), target: "_blank", rel: "noopener" }, `(${app.basis})`)
+      : document.createTextNode(`(${app.basis})`);
+    box.append(el("p", { class: "applies" },
+      el("strong", {}, "Applies from: "), `${app.date} — ${app.what} `, basisEl));
+  }
+
   const blocks = [
     ["Determining findings", c.findings, false],
     ["Transparency obligations (Art. 50)", c.transparency_obligations, false],
@@ -330,7 +361,7 @@ function renderClassification() {
     const blk = el("div", { class: "result-block" }, el("h3", {}, title));
     findings.forEach((f) => {
       blk.append(el("div", { class: "finding" },
-        el("span", { class: "refs" + (isGpai ? " gpai" : "") }, f.refs.join(", ")),
+        refsSpan(f.refs, "refs" + (isGpai ? " gpai" : "")),
         el("div", {}, el("strong", {}, f.title)),
         el("div", {}, f.rationale)));
     });
@@ -484,6 +515,7 @@ function escapeHtml(s) {
 function inline(s) {
   return s
     .replace(/`([^`]+)`/g, (_, x) => `<code>${x}</code>`)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>")
     .replace(/_([^_]+)_/g, "<em>$1</em>");

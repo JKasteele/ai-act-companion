@@ -47,6 +47,7 @@ class Classification(BaseModel):
     high_risk_obligations: list[list[str]] = Field(default_factory=list)
     nist_crosswalk: list[list[str]] = Field(default_factory=list)
     recommended_artifacts: list[str] = Field(default_factory=list)
+    applicability: dict[str, Any] = Field(default_factory=dict)
     disclaimer: str = ""
 
 

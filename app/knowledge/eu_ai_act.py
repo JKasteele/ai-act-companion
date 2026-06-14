@@ -7,7 +7,32 @@ paraphrases; always consult the consolidated regulation for the exact text.
 Disclaimer: this is a self-assessment aid, not legal advice.
 """
 
+import re
+
 REGULATION = "Regulation (EU) 2024/1689 (EU AI Act)"
+CELEX = "32024R1689"
+EURLEX_URL = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"
+_EXPLORER = "https://artificialintelligenceact.eu"
+_ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5,
+          "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10, "XI": 11}
+
+
+def ref_url(ref):
+    """Resolve a citation token (e.g. 'Art. 5(1)(a)', 'Annex III(4)') to a
+    public deep link on the AI Act Explorer, or None if it can't be parsed.
+
+    Article numbers take precedence (a token like 'Art. 11 + Annex IV' links to
+    the article); a pure 'Annex ...' token links to that annex.
+    """
+    if not ref:
+        return None
+    m = re.search(r"Art\.?\s*(\d+)", ref)
+    if m:
+        return f"{_EXPLORER}/article/{int(m.group(1))}/"
+    m = re.search(r"Annex\s+([IVX]+)", ref)
+    if m and m.group(1) in _ROMAN:
+        return f"{_EXPLORER}/annex/{_ROMAN[m.group(1)]}/"
+    return None
 
 # --- Risk tiers (ascending severity) ---------------------------------------
 TIER_PROHIBITED = "prohibited"
@@ -307,3 +332,46 @@ DISCLAIMER = (
     "by a qualified lawyer or the competent supervisory authority. "
     "Classification is based on the answers provided by the user."
 )
+
+# --- Phased applicability (Art. 113 + transitional provisions) -------------
+# (date, what applies, legal basis)
+TIMELINE = [
+    ("1 Aug 2024", "Entry into force.", "Art. 113"),
+    ("2 Feb 2025", "Prohibited practices (Art. 5) and AI literacy (Art. 4) apply.",
+     "Art. 113(a)"),
+    ("2 May 2025", "GPAI codes of practice due (in practice published Jul 2025).",
+     "Art. 56(9)"),
+    ("2 Aug 2025", "GPAI obligations (Ch. V), governance, notifying authorities "
+     "and penalties apply (except the Art. 101 GPAI fines).", "Art. 113(b)"),
+    ("2 Feb 2026", "Commission guidance on high-risk classification due.", "Art. 6(5)"),
+    ("2 Aug 2026", "General application: most obligations, incl. Annex III "
+     "high-risk systems and Art. 50 transparency.", "Art. 113"),
+    ("2 Aug 2027", "High-risk systems under Art. 6(1)/Annex I (regulated "
+     "products); GPAI models already on the market must comply.",
+     "Art. 113(c), Art. 111(3)"),
+]
+
+
+def applies_from(tier, answers):
+    """When the core obligations for THIS system start to apply."""
+    answers = answers or {}
+    if tier == TIER_PROHIBITED:
+        return {"date": "2 Feb 2025",
+                "what": "Prohibition under Art. 5 already applies.",
+                "basis": "Art. 113(a)"}
+    if tier == TIER_HIGH:
+        if answers.get("hr_safety_component"):
+            return {"date": "2 Aug 2027",
+                    "what": "High-risk obligations for Art. 6(1)/Annex I "
+                            "(regulated products).",
+                    "basis": "Art. 113(c)"}
+        return {"date": "2 Aug 2026",
+                "what": "High-risk obligations for Annex III systems.",
+                "basis": "Art. 113"}
+    if tier == TIER_LIMITED:
+        return {"date": "2 Aug 2026",
+                "what": "Transparency obligations (Art. 50) apply.",
+                "basis": "Art. 113"}
+    return {"date": "-",
+            "what": "No mandatory deadline (minimal risk).",
+            "basis": "Art. 95 (voluntary)"}

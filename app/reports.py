@@ -36,14 +36,30 @@ def _header(assessment):
     )
 
 
+def _ref_link(ref):
+    """Render a citation as a Markdown link to the AI Act Explorer when resolvable."""
+    url = eu.ref_url(ref)
+    return f"[{ref}]({url})" if url else ref
+
+
+def _refs(refs):
+    return ", ".join(_ref_link(r) for r in refs)
+
+
 def _findings_block(findings):
     if not findings:
         return "_None._\n"
     lines = []
     for f in findings:
-        refs = ", ".join(f.get("refs", []))
-        lines.append(f"- **{f.get('title','')}** ({refs}) — {f.get('rationale','')}")
+        lines.append(f"- **{f.get('title','')}** ({_refs(f.get('refs', []))}) — {f.get('rationale','')}")
     return "\n".join(lines) + "\n"
+
+
+def _timeline_table():
+    rows = ["| Date | What applies | Basis |", "|---|---|---|"]
+    for date, what, basis in eu.TIMELINE:
+        rows.append(f"| {date} | {what} | {_ref_link(basis)} |")
+    return "\n".join(rows) + "\n"
 
 
 def _nist_table(crosswalk):
@@ -82,6 +98,12 @@ def render_risk_assessment(assessment):
     md.append(f"**Risk tier: {cls.get('tier_label','-')}**\n\n")
     md.append(f"{cls.get('tier_description','')}\n\n")
     md.append(f"{cls.get('summary','')}\n")
+    app = cls.get("applicability") or {}
+    if app:
+        md.append(f"\n**Applies from:** {app.get('date','-')} — {app.get('what','')} "
+                  f"({_ref_link(app.get('basis',''))})\n")
+    md.append(f"\n_Legal source: [EUR-Lex CELEX {eu.CELEX}]({eu.EURLEX_URL}) · "
+              "article links via the AI Act Explorer._\n")
 
     md.append("\n### 2.1 Determining findings\n")
     md.append(_findings_block(cls.get("findings", [])))
@@ -93,11 +115,14 @@ def render_risk_assessment(assessment):
         md.append("\n### 2.3 GPAI obligations (Chapter V)\n")
         md.append(_findings_block(cls.get("gpai_obligations", [])))
 
+    md.append("\n### 2.4 Phased applicability timeline (Art. 113)\n")
+    md.append(_timeline_table())
+
     if cls.get("high_risk_obligations"):
         md.append("\n## 3. High-risk system obligations\n")
         md.append("The following core obligations apply:\n\n")
         for ref, desc in cls["high_risk_obligations"]:
-            md.append(f"- **{ref}** - {desc}\n")
+            md.append(f"- **{_ref_link(ref)}** - {desc}\n")
 
     md.append("\n## 4. Autonomy & human oversight\n")
     md.append(
@@ -310,7 +335,7 @@ def render_security_assessment(assessment):
                 f"| Aspect | Detail |\n|---|---|\n"
                 f"| Why it applies | {r['why']} |\n"
                 f"| MITRE ATLAS | {atlas} |\n"
-                f"| EU AI Act | {', '.join(r['ai_act_refs'])} |\n"
+                f"| EU AI Act | {_refs(r['ai_act_refs'])} |\n"
                 f"| NIST AI RMF | {', '.join(r['nist_refs'])} |\n"
                 f"| Mitigation | {r['mitigation']} |\n"
             )

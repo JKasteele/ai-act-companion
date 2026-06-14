@@ -181,6 +181,8 @@ def classify(answers):
             "high_risk_obligations": [],
             "nist_crosswalk": [list(s) for s in nist.crosswalk_for_tier(eu.TIER_MINIMAL)],
             "recommended_artifacts": _recommended_artifacts(eu.TIER_MINIMAL, answers),
+            "applicability": {"date": "-", "what": "Outside the EU AI Act's scope (Art. 2).",
+                              "basis": "Art. 2"},
             "disclaimer": eu.DISCLAIMER,
         }
 
@@ -222,6 +224,7 @@ def classify(answers):
         "high_risk_obligations": high_risk_obligations,
         "nist_crosswalk": [list(s) for s in nist.crosswalk_for_tier(tier)],
         "recommended_artifacts": _recommended_artifacts(tier, answers),
+        "applicability": eu.applies_from(tier, answers),
         "disclaimer": eu.DISCLAIMER,
     }
 

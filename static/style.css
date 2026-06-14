@@ -126,6 +126,13 @@ button.secondary:hover { background: var(--panel); }
 .finding .refs { display: inline-block; font-size: .78rem; color: var(--accent); background: var(--panel-2);
   border-radius: 4px; padding: 2px 8px; margin-bottom: 4px; }
 .finding .refs.gpai { color: var(--limited); }
+.refs a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.applies {
+  background: var(--panel); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: 6px;
+  padding: 8px 12px; font-size: .9rem;
+}
+.applies a { color: var(--accent); }
 .finding.security { border-left-color: #a877ff; }
 .finding .refs.sec { color: #c9a9ff; }
 .sec-meta { margin-top: 8px; font-size: .82rem; color: var(--muted); display: grid; gap: 3px; }
