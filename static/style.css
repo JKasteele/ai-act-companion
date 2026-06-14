@@ -215,6 +215,8 @@ ul.obligations li { margin: 4px 0; }
 .ai-field-btn:disabled { opacity: .5; cursor: default; }
 
 .hidden { display: none; }
+.modes { font-size: .85rem; color: var(--muted); margin: 8px 0 0; }
+.modes a, footer a { color: var(--accent); }
 footer { color: var(--muted); margin-top: 40px; text-align: center; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   background: var(--accent-2); color: #fff; padding: 10px 18px; border-radius: 8px; z-index: 50; }

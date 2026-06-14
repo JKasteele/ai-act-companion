@@ -6,6 +6,7 @@ Python strings, fed by the classifier output.
 """
 
 from .knowledge import eu_ai_act as eu
+from .knowledge import iso_42001 as iso
 from .security import assess_security
 
 REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria")
@@ -59,6 +60,13 @@ def _timeline_table():
     rows = ["| Date | What applies | Basis |", "|---|---|---|"]
     for date, what, basis in eu.TIMELINE:
         rows.append(f"| {date} | {what} | {_ref_link(basis)} |")
+    return "\n".join(rows) + "\n"
+
+
+def _iso_table():
+    rows = ["| EU AI Act | ISO/IEC 42001 anchor | Note |", "|---|---|---|"]
+    for art, anchor, note in iso.CROSSWALK:
+        rows.append(f"| {_ref_link(art)} | {anchor} | {note} |")
     return "\n".join(rows) + "\n"
 
 
@@ -131,12 +139,16 @@ def render_risk_assessment(assessment):
         f"- Oversight measures: {_a(answers,'human_oversight')}\n"
     )
 
-    md.append("\n## 5. NIST AI RMF crosswalk\n")
+    md.append("\n## 5. Framework crosswalks\n")
+    md.append("\n### 5.1 NIST AI RMF\n")
     md.append(
         "Mapping of the situation to relevant NIST AI RMF subcategories "
         "(GOVERN/MAP always apply; MEASURE/MANAGE scale with the risk):\n\n"
     )
     md.append(_nist_table(cls.get("nist_crosswalk", [])))
+    md.append("\n### 5.2 ISO/IEC 42001\n")
+    md.append(_iso_table())
+    md.append(f"\n_{iso.PROVENANCE}_\n")
 
     md.append("\n## 6. Risk register (to be completed)\n")
     md.append(

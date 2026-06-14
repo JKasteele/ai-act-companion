@@ -39,11 +39,43 @@ This project focuses on three things that are uncommon in free tooling:
   Art. 15 and NIST AI RMF — the governance × security intersection that
   otherwise lives only in commercial tools. See [AI security lens](#ai-security-lens).
 
+## Two ways to use it
+
+One deterministic engine (the audited rule classifier + report generators) sits
+underneath two interchangeable front-ends — pick whichever fits your workflow:
+
+```mermaid
+flowchart TB
+    A["🔒 Local web app<br/>(privacy-first)"]
+    B["⚡ Claude Code plugin<br/>(MCP)"]
+    E["<b>Deterministic engine</b><br/>classifier · reports · knowledge<br/>= ground truth"]
+    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA"]
+    A -->|"optional local AI:<br/>Ollama or paste-into-your-own-LLM"| E
+    B -->|"Claude is the interface<br/>& narrative author"| E
+    E --> O
+```
+
+| | 🔒 Local web app | ⚡ Claude Code plugin |
+|---|---|---|
+| **Interface** | Browser UI on your machine | Claude Code (chat) |
+| **AI assist** | Local Ollama, or paste-into-your-own-LLM | Claude Code itself, via MCP tools |
+| **Privacy** | Fully local — data never leaves your device | Uses your existing Claude Code session |
+| **Best for** | Privacy-sensitive / offline / no subscription | If you already live in Claude Code |
+| **Set-up** | [Quickstart](#quickstart) | [Use inside Claude Code](#use-inside-claude-code) |
+
+Either way, the **risk tier and citations come only from the deterministic
+engine** — the AI never decides the outcome, and a human-in-the-loop review is
+required. The engine can also be driven headless via the [CLI](#cli).
+
 ## Screenshots
 
-| Classification result | AI security lens | Generated report | AI assist (human-in-the-loop) |
-|---|---|---|---|
-| ![Classification](docs/img/result.png) | ![Security lens](docs/img/security.png) | ![Report](docs/img/report.png) | ![AI assist](docs/img/ai-assist.png) |
+| Classification result | AI security lens | Generated report |
+|---|---|---|
+| ![Classification](docs/img/result.png) | ![Security lens](docs/img/security.png) | ![Report](docs/img/report.png) |
+
+| AI assist (human-in-the-loop) | AI system inventory |
+|---|---|
+| ![AI assist](docs/img/ai-assist.png) | ![Inventory](docs/img/inventory.png) |
 
 ## What it does
 
@@ -243,6 +275,7 @@ concrete article/annex per conclusion:
 - **Art. 50** — transparency obligations
 - **Chapter V (Art. 51–55)** — general-purpose AI (GPAI)
 - **NIST AI RMF 1.0** — GOVERN / MAP / MEASURE / MANAGE crosswalk
+- **ISO/IEC 42001:2023** — AI management system crosswalk (analytical alignment)
 
 ## Roadmap
 
@@ -256,7 +289,7 @@ concrete article/annex per conclusion:
 - [x] EUR-Lex / AI Act Explorer deep links + phased applicability timeline (Art. 113)
 - [x] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
 - [x] AI system inventory (dashboard) + CSV register and JSON export/import
-- [ ] ISO/IEC 42001 mapping
+- [x] ISO/IEC 42001 crosswalk (in the risk assessment report)
 
 ## License
 
