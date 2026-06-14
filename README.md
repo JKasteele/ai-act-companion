@@ -18,6 +18,8 @@ own machine.
 
 ---
 
+![AI Act Companion — load an example, classify, and review the result, security lens and report](docs/img/demo.gif)
+
 ## Why this one?
 
 Most open EU AI Act repos are either static checklists or heavyweight platforms.

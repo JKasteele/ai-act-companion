@@ -115,6 +115,9 @@ def list_examples():
                 data = json.loads(path.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
                 continue
+            # Skip non-object files (e.g. examples/golden_set.json is an array).
+            if not isinstance(data, dict) or "sys_name" not in data:
+                continue
             answers = {k: v for k, v in data.items() if not k.startswith("_")}
             out.append({
                 "id": path.stem,
