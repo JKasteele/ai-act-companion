@@ -5,12 +5,15 @@ inspectable; suitable for synthetic example data.
 """
 
 import json
+import os
 import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# Where assessments are stored. Overridable via AIACT_DATA_DIR (e.g. a writable
+# path in a container / Hugging Face Space); defaults to the project's data/.
+DATA_DIR = Path(os.environ.get("AIACT_DATA_DIR") or Path(__file__).resolve().parent.parent / "data")
 
 
 def _ensure_dir():
