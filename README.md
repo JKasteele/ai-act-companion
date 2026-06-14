@@ -251,8 +251,8 @@ concrete article/annex per conclusion:
 - [x] **Claude Code plugin** — MCP server + skill + CLI (Claude as interface, engine as ground truth)
 - [x] **AI security lens** — findings mapped to OWASP LLM Top 10 (2025) + MITRE ATLAS
 - [x] Threat model of the tool itself (`THREAT_MODEL.md`) + `bandit`/`pip-audit` in CI
-- [ ] Article text + EUR-Lex deep links + phased applicability timeline
-- [ ] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
+- [x] EUR-Lex / AI Act Explorer deep links + phased applicability timeline (Art. 113)
+- [x] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
 - [ ] ISO/IEC 42001 mapping
 
 ## License
