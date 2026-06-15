@@ -18,7 +18,7 @@ own machine.
 
 ---
 
-![AI Act Companion — classify a system, then review the architecture-aware AI security severity and the NIST CSF 2.0 / ISO 27001 framework matrix](docs/img/demo.gif)
+![AI Act Companion — classify a system, then review the architecture-aware AI security severity, the prioritised red-team test plan, and the NIST CSF 2.0 / ISO 27001 framework matrix](docs/img/demo.gif)
 
 ## Why this one?
 
@@ -76,13 +76,13 @@ required. The engine can also be driven headless via the [CLI](#cli).
 
 ## Screenshots
 
-| Classification result | Architecture-aware severity | Conformity tracker + penalties |
+| Classification result | Architecture-aware severity | Red-team test plan |
 |---|---|---|
-| ![Classification result](docs/img/result.png) | ![Architecture-aware severity in the AI security lens](docs/img/security.png) | ![Obligations tracker with Art. 99 penalties](docs/img/report.png) |
+| ![Classification result](docs/img/result.png) | ![Architecture-aware severity in the AI security lens](docs/img/security.png) | ![Architecture-aware red-team test plan, prioritised by severity](docs/img/redteam.png) |
 
-| CSF 2.0 / ISO 27001 matrix | AI assist (human-in-the-loop) | AI system inventory |
+| Conformity tracker + penalties | CSF 2.0 / ISO 27001 matrix | AI assist (human-in-the-loop) |
 |---|---|---|
-| ![NIST CSF 2.0 / ISO 27001 framework integration matrix](docs/img/framework-matrix.png) | ![AI assist](docs/img/ai-assist.png) | ![Inventory](docs/img/inventory.png) |
+| ![Obligations tracker with Art. 99 penalties](docs/img/report.png) | ![NIST CSF 2.0 / ISO 27001 framework integration matrix](docs/img/framework-matrix.png) | ![AI assist](docs/img/ai-assist.png) |
 
 ## What it does
 

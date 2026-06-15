@@ -82,7 +82,7 @@ def main():
         page = ctx.new_page()
         frames = []
 
-        # --- support_chatbot: security severity + framework matrix + GIF ----
+        # --- support_chatbot: severity -> red-team plan -> framework matrix -
         load_and_classify(page, "support_chatbot")
         select_report(page, "risk", "EU AI Act classification")   # wait until rendered
         scroll_to(page, "EU AI Act classification")
@@ -96,16 +96,21 @@ def main():
         scroll_to(page, "Applicable risks")
         frames.append(frame(page))                      # F3: applicable risks (Critical detail)
 
-        scroll_to(page, "Framework integration matrix")
-        frames.append(frame(page))                      # F4: matrix in the security report
+        select_report(page, "redteam", "Prioritised test cases")
+        scroll_to(page, "Summary")
+        shot(page, "redteam.png")
+        frames.append(frame(page))                      # F4: red-team priority summary
+
+        scroll_to(page, "Cross-tenant", css="#report-preview h3")
+        frames.append(frame(page))                      # F5: a Critical test case (arch-aware)
 
         select_report(page, "framework-matrix", "Integration matrix")
         scroll_to(page, "NIST CSF 2.0 functions")
-        frames.append(frame(page))                      # F5: CSF 2.0 functions table
+        frames.append(frame(page))                      # F6: CSF 2.0 functions table
 
         scroll_to(page, "Integration matrix")
         shot(page, "framework-matrix.png")
-        frames.append(frame(page))                      # F6: integration matrix (final, lingers)
+        frames.append(frame(page))                      # F7: integration matrix (final, lingers)
 
         # --- hiring (high-risk): classification result + conformity tracker -
         load_and_classify(page, "hiring_cv_screening")
@@ -124,7 +129,7 @@ def main():
         gif = [f.resize((f.width // 2, f.height // 2)) for f in frames]  # 1280x860
         gif[0].save(
             OUT / "demo.gif", save_all=True, append_images=gif[1:],
-            duration=[2200, 2600, 2200, 2000, 2000, 3000], loop=0, optimize=True,
+            duration=[2200, 2400, 2000, 2600, 2800, 2000, 3200], loop=0, optimize=True,
         )
         print(f"  wrote demo.gif ({(OUT / 'demo.gif').stat().st_size // 1024} KB, {len(gif)} frames)")
 

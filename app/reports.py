@@ -37,7 +37,7 @@ def _header(assessment):
     return (
         f"_Assessment id: `{assessment.get('id', '-')}` · "
         f"Generated: {assessment.get('created_at', '-')} · "
-        f"AI Act Companion v0.2_\n\n"
+        f"AI Act Companion v0.3_\n\n"
         f"> {eu.DISCLAIMER}\n"
     )
 

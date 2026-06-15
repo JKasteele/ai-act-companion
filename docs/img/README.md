@@ -4,9 +4,10 @@ The main `README.md` embeds these captures of the running app:
 
 | File | View |
 |---|---|
-| `demo.gif` | Hero animation: classify → architecture-aware severity → framework matrix |
+| `demo.gif` | Hero animation: classify → architecture-aware severity → red-team test plan → framework matrix |
 | `result.png` | Classification result (high-risk example: tier, findings, obligations) |
 | `security.png` | AI security lens — architecture-aware severity (OWASP LLM Top 10 + MITRE ATLAS) |
+| `redteam.png` | Red-team test plan — priority summary + a Critical, architecture-aware test case |
 | `report.png` | Obligations & conformity tracker with the Art. 99 penalty block |
 | `framework-matrix.png` | NIST CSF 2.0 / ISO 27001:2022 framework integration matrix |
 | `ai-assist.png` | The AI assist panel (free-text → human-in-the-loop draft) |

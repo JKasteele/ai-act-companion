@@ -4,7 +4,7 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-06-15
 
 Turns the security lens into an actionable, purple-team artifact.
 
@@ -23,6 +23,8 @@ Turns the security lens into an actionable, purple-team artifact.
 - Tests (`tests/test_redteam_plan.py`): determinism, severity-driven priority,
   architecture gating, the free-text invariant (prose cannot add/drop/re-prioritise
   a test), coverage consistency, and rendering.
+
+[0.3.0]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.3.0
 
 ## [0.2.0] - 2026-06-15
 
