@@ -18,7 +18,7 @@ own machine.
 
 ---
 
-![AI Act Companion — load an example, classify, and review the result, security lens and report](docs/img/demo.gif)
+![AI Act Companion — classify a system, then review the architecture-aware AI security severity and the NIST CSF 2.0 / ISO 27001 framework matrix](docs/img/demo.gif)
 
 ## Why this one?
 
@@ -71,13 +71,13 @@ required. The engine can also be driven headless via the [CLI](#cli).
 
 ## Screenshots
 
-| Classification result | AI security lens | Generated report |
+| Classification result | Architecture-aware severity | Conformity tracker + penalties |
 |---|---|---|
-| ![Classification](docs/img/result.png) | ![Security lens](docs/img/security.png) | ![Report](docs/img/report.png) |
+| ![Classification result](docs/img/result.png) | ![Architecture-aware severity in the AI security lens](docs/img/security.png) | ![Obligations tracker with Art. 99 penalties](docs/img/report.png) |
 
-| AI assist (human-in-the-loop) | AI system inventory |
-|---|---|
-| ![AI assist](docs/img/ai-assist.png) | ![Inventory](docs/img/inventory.png) |
+| CSF 2.0 / ISO 27001 matrix | AI assist (human-in-the-loop) | AI system inventory |
+|---|---|---|
+| ![NIST CSF 2.0 / ISO 27001 framework integration matrix](docs/img/framework-matrix.png) | ![AI assist](docs/img/ai-assist.png) | ![Inventory](docs/img/inventory.png) |
 
 ## What it does
 

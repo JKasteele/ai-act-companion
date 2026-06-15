@@ -400,11 +400,19 @@ function renderClassification() {
     secp.risks.forEach((r) => {
       let atlas = (r.atlas || []).map((t) => `${t.id} (${t.name})`).join(", ") || "—";
       if (r.atlas_note) atlas += ` — ${r.atlas_note}`;
+      const sevBadge = r.severity
+        ? el("span", { class: `sev-badge sev-${String(r.severity).toLowerCase()}` }, r.severity)
+        : null;
+      const sevLine = r.severity_rationale
+        ? el("div", {}, el("em", {}, "Severity: "), `${r.severity} — ${r.severity_rationale}`)
+        : null;
       blk.append(el("div", { class: "finding security" },
         el("span", { class: "refs sec" }, r.id),
+        sevBadge,
         el("div", {}, el("strong", {}, r.name)),
         el("div", {}, r.summary),
         el("div", { class: "sec-meta" },
+          sevLine,
           el("div", {}, el("em", {}, "Why: "), r.why),
           el("div", {}, el("em", {}, "MITRE ATLAS: "), atlas),
           el("div", {}, el("em", {}, "EU AI Act: "), (r.ai_act_refs || []).join(", ")),

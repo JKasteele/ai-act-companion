@@ -20,5 +20,14 @@
   "sec_external_data": true,
   "sec_agentic": true,
   "sec_public": true,
-  "sec_outputs_to_systems": false
+  "sec_outputs_to_systems": false,
+  "arch_auth_strength": "weak",
+  "arch_api_write": false,
+  "arch_downstream_actions": false,
+  "arch_access_control_layer": "llm-prompt",
+  "arch_data_scope": "all-users",
+  "arch_rag_modifiable": true,
+  "arch_identity_model": "shared-service-account",
+  "arch_logging": true,
+  "arch_rate_limits": false
 }

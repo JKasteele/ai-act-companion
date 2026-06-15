@@ -1,14 +1,25 @@
 # Screenshots
 
-The main `README.md` embeds these screenshots of the running app:
+The main `README.md` embeds these captures of the running app:
 
 | File | View |
 |---|---|
-| `result.png` | Classification result (after "Load example" → "Classify & generate") |
-| `security.png` | The AI security lens (OWASP LLM Top 10 + MITRE ATLAS) |
-| `report.png` | Rendered report preview (Risk assessment tab) |
+| `demo.gif` | Hero animation: classify → architecture-aware severity → framework matrix |
+| `result.png` | Classification result (high-risk example: tier, findings, obligations) |
+| `security.png` | AI security lens — architecture-aware severity (OWASP LLM Top 10 + MITRE ATLAS) |
+| `report.png` | Obligations & conformity tracker with the Art. 99 penalty block |
+| `framework-matrix.png` | NIST CSF 2.0 / ISO 27001:2022 framework integration matrix |
 | `ai-assist.png` | The AI assist panel (free-text → human-in-the-loop draft) |
+| `inventory.png` | The AI system inventory dashboard |
 
 They are real captures of the live UI (no mock-ups). To regenerate, run the app
-(`uvicorn app.main:app`) and use a headless-browser capture against
-`http://127.0.0.1:8000`.
+and the capture script:
+
+```bash
+uvicorn app.main:app --port 8000        # one terminal
+python scripts/capture_demo.py           # another (writes the files here)
+```
+
+The script (`scripts/capture_demo.py`) drives the same UI a user would — load an
+example from the dropdown, classify, click through the report tabs — using a
+headless browser. Requires `pip install -e ".[dev,capture]" && playwright install chromium`.

@@ -157,6 +157,14 @@ button.secondary:hover { background: var(--panel); }
 .finding .refs.sec { color: #c9a9ff; }
 .sec-meta { margin-top: 8px; font-size: .82rem; color: var(--muted); display: grid; gap: 3px; }
 .sec-meta em { color: var(--text); font-style: normal; font-weight: 600; }
+.sev-badge {
+  display: inline-block; margin-left: 8px; padding: 1px 9px; border-radius: 999px;
+  font-size: .72rem; font-weight: 700; color: #0f1419; vertical-align: middle;
+}
+.sev-critical { background: var(--prohibited); }
+.sev-high { background: var(--high); }
+.sev-medium { background: var(--limited); }
+.sev-low { background: var(--minimal); }
 
 .result-block h3 { margin: 22px 0 8px; font-size: 1.05rem; }
 ul.obligations { padding-left: 20px; }
