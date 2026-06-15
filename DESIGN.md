@@ -26,8 +26,9 @@ Top 10 for LLM Applications + MITRE ATLAS, with architecture-aware severity),
 and generates the supporting documentation — risk assessment, DPIA skeleton,
 bias-audit checklist, AI security assessment, FRIA, Annex IV technical
 documentation, an obligations & conformity tracker (with Art. 99 penalty
-exposure), a post-market monitoring plan, and a NIST CSF 2.0 / ISO 27001
-framework integration matrix.
+exposure), a post-market monitoring plan, a NIST CSF 2.0 / ISO 27001 framework
+integration matrix, an architecture-aware red-team test plan, a defensive control
+catalogue, and an OWASP GenAI Data Security assessment.
 
 ### Who it is for
 
@@ -112,10 +113,17 @@ Three pure functions, no I/O, fully testable:
   injection and system-prompt leakage. It also computes a deterministic
   **severity** per item from the `arch_*` architecture fields (see [§3](#3-the-core-safety-pattern)).
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of nine Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
-  `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`) from the
-  classifier and security output. Markdown is the canonical export; PDF is
-  print-to-PDF in the browser.
+  renders one of twelve Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
+  `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`, `redteam`,
+  `controls`, `datasec`) from the classifier and the security lenses. Markdown is
+  the canonical export; PDF is print-to-PDF in the browser.
+
+Three further pure functions extend the security lens without adding any new
+judgement — `redteam.generate_test_plan` (an offensive test plan),
+`controls.generate_control_catalog` (its defensive mirror), and
+`data_security.assess_data_security` (the OWASP GenAI Data Security lens). The
+first two reuse `assess_security`'s architecture-aware severity as their
+priority (see [§3](#3-the-core-safety-pattern)).
 
 Underneath sits `knowledge/`, where the frameworks live as data (see
 [§4](#4-framework-mapping-methodology--provenance)).
@@ -248,6 +256,25 @@ are deliberately methodology-level — objectives, preconditions, technique
 families and pass/fail criteria — and ship **no working exploit payloads**: the
 generator produces a *plan*, never an attack.
 
+### The same contract, once more: the control catalogue and the data lens
+
+The defensive **control catalogue** (`app/controls.py`) is the blue-team mirror
+of the red-team plan and the fourth application of the contract. It introduces no
+new judgement either: a control's priority *is* the architecture-aware severity of
+the OWASP risk it mitigates, and its conditional controls are gated through the
+*same* `redteam.architecture_flags`/`gate_open` evaluation the offense uses —
+promoted to public functions precisely so offense and defense can never disagree
+about whether, say, retrieved content is untrusted. The pay-off is that each
+control names the red-team test case(s) that verify it (`validated_by`), turning
+the two reports into one loop: *implement the control, then run the test that
+proves it works.* The **OWASP GenAI Data Security lens** (`app/data_security.py`)
+applies the injection-proof half of the contract to a second risk taxonomy
+(DSGAI01–21): which of the 21 data-security risks are in scope is a pure function
+of the structured `sec_*`/`arch_*`/`data_*` fields, so crafted free-text cannot
+add or drop one. It deliberately does *not* invent a severity — DSGAI has no
+official ranking — and reports in the document's own order, leaving the
+severity story to the OWASP LLM Top 10 lens it complements.
+
 ---
 
 ## 4. Framework-mapping methodology & provenance
@@ -263,6 +290,9 @@ real, checkable identifier and the classifier can reference it by key.
 | ISO/IEC 42001:2023 | `knowledge/iso_42001.py` | the publicly-published clause skeleton (4–10) and Annex A control *categories* (A.2–A.10), plus an AI Act crosswalk |
 | NIST AI 800-4 (Mar 2026) | `knowledge/monitoring.py` | the six deployed-AI monitoring categories and five cross-cutting challenges, organised into an Art. 72 post-market monitoring plan |
 | NIST CSF 2.0 + ISO/IEC 27001:2022 | `knowledge/security_frameworks.py` | CSF 2.0 functions, ISO 27001:2022 Annex A control *titles* (public only), and the Framework Integration Matrix bridging both to AI RMF / OWASP / ATLAS / EU AI Act |
+| AI red-team test plan | `knowledge/red_team.py` | methodology-level adversarial test-case templates per OWASP item (objective, preconditions, technique families, pass/fail, expected detection), gated on architecture — **no exploit payloads** |
+| Defensive control catalogue | `knowledge/controls.py` | the control to implement per OWASP item (what, what it prevents, how to verify, CSF 2.0 / ISO 27001 anchors), each naming the red-team test case(s) that verify it |
+| OWASP GenAI Data Security (2026, v1.0) | `knowledge/data_security.py` | the 21 DSGAI data-security risks (DSGAI01–21), each cross-mapped to the OWASP LLM Top 10, EU AI Act Art. 10 and the GDPR |
 
 ### How citations are produced and resolved
 
@@ -400,9 +430,12 @@ Stated plainly, because knowing the boundary is part of the design.
   scope and would require its own security review first.
 - **Not a security scanner or red-team.** The security lens is a mapping and a
   checklist, and the red-team feature generates a *test plan* to **scope** an
-  authorized exercise — it executes nothing and ships no exploit payloads.
-  Neither replaces a penetration test, an actual red-team exercise or a formal
-  threat model of the assessed system; they are inputs to one.
+  authorized exercise — it executes nothing and ships no exploit payloads. The
+  defensive control catalogue and the OWASP GenAI Data Security lens are likewise
+  self-assessment aids — a prioritised list of controls to implement and a
+  data-governance mapping, not certifications. None of them replaces a penetration
+  test, an actual red-team exercise, a data-protection review or a formal threat
+  model of the assessed system; they are inputs to one.
 - **English-only and EU-AI-Act-centric.** Other jurisdictions' AI regulation are
   out of scope; NIST/ISO appear only as crosswalk anchors.
 

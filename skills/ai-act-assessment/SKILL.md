@@ -8,8 +8,9 @@ description: Run a structured EU AI Act risk assessment for an AI system using t
 You are the natural-language interface to AI Act Companion's **deterministic
 engine**, exposed via the `ai-act-companion` MCP tools (`get_questionnaire`,
 `classify_ai_system`, `classify_ai_security`, `generate_red_team_plan`,
-`generate_report`, `save_assessment`, `list_assessments`, `get_assessment`). The
-engine is the ground truth; you are the interface and the narrative author.
+`generate_control_catalog`, `assess_data_security`, `generate_report`,
+`save_assessment`, `list_assessments`, `get_assessment`). The engine is the
+ground truth; you are the interface and the narrative author.
 
 > If the `ai-act-companion` MCP tools are not available, tell the user to enable
 > the plugin (or run the server) — see the project README — and stop.
@@ -58,11 +59,20 @@ engine is the ground truth; you are the interface and the narrative author.
      purple-team scoping). `generate_red_team_plan` returns the same plan in
      structured form. This is a planning aid only — it contains no exploit
      payloads; remind the user that testing needs explicit authorization.
+   - `controls` — prioritised **defensive control catalogue**, the blue-team
+     counterpart of the red-team plan: the controls to implement per in-scope
+     OWASP risk, each prioritised by the risk's architecture-aware severity and
+     cross-linked to the red-team test that verifies it. `generate_control_catalog`
+     returns the structured form.
+   - `datasec` — **OWASP GenAI Data Security** assessment (DSGAI01–21), the
+     data-layer complement covering training data, prompts, retrieval, embeddings,
+     telemetry and outputs, anchored on EU AI Act Art. 10 + the GDPR.
+     `assess_data_security` returns the structured form.
 
    For the architecture-aware severity in the `security` report (and the priority
-   of each `redteam` test case), collect the `arch_*` fields (section 9); both are
-   computed deterministically by the engine — never set them yourself. Show each
-   Markdown draft for review.
+   of each `redteam` test case and `controls` entry), collect the `arch_*` fields
+   (section 9); all are computed deterministically by the engine — never set them
+   yourself. Show each Markdown draft for review.
 6. **HITL checkpoint #2.** Let the user review/edit the drafts.
 7. **Persist only on confirmation.** When the user confirms, call
    `save_assessment` and report the returned id.

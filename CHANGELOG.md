@@ -4,6 +4,35 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+Completes the Tier 2 purple-team set: pairs the red-team plan with its defensive
+counterpart and adds a data-layer security lens.
+
+### Added
+- **Defensive control catalogue** (`app/controls.py`, `controls` report + MCP
+  `generate_control_catalog`) — the blue-team mirror of the red-team test plan.
+  A prioritised, architecture-aware catalogue of the controls to implement per
+  in-scope OWASP LLM risk: what to implement, what it prevents, how to verify it,
+  the NIST CSF 2.0 / ISO 27001:2022 anchors and the EU AI Act / NIST AI RMF
+  references. Each control's priority *is* the architecture-aware severity of the
+  risk it mitigates (the same number the red-team plan uses), conditional controls
+  are gated on the *same* architecture conditions as the offense, and each control
+  names the red-team test case(s) that verify it — *implement, then test*.
+- **OWASP GenAI Data Security lens** (`app/data_security.py`, `datasec` report +
+  MCP `assess_data_security`) — maps the system to the 21 OWASP GenAI Data
+  Security risks (DSGAI01–DSGAI21, from the 2026 v1.0 guidance), the data-layer
+  complement to the OWASP LLM Top 10 lens. Relevance is deterministic over the
+  `sec_*`/`arch_*`/`data_*` intake; each applicable risk carries its related OWASP
+  LLM item(s) and EU AI Act (Art. 10 anchor) / GDPR / NIST AI RMF controls.
+- Both report types added to the CLI (`--type controls|datasec`) and the web UI
+  (Control catalogue / Data security tabs); `architecture_flags`/`gate_open`
+  promoted to public in `redteam.py` so offense and defense share gate semantics.
+- Tests (`tests/test_control_catalog.py`, `tests/test_data_security.py`):
+  determinism, severity-driven priority, architecture gating, the free-text
+  invariant, the offense↔defense cross-link integrity, DSGAI knowledge-base
+  fidelity (21 ids), coverage consistency, and rendering.
+
 ## [0.3.0] - 2026-06-15
 
 Turns the security lens into an actionable, purple-team artifact.

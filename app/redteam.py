@@ -40,8 +40,13 @@ def _select(answers, key):
     return v.strip().lower() if isinstance(v, str) else ""
 
 
-def _flags(answers, fired_ids):
-    """Structured signals the gate evaluator needs. Reads only sec_*/arch_*."""
+def architecture_flags(answers, fired_ids):
+    """Structured signals the gate evaluator needs. Reads only sec_*/arch_*.
+
+    Public so the defensive control catalog (`app/controls.py`) gates its
+    controls on the *same* architecture conditions the offensive test plan uses
+    — offense and defense agree by construction on what "indirect injection" or
+    "cross-tenant" means."""
     def a(key):
         return _truthy(answers.get(key))
 
@@ -59,7 +64,7 @@ def _flags(answers, fired_ids):
     }
 
 
-def _gate_open(gate, flags):
+def gate_open(gate, flags):
     """A template with no gate always applies (its parent risk already fired);
     a gated template applies only when its named condition holds."""
     return True if gate is None else bool(flags.get(gate))
@@ -97,13 +102,13 @@ def generate_test_plan(answers):
         base = r["id"].split(":")[0]
         by_base[base] = r
     fired_ids = set(by_base)
-    flags = _flags(answers, fired_ids)
+    flags = architecture_flags(answers, fired_ids)
 
     cases = []
     for base, risk in by_base.items():
         info = sec.OWASP_LLM_TOP10.get(base, {})
         for tmpl in rt.TEST_CASES.get(base, []):
-            if not _gate_open(tmpl["gate"], flags):
+            if not gate_open(tmpl["gate"], flags):
                 continue
             atlas = [{"id": tid, "name": tname} for tid, tname in info.get("atlas", [])]
             cases.append({

@@ -25,6 +25,8 @@ from mcp.server.fastmcp import FastMCP  # noqa: E402
 
 from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
+from app.controls import generate_control_catalog as _generate_control_catalog  # noqa: E402
+from app.data_security import assess_data_security as _assess_data_security  # noqa: E402
 from app.questionnaire import QUESTIONNAIRE  # noqa: E402
 from app.redteam import generate_test_plan as _generate_test_plan  # noqa: E402
 from app.security import assess_security as _assess_security  # noqa: E402
@@ -80,11 +82,36 @@ def generate_red_team_plan(answers: dict) -> dict:
 
 
 @mcp.tool()
+def generate_control_catalog(answers: dict) -> dict:
+    """Generate a prioritised, architecture-aware **defensive control catalogue**
+    — the blue-team counterpart of the red-team test plan. Returns the controls
+    to implement for each in-scope OWASP LLM risk (what to implement, what it
+    prevents, how to verify it, the NIST CSF 2.0 / ISO 27001 anchors and the EU
+    AI Act / NIST AI RMF references), each prioritised by the architecture-aware
+    severity of the risk it mitigates and cross-linked to the red-team test
+    case(s) that verify it. Driven by the `sec_*`/`arch_*` intake fields.
+    Self-assessment aid; present as a draft for human review."""
+    return _generate_control_catalog(answers)
+
+
+@mcp.tool()
+def assess_data_security(answers: dict) -> dict:
+    """Map the AI system to the applicable **OWASP GenAI Data Security** risks
+    (DSGAI01-DSGAI21) — the data-layer complement to `classify_ai_security`,
+    covering training data, prompts, retrieved context, embeddings, telemetry and
+    outputs. Each applicable risk carries its related OWASP LLM Top 10 item(s) and
+    EU AI Act (Art. 10 anchor) / GDPR / NIST AI RMF controls. Deterministic;
+    relevance is driven by the `sec_*`/`arch_*`/`data_*` intake fields."""
+    return _assess_data_security(answers)
+
+
+@mcp.tool()
 def generate_report(
     answers: dict,
     report_type: Literal[
         "risk", "dpia", "bias", "security", "fria",
         "techdoc", "compliance", "monitoring", "framework-matrix", "redteam",
+        "controls", "datasec",
     ] = "risk",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
@@ -102,7 +129,11 @@ def generate_report(
       'framework-matrix' - NIST CSF 2.0 / ISO 27001:2022 framework integration
         matrix;
       'redteam' - architecture-aware AI red-team test plan (authorized
-        purple-team scoping; see generate_red_team_plan for the structured form).
+        purple-team scoping; see generate_red_team_plan for the structured form);
+      'controls' - prioritised defensive control catalogue (the blue-team
+        counterpart of the red-team plan; see generate_control_catalog);
+      'datasec' - OWASP GenAI Data Security assessment (DSGAI01-21; see
+        assess_data_security for the structured form).
     The system is classified deterministically first, then the report is
     rendered. Present the draft to the user for review before treating it as
     final.
@@ -114,6 +145,8 @@ def generate_report(
         "classification": _classify(answers),
         "security": _assess_security(answers),
         "red_team": _generate_test_plan(answers),
+        "controls": _generate_control_catalog(answers),
+        "data_security": _assess_data_security(answers),
     }
     _rtype, _filename, markdown = reports.render(report_type, assessment)
     return markdown

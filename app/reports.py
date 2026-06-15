@@ -5,7 +5,10 @@ for preview/print. No external templating dependency: we build the Markdown with
 Python strings, fed by the classifier output.
 """
 
+from .controls import generate_control_catalog
+from .data_security import assess_data_security
 from .knowledge import ai_security as sec
+from .knowledge import data_security as ds
 from .knowledge import eu_ai_act as eu
 from .knowledge import iso_42001 as iso
 from .knowledge import monitoring as mon
@@ -14,7 +17,8 @@ from .redteam import generate_test_plan
 from .security import SEVERITY_ORDER, assess_security
 
 REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria", "techdoc",
-                "compliance", "monitoring", "framework-matrix", "redteam")
+                "compliance", "monitoring", "framework-matrix", "redteam",
+                "controls", "datasec")
 
 
 # --- helpers ---------------------------------------------------------------
@@ -887,6 +891,193 @@ def render_red_team_plan(assessment):
     return "".join(md)
 
 
+# --- 11. Defensive control catalogue (OWASP LLM Top 10 + CSF/ISO) ----------
+def render_control_catalog(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    cat = assessment.get("controls") or generate_control_catalog(answers)
+
+    md = []
+    md.append(f"# AI Defensive Control Catalogue - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        "A prioritised, **architecture-aware** catalogue of the controls to "
+        "implement, derived from the AI security lens (OWASP Top 10 for LLM "
+        "Applications 2025). It is the defensive counterpart of the red-team test "
+        "plan: each control's priority is the architecture-aware **severity** of "
+        "the OWASP risk it mitigates, and each names the red-team test case(s) "
+        "that verify it — *implement, then test*.\n"
+    )
+    md.append(f"\n> {cat.get('disclaimer','')}\n")
+
+    controls = cat.get("controls", [])
+    if not controls:
+        md.append(
+            "\n_No AI-security risks were triggered by the current answers, so no "
+            "controls were selected. Complete section 8 (AI security context) to "
+            "build a catalogue._\n"
+        )
+        return "".join(md)
+
+    md.append("\n## 1. How to read this catalogue\n")
+    md.append(
+        "- **Priority = severity.** A control's priority is the deterministic, "
+        "architecture-aware severity of the OWASP risk it mitigates — so this is "
+        "specific to the architecture, not a generic checklist.\n"
+        "- **Conditional controls** appear only when the architecture warrants "
+        "them; each carries a one-line reason.\n"
+        "- **Validated by** names the red-team test case(s) (see the red-team "
+        "test plan) that confirm the control is effective.\n"
+        "- **Frameworks** anchor each control to a NIST CSF 2.0 function and "
+        "ISO/IEC 27001:2022 control, plus the EU AI Act / NIST AI RMF references "
+        "of the parent risk.\n"
+    )
+    if not cat.get("arch_provided"):
+        md.append(
+            "\n> Security-architecture context (section 9) was not fully provided, "
+            "so priorities use conservative defaults. Complete it to refine the "
+            "catalogue.\n"
+        )
+
+    bp = cat.get("by_priority", {})
+    md.append("\n## 2. Summary\n")
+    md.append(
+        f"{cat.get('count', 0)} control(s); highest priority "
+        f"**{cat.get('max_priority','-')}**. "
+        f"Covers {len(cat.get('owasp_covered', []))}/10 OWASP LLM items and is "
+        f"verified by {len(cat.get('validated_refs', []))} red-team test case(s).\n\n"
+    )
+    md.append("| Priority | Controls |\n|---|---|\n")
+    for level in ("Critical", "High", "Medium", "Low"):
+        if bp.get(level):
+            md.append(f"| **{level}** | {bp[level]} |\n")
+
+    md.append("\n## 3. Prioritised controls\n")
+    for c in controls:
+        control_text = c["control"]
+        if c.get("gate_reason"):
+            control_text += f" _(applies because {c['gate_reason']}.)_"
+        validated = ", ".join(c["validated_by"]) or "-"
+        md.append(f"\n### {c['ref']} — {c['title']}  · **{c['priority']}**\n")
+        md.append(
+            f"| Aspect | Detail |\n|---|---|\n"
+            f"| Priority | **{c['priority']}** (severity of {c['owasp']['id']}) |\n"
+            f"| Mitigates | {c['owasp']['id']} {c['owasp']['name']} |\n"
+            f"| Control | {control_text} |\n"
+            f"| Prevents | {c['intent']} |\n"
+            f"| How to verify | {c['verify']} |\n"
+            f"| Validated by (red-team) | {validated} |\n"
+            f"| NIST CSF 2.0 | {', '.join(c['csf'])} |\n"
+            f"| ISO/IEC 27001:2022 | {', '.join(c['iso'])} |\n"
+            f"| EU AI Act | {_refs(c['ai_act_refs'])} |\n"
+            f"| NIST AI RMF | {', '.join(c['nist_refs'])} |\n"
+        )
+
+    md.append("\n## 4. Coverage matrix\n")
+    md.append("| OWASP LLM item | Controls | Control IDs | Highest priority |\n|---|---|---|---|\n")
+    for info in sec.OWASP_LLM_TOP10.values():
+        full_id = info["id"]
+        matched = [c for c in controls if c["owasp"]["id"] == full_id]
+        if matched:
+            ids = ", ".join(c["ref"] for c in matched)
+            top = max((c["priority"] for c in matched),
+                      key=lambda s: SEVERITY_ORDER.get(s, 0))
+            md.append(f"| {full_id} {info['name']} | {len(matched)} | {ids} | {top} |\n")
+        else:
+            md.append(f"| {full_id} {info['name']} | 0 | | |\n")
+
+    md.append("\n## 5. Control register (to be completed)\n")
+    md.append(
+        "| Control ID | Implemented? | Owner | Evidence / reference | Target date |\n"
+        "|---|---|---|---|---|\n"
+    )
+    for c in controls:
+        md.append(f"| {c['ref']} | Not started | | | |\n")
+
+    md.append("\n## 6. Sign-off\n")
+    md.append(
+        "| Role | Name | Date | Signature |\n|---|---|---|---|\n"
+        "| Security owner | | | |\n"
+        "| AI governance reviewer | | | |\n"
+    )
+    md.append(f"\n> _{cat.get('provenance','')}_\n")
+    return "".join(md)
+
+
+# --- 12. AI data security assessment (OWASP GenAI Data Security) ------------
+def render_data_security(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    profile = assessment.get("data_security") or assess_data_security(answers)
+
+    md = []
+    md.append(f"# AI Data Security Assessment - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        "Maps the system to the **OWASP GenAI Data Security** risks "
+        "(DSGAI01-DSGAI21) — the data-layer complement to the OWASP LLM Top 10 "
+        "lens, covering training/fine-tuning data, prompts, retrieved context, "
+        "embeddings, telemetry and outputs. Its natural EU AI Act anchor is "
+        "**Art. 10 (data and data governance)**, with the GDPR where personal "
+        "data is processed.\n"
+    )
+    md.append(f"\n{profile.get('summary','')}\n")
+    md.append(f"\n> {profile.get('disclaimer','')}\n")
+    if profile.get("provenance"):
+        md.append(f">\n> _{profile['provenance']}_\n")
+
+    risks = profile.get("risks", [])
+    if not risks:
+        md.append("\n_No OWASP GenAI Data Security risks were triggered by the "
+                  "current answers._\n")
+        return "".join(md)
+
+    md.append("\n## 1. Applicable data-security risks\n")
+    for r in risks:
+        owasp = ", ".join(r.get("owasp_refs", [])) or "—"
+        gdpr = ", ".join(r.get("gdpr_refs", [])) or "—"
+        md.append(f"\n### {r['id']} - {r['name']}\n")
+        md.append(f"{r['summary']}\n\n")
+        md.append(
+            f"| Aspect | Detail |\n|---|---|\n"
+            f"| Why it applies | {r['why']} |\n"
+            f"| Related OWASP LLM | {owasp} |\n"
+            f"| EU AI Act | {_refs(r['ai_act_refs'])} |\n"
+            f"| GDPR | {gdpr} |\n"
+            f"| NIST AI RMF | {', '.join(r['nist_refs'])} |\n"
+            f"| Mitigation | {r['mitigation']} |\n"
+        )
+
+    md.append("\n## 2. Coverage (all 21 DSGAI risks)\n")
+    applicable = {r["id"] for r in risks}
+    md.append("| DSGAI | Risk | Applicable | Related OWASP LLM |\n|---|---|---|---|\n")
+    for oid in ds.ORDER:
+        info = ds.DSGAI[oid]
+        owasp = ", ".join(info["owasp_refs"]) or "—"
+        mark = "Yes" if oid in applicable else "No"
+        md.append(f"| {oid} | {info['name']} | {mark} | {owasp} |\n")
+
+    md.append("\n## 3. Data-security control checklist (to be completed)\n")
+    md.append(
+        "| ✓ | Control | Owner | Evidence |\n|---|---|---|---|\n"
+        "| ☐ | Data classified; retention & disposal set per class (incl. prompts/logs) | | |\n"
+        "| ☐ | PII minimised and redacted in context, telemetry and outputs | | |\n"
+        "| ☐ | Retrieval / vector store access-controlled and tenant-isolated | | |\n"
+        "| ☐ | Ingestion validated; provenance tracked; poisoning monitored | | |\n"
+        "| ☐ | Per-user/tenant context isolation (no cross-conversation bleed) | | |\n"
+        "| ☐ | Lawful basis mapped; DPIA/FRIA completed where required | | |\n"
+        "| ☐ | Sanctioned-AI inventory + egress controls (shadow AI) | | |\n"
+    )
+
+    md.append("\n## 4. Sign-off\n")
+    md.append(
+        "| Role | Name | Date | Signature |\n|---|---|---|---|\n"
+        "| Data protection / security owner | | | |\n"
+        "| AI governance reviewer | | | |\n"
+    )
+    return "".join(md)
+
+
 # --- dispatcher ------------------------------------------------------------
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
@@ -911,4 +1102,8 @@ def render(report_type, assessment):
         return "framework-matrix", f"framework-matrix-{slug}.md", render_framework_matrix(assessment)
     if report_type == "redteam":
         return "redteam", f"red-team-test-plan-{slug}.md", render_red_team_plan(assessment)
+    if report_type == "controls":
+        return "controls", f"control-catalogue-{slug}.md", render_control_catalog(assessment)
+    if report_type == "datasec":
+        return "datasec", f"data-security-{slug}.md", render_data_security(assessment)
     raise ValueError(f"Unknown report type: {report_type}")
