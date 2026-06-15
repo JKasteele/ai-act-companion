@@ -4,10 +4,12 @@ The main `README.md` embeds these captures of the running app:
 
 | File | View |
 |---|---|
-| `demo.gif` | Hero animation: classify → architecture-aware severity → red-team test plan → framework matrix |
+| `demo.gif` | Hero animation: classify → severity → red-team test (offense) → control catalogue (defense) → the offense↔defense loop → OWASP GenAI Data Security → framework matrix |
 | `result.png` | Classification result (high-risk example: tier, findings, obligations) |
 | `security.png` | AI security lens — architecture-aware severity (OWASP LLM Top 10 + MITRE ATLAS) |
 | `redteam.png` | Red-team test plan — priority summary + a Critical, architecture-aware test case |
+| `controls.png` | Defensive control catalogue — priority summary + a control cross-linked to its red-team test |
+| `datasec.png` | OWASP GenAI Data Security lens — applicable DSGAI risks with OWASP / Art. 10 / GDPR mappings |
 | `report.png` | Obligations & conformity tracker with the Art. 99 penalty block |
 | `framework-matrix.png` | NIST CSF 2.0 / ISO 27001:2022 framework integration matrix |
 | `ai-assist.png` | The AI assist panel (free-text → human-in-the-loop draft) |

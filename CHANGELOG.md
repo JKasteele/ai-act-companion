@@ -4,7 +4,7 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.4.0] - 2026-06-15
 
 Completes the Tier 2 purple-team set: pairs the red-team plan with its defensive
 counterpart and adds a data-layer security lens.
@@ -32,6 +32,8 @@ counterpart and adds a data-layer security lens.
   determinism, severity-driven priority, architecture gating, the free-text
   invariant, the offense↔defense cross-link integrity, DSGAI knowledge-base
   fidelity (21 ids), coverage consistency, and rendering.
+
+[0.4.0]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.4.0
 
 ## [0.3.0] - 2026-06-15
 

@@ -18,7 +18,7 @@ own machine.
 
 ---
 
-![AI Act Companion — classify a system, then review the architecture-aware AI security severity, the prioritised red-team test plan, and the NIST CSF 2.0 / ISO 27001 framework matrix](docs/img/demo.gif)
+![AI Act Companion — classify a system, then review the architecture-aware AI security severity, the prioritised red-team test plan, the matching defensive control catalogue, the OWASP GenAI Data Security findings, and the NIST CSF 2.0 / ISO 27001 framework matrix](docs/img/demo.gif)
 
 ## Why this one?
 
@@ -45,6 +45,12 @@ This project focuses on three things that are uncommon in free tooling:
   *authorized* purple-team exercise — each test case prioritised by the same
   deterministic severity and traced back to the control it validates. A planning
   aid (no exploit payloads), not an attack tool. See [Red-team test plan](#red-team-test-plan).
+- **…and back to a defensive control catalogue.** The blue-team mirror: the
+  controls to *implement* per risk, prioritised by the same severity, each naming
+  the red-team test that verifies it — *implement, then test*. Plus an **OWASP
+  GenAI Data Security** lens (DSGAI01–21) for the data layer (training data,
+  prompts, retrieval, embeddings, telemetry), anchored on EU AI Act Art. 10. See
+  [Control catalogue & data security](#control-catalogue--data-security).
 
 ## Two ways to use it
 
@@ -56,7 +62,7 @@ flowchart TB
     A["🔒 Local web app<br/>(privacy-first)"]
     B["⚡ Claude Code plugin<br/>(MCP)"]
     E["<b>Deterministic engine</b><br/>classifier · reports · knowledge<br/>= ground truth"]
-    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA<br/>techdoc · compliance · monitoring · framework-matrix · red-team plan"]
+    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA · techdoc<br/>compliance · monitoring · framework-matrix<br/>red-team plan · control catalogue · data security"]
     A -->|"optional local AI:<br/>Ollama or paste-into-your-own-LLM"| E
     B -->|"Claude is the interface<br/>& narrative author"| E
     E --> O
@@ -76,13 +82,17 @@ required. The engine can also be driven headless via the [CLI](#cli).
 
 ## Screenshots
 
-| Classification result | Architecture-aware severity | Red-team test plan |
+| Classification result | Architecture-aware severity | Red-team test plan (offense) |
 |---|---|---|
 | ![Classification result](docs/img/result.png) | ![Architecture-aware severity in the AI security lens](docs/img/security.png) | ![Architecture-aware red-team test plan, prioritised by severity](docs/img/redteam.png) |
 
-| Conformity tracker + penalties | CSF 2.0 / ISO 27001 matrix | AI assist (human-in-the-loop) |
+| Control catalogue (defense) | OWASP GenAI Data Security | CSF 2.0 / ISO 27001 matrix |
 |---|---|---|
-| ![Obligations tracker with Art. 99 penalties](docs/img/report.png) | ![NIST CSF 2.0 / ISO 27001 framework integration matrix](docs/img/framework-matrix.png) | ![AI assist](docs/img/ai-assist.png) |
+| ![Defensive control catalogue, each control validated by a red-team test](docs/img/controls.png) | ![OWASP GenAI Data Security risks (DSGAI01–21)](docs/img/datasec.png) | ![NIST CSF 2.0 / ISO 27001 framework integration matrix](docs/img/framework-matrix.png) |
+
+| Conformity tracker + penalties | AI assist (human-in-the-loop) | |
+|---|---|---|
+| ![Obligations tracker with Art. 99 penalties](docs/img/report.png) | ![AI assist](docs/img/ai-assist.png) | |
 
 ## What it does
 
@@ -103,6 +113,9 @@ required. The engine can also be driven headless via the [CLI](#cli).
    - post-market monitoring plan (Art. 72)
    - framework integration matrix (NIST CSF 2.0 / ISO 27001:2022)
    - architecture-aware red-team test plan (authorized purple-team scoping)
+   - defensive control catalogue (the controls to implement, each cross-linked to
+     the red-team test that verifies it)
+   - OWASP GenAI Data Security assessment (DSGAI01–21, data-layer lens)
    all mapped to EU AI Act + NIST AI RMF, exportable to **Markdown** and **PDF**
    (via browser print-to-PDF).
 4. **Optional AI layer** (human-in-the-loop): turn a free-text system description
@@ -211,12 +224,14 @@ ai-act-companion/
 │   ├── cli.py             scriptable CLI over the engine
 │   ├── questionnaire.py   intake definition (single source of truth)
 │   ├── classifier.py      rule-based EU AI Act classifier
-│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam)
+│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam/controls/datasec)
 │   ├── security.py        AI security lens + architecture-aware severity
 │   ├── redteam.py         architecture-aware red-team test-plan generator
+│   ├── controls.py        defensive control-catalogue generator (blue-team mirror)
+│   ├── data_security.py   OWASP GenAI Data Security lens (DSGAI01–21)
 │   ├── storage.py         JSON persistence
 │   ├── models.py          pydantic models
-│   ├── knowledge/         EU AI Act, NIST AI RMF, ISO 42001, AI security, monitoring, CSF/ISO 27001 as data
+│   ├── knowledge/         EU AI Act, NIST AI RMF, ISO 42001, AI security, red-team, controls, GenAI data security, monitoring, CSF/ISO 27001 as data
 │   └── llm/               optional local/manual AI assist (web app)
 ├── mcp_server.py          MCP server (Claude Code tools over the engine)
 ├── skills/                Claude Code skill (ai-act-assessment playbook)
@@ -238,7 +253,7 @@ ai-act-companion/
 | GET | `/api/assessments/{id}` | full assessment (JSON export) |
 | DELETE | `/api/assessments/{id}` | delete an assessment |
 | GET | `/api/export.csv` | inventory as a CSV register |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam` | report (markdown) |
+| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam\|controls\|datasec` | report (markdown) |
 | GET | `/api/ai/status` | AI layer status (provider, model, reachability) |
 | POST | `/api/ai/prefill` | free text → draft answers (or a prompt for manual mode) |
 | POST | `/api/ai/parse` | pasted-back LLM answer → validated draft |
@@ -326,6 +341,33 @@ It surfaces as the **Red-team plan** report tab, as `ai-act report --type
 redteam`, and via the `generate_red_team_plan` MCP tool (structured) /
 `generate_report` (Markdown).
 
+### Control catalogue & data security
+
+Two more lenses complete the purple-team picture:
+
+- **Defensive control catalogue** — the blue-team mirror of the red-team plan.
+  For each in-scope OWASP risk it lists the **control to implement** (what it is,
+  what it prevents, how to verify it), the NIST CSF 2.0 / ISO 27001:2022 anchors
+  and the EU AI Act / NIST AI RMF references. A control's priority *is* the
+  architecture-aware severity of the risk it mitigates (the same number the
+  red-team plan uses), conditional controls are gated on the *same* architecture
+  conditions as the offense, and every control names the **red-team test case(s)
+  that verify it** — turning the two reports into one loop: *implement the control,
+  then run the test that proves it works.* Surfaces as the **Control catalogue**
+  tab, `ai-act report --type controls`, and the `generate_control_catalog` MCP tool.
+- **OWASP GenAI Data Security lens** — the data-layer complement to the LLM Top 10
+  lens. It maps the system to the 21 **OWASP GenAI Data Security** risks
+  (DSGAI01–21, from the 2026 v1.0 guidance) covering training/fine-tuning data,
+  prompts, retrieved context, embeddings, telemetry and outputs. Relevance is
+  deterministic over the intake; each applicable risk is cross-mapped to the OWASP
+  LLM Top 10, **EU AI Act Art. 10 (data governance)**, the GDPR and NIST AI RMF.
+  Surfaces as the **Data security** tab, `ai-act report --type datasec`, and the
+  `assess_data_security` MCP tool.
+
+> DSGAI identifiers are verified against genai.owasp.org; the DSGAI ⇄ OWASP ⇄ AI
+> Act ⇄ NIST mappings and the control catalogue's framework anchors are
+> Companion-derived analytical alignments, not official published crosswalks.
+
 The tool also has its own [THREAT_MODEL.md](THREAT_MODEL.md) — including the
 OWASP LLM Top 10 applied to its *own* AI layer — and a
 [SECURITY.md](SECURITY.md) policy; `bandit` and `pip-audit` run in CI.
@@ -342,7 +384,8 @@ concrete article/annex per conclusion:
 - **Art. 11 + Annex IV** — technical documentation
 - **Art. 72** — post-market monitoring
 - **Art. 99 / 101** — administrative fines (penalty-exposure block)
-- **OWASP LLM Top 10 (2025) + MITRE ATLAS** — security lens & red-team test plan
+- **OWASP LLM Top 10 (2025) + MITRE ATLAS** — security lens, red-team test plan & control catalogue
+- **OWASP GenAI Data Security (2026, v1.0)** — data-layer lens (DSGAI01–21), anchored on Art. 10
 - **NIST AI RMF 1.0** — GOVERN / MAP / MEASURE / MANAGE crosswalk
 - **ISO/IEC 42001:2023** — AI management system crosswalk (analytical alignment)
 - **NIST CSF 2.0 + ISO/IEC 27001:2022** — security-framework integration matrix (analytical alignment)
@@ -366,6 +409,8 @@ concrete article/annex per conclusion:
 - [x] Post-market monitoring plan (Art. 72), structured on NIST AI 800-4
 - [x] **NIST CSF 2.0 + ISO/IEC 27001:2022** framework integration matrix
 - [x] **Architecture-aware red-team test plan** (OWASP LLM Top 10 + MITRE ATLAS, authorized purple-team scoping)
+- [x] **Defensive control catalogue** — the blue-team mirror, each control validated by a red-team test
+- [x] **OWASP GenAI Data Security lens** (DSGAI01–21) — data-layer complement, anchored on EU AI Act Art. 10
 
 ## License
 

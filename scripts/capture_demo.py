@@ -82,7 +82,8 @@ def main():
         page = ctx.new_page()
         frames = []
 
-        # --- support_chatbot: severity -> red-team plan -> framework matrix -
+        # --- support_chatbot: severity -> test (offense) -> control (defense)
+        #     -> the offense<->defense loop -> data security -> framework matrix -
         load_and_classify(page, "support_chatbot")
         select_report(page, "risk", "EU AI Act classification")   # wait until rendered
         scroll_to(page, "EU AI Act classification")
@@ -93,21 +94,26 @@ def main():
         shot(page, "security.png")
         frames.append(frame(page))                      # F2: severity overview table
 
-        scroll_to(page, "Applicable risks")
-        frames.append(frame(page))                      # F3: applicable risks (Critical detail)
-
         select_report(page, "redteam", "Prioritised test cases")
         scroll_to(page, "Summary")
-        shot(page, "redteam.png")
-        frames.append(frame(page))                      # F4: red-team priority summary
-
+        shot(page, "redteam.png")                       # (unchanged shot point)
         scroll_to(page, "Cross-tenant", css="#report-preview h3")
-        frames.append(frame(page))                      # F5: a Critical test case (arch-aware)
+        frames.append(frame(page))                      # F3: a Critical red-team test (offense)
+
+        select_report(page, "controls", "Prioritised controls")
+        scroll_to(page, "Summary")
+        shot(page, "controls.png")
+        frames.append(frame(page))                      # F4: control catalogue priority summary (defense)
+
+        scroll_to(page, "per-request authorization", css="#report-preview h3")
+        frames.append(frame(page))                      # F5: the matching control (validated by the red-team test)
+
+        select_report(page, "datasec", "Applicable data-security risks")
+        scroll_to(page, "Applicable data-security risks")
+        shot(page, "datasec.png")
+        frames.append(frame(page))                      # F6: OWASP GenAI Data Security (DSGAI) findings
 
         select_report(page, "framework-matrix", "Integration matrix")
-        scroll_to(page, "NIST CSF 2.0 functions")
-        frames.append(frame(page))                      # F6: CSF 2.0 functions table
-
         scroll_to(page, "Integration matrix")
         shot(page, "framework-matrix.png")
         frames.append(frame(page))                      # F7: integration matrix (final, lingers)
@@ -129,7 +135,7 @@ def main():
         gif = [f.resize((f.width // 2, f.height // 2)) for f in frames]  # 1280x860
         gif[0].save(
             OUT / "demo.gif", save_all=True, append_images=gif[1:],
-            duration=[2200, 2400, 2000, 2600, 2800, 2000, 3200], loop=0, optimize=True,
+            duration=[2200, 2400, 2600, 2400, 2800, 2600, 3200], loop=0, optimize=True,
         )
         print(f"  wrote demo.gif ({(OUT / 'demo.gif').stat().st_size // 1024} KB, {len(gif)} frames)")
 
