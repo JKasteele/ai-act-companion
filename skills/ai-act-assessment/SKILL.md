@@ -42,9 +42,22 @@ narrative author.
    the tier, the reasoning and the cited articles/annexes *verbatim* from the
    tool result. Surface transparency (Art. 50) and GPAI obligations and the NIST
    AI RMF crosswalk if present.
-5. **Generate documentation.** Offer the three artifacts. For each requested
-   one, call `generate_report` with `report_type` `risk`, `dpia` or `bias` and
-   show the Markdown draft.
+5. **Generate documentation.** Offer the artifacts. For each requested one, call
+   `generate_report` with `report_type`:
+   - `risk` — AI risk assessment;
+   - `dpia` — DPIA skeleton (GDPR Art. 35);
+   - `bias` — bias-audit checklist;
+   - `security` — AI security assessment (OWASP LLM Top 10 + MITRE ATLAS, with
+     architecture-aware severity and the NIST CSF 2.0 / ISO 27001 matrix);
+   - `fria` — fundamental rights impact assessment (Art. 27);
+   - `techdoc` — Annex IV technical documentation skeleton (Art. 11);
+   - `compliance` — obligations & conformity tracker with Art. 99 penalties;
+   - `monitoring` — post-market monitoring plan (Art. 72);
+   - `framework-matrix` — NIST CSF 2.0 / ISO 27001:2022 integration matrix.
+
+   For the architecture-aware severity in the `security` report, collect the
+   `arch_*` fields (section 9); the severity is computed deterministically by the
+   engine — never set it yourself. Show each Markdown draft for review.
 6. **HITL checkpoint #2.** Let the user review/edit the drafts.
 7. **Persist only on confirmation.** When the user confirms, call
    `save_assessment` and report the returned id.

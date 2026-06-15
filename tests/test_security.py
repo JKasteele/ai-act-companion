@@ -10,11 +10,18 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from app import reports, storage  # noqa: E402
-from app.security import assess_security  # noqa: E402
+from app.security import SEVERITY_ORDER, assess_security  # noqa: E402
 
 
 def _ids(profile):
     return {r["id"] for r in profile["risks"]}
+
+
+def _sev(profile, owasp_id):
+    for r in profile["risks"]:
+        if r["id"] == owasp_id:
+            return r["severity"]
+    return None
 
 
 def test_no_security_context_yields_no_risks():
@@ -53,6 +60,56 @@ def test_each_risk_carries_atlas_and_refs():
         assert r["ai_act_refs"] and r["nist_refs"] and r["mitigation"]
 
 
+def test_severity_read_only_own_data_strong_sso_is_medium():
+    p = assess_security({
+        "sec_is_llm": True, "sec_public": True,
+        "arch_auth_strength": "strong-sso", "arch_data_scope": "own-user",
+        "arch_api_write": False,
+    })
+    assert _sev(p, "LLM01:2025") == "Medium"
+
+
+def test_severity_no_auth_is_critical():
+    p = assess_security({
+        "sec_is_llm": True, "sec_public": True, "arch_auth_strength": "none",
+    })
+    assert _sev(p, "LLM01:2025") == "Critical"
+
+
+def test_severity_llm_is_the_boundary_is_critical():
+    p = assess_security({
+        "sec_is_llm": True, "sec_public": True, "data_personal": True,
+        "arch_access_control_layer": "llm-prompt", "arch_data_scope": "all-users",
+    })
+    assert _sev(p, "LLM01:2025") == "Critical"
+    assert _sev(p, "LLM02:2025") == "Critical"
+
+
+def test_every_risk_has_valid_severity_and_rationale():
+    p = assess_security({
+        "sec_is_llm": True, "sec_public": True, "sec_agentic": True,
+        "sec_external_data": True, "sec_outputs_to_systems": True,
+        "data_personal": True, "sec_third_party_models": True,
+    })
+    assert p["risks"]
+    for r in p["risks"]:
+        assert r["severity"] in SEVERITY_ORDER
+        assert isinstance(r["severity_rationale"], str) and r["severity_rationale"]
+    # Risks are ordered worst-first.
+    sevs = [SEVERITY_ORDER[r["severity"]] for r in p["risks"]]
+    assert sevs == sorted(sevs, reverse=True)
+
+
+def test_read_only_no_downstream_lowers_integrity_to_low():
+    p = assess_security({
+        "sec_agentic": True, "sec_outputs_to_systems": True,
+        "arch_api_write": False, "arch_downstream_actions": False,
+    })
+    # LLM05/LLM06 fire (agentic + outputs to systems) but are re-rated Low.
+    assert _sev(p, "LLM05:2025") == "Low"
+    assert _sev(p, "LLM06:2025") == "Low"
+
+
 def test_security_report_renders():
     answers = {"sys_name": "ChatBot", "sec_is_llm": True, "sec_public": True}
     assessment = {"id": "t", "created_at": "2026-01-01T00:00:00+00:00",
@@ -62,6 +119,35 @@ def test_security_report_renders():
     assert rtype == "security"
     assert filename.endswith(".md")
     assert "OWASP" in md and "ATLAS" in md and "LLM01:2025" in md
+
+
+def test_framework_matrix_renders():
+    from app.knowledge import security_frameworks as sfw
+    answers = {"sys_name": "MatrixDemo", "sec_is_llm": True}
+    assessment = {"id": "fm", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": {},
+                  "security": assess_security(answers)}
+    rtype, filename, md = reports.render("framework-matrix", assessment)
+    assert rtype == "framework-matrix"
+    assert filename.endswith(".md")
+    # All six CSF function codes, at least one ISO title, an OWASP item, an Art.
+    # link, and the provenance sentence.
+    for code, *_ in sfw.CSF_FUNCTIONS:
+        assert f"({code})" in md or f"| {code} |" in md
+    assert "Policies for information security" in md  # an ISO 27001 title
+    assert "LLM01" in md
+    assert "artificialintelligenceact.eu/article/" in md
+    assert "analytical alignment" in md
+
+
+def test_security_report_includes_framework_matrix():
+    answers = {"sys_name": "ChatBot", "sec_is_llm": True, "sec_public": True}
+    assessment = {"id": "t", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": {},
+                  "security": assess_security(answers)}
+    _rtype, _filename, md = reports.render("security", assessment)
+    assert "Framework integration matrix" in md
+    assert "ISO 27001" in md
 
 
 def test_storage_rejects_path_traversal_ids():

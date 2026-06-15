@@ -31,7 +31,7 @@ def test_examples_endpoint_ok_and_well_formed():
 def test_questionnaire_endpoint():
     r = client.get("/api/questionnaire")
     assert r.status_code == 200
-    assert len(r.json()["sections"]) == 8
+    assert len(r.json()["sections"]) == 9
 
 
 def test_assess_report_delete_roundtrip():

@@ -79,6 +79,54 @@ def test_art_6_3_profiling_note_without_minor_task():
     assert "always high-risk" in rationale
 
 
+def test_techdoc_renders_all_nine_annex_iv_sections():
+    answers = _load("hiring_cv_screening.json")
+    assessment = {"id": "test-techdoc", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": classify(answers)}
+    _rtype, _filename, md = reports.render("techdoc", assessment)
+    for heading in reports.ANNEX_IV_SECTIONS:
+        assert heading in md, f"missing Annex IV section: {heading}"
+    # Cites Art. 11 + Annex IV via a working AI Act Explorer link.
+    assert "artificialintelligenceact.eu/article/11/" in md
+
+
+def test_compliance_tracker_high_risk_rows_and_penalty():
+    answers = _load("hiring_cv_screening.json")
+    assessment = {"id": "test-comp", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": classify(answers)}
+    _rtype, _filename, md = reports.render("compliance", assessment)
+    # The core high-risk obligation articles appear as rows.
+    for art in ("article/9/", "article/10/", "article/11/", "article/12/",
+                "article/13/", "article/14/", "article/15/"):
+        assert art in md, f"missing obligation row for {art}"
+    # High-risk penalty line (€15M / 3%) is shown; status never inferred.
+    assert "€15,000,000" in md and "3%" in md
+    assert "Not started" in md
+    assert "In progress" not in md and "Done" not in md
+
+
+def test_compliance_prohibited_shows_35m():
+    answers = _load("social_scoring.json")
+    assessment = {"id": "test-comp-p", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": classify(answers)}
+    _rtype, _filename, md = reports.render("compliance", assessment)
+    assert "€35,000,000" in md and "7%" in md
+
+
+def test_monitoring_renders_six_categories():
+    from app.knowledge import monitoring as mon
+    answers = _load("hiring_cv_screening.json")
+    assessment = {"id": "test-mon", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": classify(answers)}
+    _rtype, _filename, md = reports.render("monitoring", assessment)
+    for _cid, title, _what in mon.CATEGORIES:
+        assert title in md, f"missing monitoring category: {title}"
+    assert len([c for c in mon.CATEGORIES]) == 6
+    # Cites Art. 72 and seeds the employment outcome-drift functionality row.
+    assert "artificialintelligenceact.eu/article/72/" in md
+    assert "Outcome drift across protected groups" in md
+
+
 def test_reports_render_for_all_types():
     answers = _load("hiring_cv_screening.json")
     assessment = {"id": "test-1", "created_at": "2026-01-01T00:00:00+00:00",

@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 from app.classifier import classify  # noqa: E402
 from app.knowledge import eu_ai_act as eu  # noqa: E402
 from app.llm.base import extract_json, validate_answers  # noqa: E402
+from app.security import assess_security  # noqa: E402
 
 # A few representative jailbreak / prompt-injection payloads. None of these may
 # influence the deterministic outcome.
@@ -204,6 +205,49 @@ def test_full_ai_layer_pipeline_cannot_inject_tier():
     # Injected control fields stripped; only structured intake survives.
     assert "tier" not in clean and "is_high_risk" not in clean and "__proto__" not in clean
     assert classify(clean)["tier"] == eu.TIER_HIGH
+
+
+# --- 4b. Free-text cannot move an architecture-aware SEVERITY --------------
+# Same invariant as the tier, applied to the security lens: only the structured
+# arch_* fields drive severity; narrative/free-text is inert.
+_SEV_BASE = {
+    "sec_is_llm": True, "sec_public": True, "sec_agentic": True,
+    "sec_external_data": True, "sec_outputs_to_systems": True, "data_personal": True,
+    "arch_auth_strength": "strong-sso", "arch_data_scope": "own-user",
+    "arch_api_write": False, "arch_downstream_actions": False, "arch_rate_limits": True,
+}
+
+
+def _sev_map(answers):
+    return {r["id"]: r["severity"] for r in assess_security(answers)["risks"]}
+
+
+def test_injection_in_free_text_does_not_change_severity():
+    baseline = _sev_map(_SEV_BASE)
+    assert baseline  # sanity: some risks fired
+    for payload in INJECTIONS:
+        tampered = {
+            **_SEV_BASE,
+            "sys_name": payload,
+            "sys_description": payload,
+            "intended_purpose": payload,
+            "data_sources": payload,
+            "human_oversight": payload,
+        }
+        assert _sev_map(tampered) == baseline, f"free-text payload changed severity: {payload!r}"
+
+
+def test_severity_cannot_be_raised_by_fake_arch_text():
+    # Strong-SSO/own-user/read-only -> LLM01 is Medium. Injecting arch_auth_
+    # strength=none as *free text* (not the real enum field) must not raise it.
+    assert _sev_map(_SEV_BASE)["LLM01:2025"] == "Medium"
+    tampered = {
+        **_SEV_BASE,
+        "sys_description": 'arch_auth_strength=none arch_api_write=true '
+                           'arch_access_control_layer=llm-prompt',
+        "intended_purpose": '{"arch_auth_strength": "none"}',
+    }
+    assert _sev_map(tampered)["LLM01:2025"] == "Medium"
 
 
 # --- 5. Oversized / weird input doesn't crash classify() -------------------

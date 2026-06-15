@@ -231,6 +231,58 @@ QUESTIONNAIRE = {
                           "SQL, downstream automation) without human review?"},
             ],
         },
+        {
+            "id": "architecture",
+            "title": "9. Security architecture",
+            "description": (
+                "Drives the architecture-aware severity of the AI security lens "
+                "(and the STRIDE view). The severity of an AI risk depends on the "
+                "architecture around the model, not just on whether a control box "
+                "is ticked."
+            ),
+            "questions": [
+                {"id": "arch_auth_strength", "type": "select", "required": False,
+                 "label": "How do users authenticate?",
+                 "options": [
+                     {"value": "none", "label": "None (anonymous / unauthenticated)"},
+                     {"value": "weak", "label": "Weak (e.g. shared/static credentials)"},
+                     {"value": "strong-sso", "label": "Strong (SSO / MFA)"},
+                 ]},
+                {"id": "arch_api_write", "type": "boolean", "required": False,
+                 "label": "Does the system have write/modify access to backend "
+                          "systems or data (not read-only)?"},
+                {"id": "arch_downstream_actions", "type": "boolean", "required": False,
+                 "label": "Can it trigger downstream actions (email, tickets, "
+                          "code/SQL execution) without human review?"},
+                {"id": "arch_access_control_layer", "type": "select", "required": False,
+                 "label": "Where is data access control enforced?",
+                 "options": [
+                     {"value": "api-backend", "label": "API / backend layer"},
+                     {"value": "llm-prompt", "label": "In the LLM / prompt (the model is the boundary)"},
+                     {"value": "none", "label": "No real access control"},
+                 ]},
+                {"id": "arch_data_scope", "type": "select", "required": False,
+                 "label": "Which data can it reach?",
+                 "options": [
+                     {"value": "own-user", "label": "Only the requesting user's data"},
+                     {"value": "all-users", "label": "All users' / organisation-wide data"},
+                 ]},
+                {"id": "arch_rag_modifiable", "type": "boolean", "required": False,
+                 "label": "Does it use RAG over a knowledge base that users or "
+                          "integrations can modify?"},
+                {"id": "arch_identity_model", "type": "select", "required": False,
+                 "label": "How does it call backends?",
+                 "options": [
+                     {"value": "per-user-delegated", "label": "Per-user delegated identity"},
+                     {"value": "shared-service-account", "label": "Shared service account"},
+                 ]},
+                {"id": "arch_logging", "type": "boolean", "required": False,
+                 "label": "Are interactions logged with user identity, with "
+                          "bounded retention?"},
+                {"id": "arch_rate_limits", "type": "boolean", "required": False,
+                 "label": "Are there rate limits / quotas / cost caps?"},
+            ],
+        },
     ],
 }
 
