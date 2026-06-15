@@ -22,9 +22,12 @@ Everything else follows from taking that sentence seriously.
 AI Act Companion is a local-first tool that runs a structured AI risk
 assessment for an AI system under the **EU AI Act** (Regulation (EU) 2024/1689),
 crosswalks it to the **NIST AI RMF**, layers on an **AI security lens** (OWASP
-Top 10 for LLM Applications + MITRE ATLAS), and generates the supporting
-documentation — risk assessment, DPIA skeleton, bias-audit checklist, AI
-security assessment, and FRIA.
+Top 10 for LLM Applications + MITRE ATLAS, with architecture-aware severity),
+and generates the supporting documentation — risk assessment, DPIA skeleton,
+bias-audit checklist, AI security assessment, FRIA, Annex IV technical
+documentation, an obligations & conformity tracker (with Art. 99 penalty
+exposure), a post-market monitoring plan, and a NIST CSF 2.0 / ISO 27001
+framework integration matrix.
 
 ### Who it is for
 
@@ -81,12 +84,13 @@ binds the whole thing together.
         │   reports.render(type, assessment)  → Markdown artifacts   │
         │                                                            │
         │   knowledge/  eu_ai_act · nist_rmf · ai_security · iso_42001│
+        │               · monitoring · security_frameworks           │
         │   (frameworks encoded as cited data)                       │
         └───────────────────────────────────────────────────────────┘
                                        │
                                        ▼
         risk tier + cited articles · transparency/GPAI obligations ·
-        NIST + ISO crosswalks · security findings · 5 report types
+        NIST + ISO crosswalks · security findings (+ severity) · 9 report types
 ```
 
 ### The engine (ground truth)
@@ -105,10 +109,12 @@ Three pure functions, no I/O, fully testable:
   OWASP LLM Top 10 items, each with MITRE ATLAS techniques and AI Act / NIST
   controls. It adapts: a non-generative ML system still maps to disclosure,
   poisoning and supply-chain items; an exposed LLM additionally maps to prompt
-  injection and system-prompt leakage.
+  injection and system-prompt leakage. It also computes a deterministic
+  **severity** per item from the `arch_*` architecture fields (see [§3](#3-the-core-safety-pattern)).
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of five Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
-  `fria`) from the classifier output. Markdown is the canonical export; PDF is
+  renders one of nine Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
+  `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`) from the
+  classifier and security output. Markdown is the canonical export; PDF is
   print-to-PDF in the browser.
 
 Underneath sits `knowledge/`, where the frameworks live as data (see
@@ -206,6 +212,25 @@ Claude in plain language: *"This is the authoritative classification. Do NOT
 decide the risk tier yourself."* The instruction is belt-and-braces; the real
 guarantee is that the engine simply never asks the model for a verdict.
 
+### The same contract, applied to security severity
+
+The architecture-aware severity in the security lens follows the identical
+discipline, which is why it lives in the engine and not in a prompt. The premise
+is that *the severity of an AI risk depends on the architecture around the model,
+not on whether a control box is ticked* — "prompt injection is **Critical** here
+because the LLM is the only access-control boundary and the API is read-write" is
+both more useful and more correct than "LLM01 applies". So severity
+(`security._severity_for`) is computed as a **pure function of a handful of
+structured `arch_*` fields** (auth strength, write access, where access control
+is enforced, data scope, modifiable RAG, identity model, …), and each rating
+carries a one-line rationale naming the deciding field(s) — the same
+`refs`/`source_questions` explainability contract as the classifier. Because the
+function reads *only* those structured enums/booleans and never narrative text,
+crafted free-text cannot move a severity; the red-team suite asserts exactly that
+(injecting `arch_auth_strength=none` as prose leaves the rating unchanged), the
+mirror of the tier invariant. Missing architecture context degrades to a stated
+conservative default rather than a silent guess.
+
 ---
 
 ## 4. Framework-mapping methodology & provenance
@@ -215,10 +240,12 @@ real, checkable identifier and the classifier can reference it by key.
 
 | Framework | Module | What is encoded |
 |---|---|---|
-| EU AI Act (Reg. (EU) 2024/1689) | `knowledge/eu_ai_act.py` | Art. 5 prohibited practices, Art. 6 + Annex I/III high-risk use cases, the Art. 6(3)/6(4) derogation, Art. 50 transparency, Chapter V GPAI, the high-risk obligation set, the Art. 113 applicability timeline, CELEX + EUR-Lex / AI Act Explorer deep links |
+| EU AI Act (Reg. (EU) 2024/1689) | `knowledge/eu_ai_act.py` | Art. 5 prohibited practices, Art. 6 + Annex I/III high-risk use cases, the Art. 6(3)/6(4) derogation, Art. 50 transparency, Chapter V GPAI, the high-risk obligation set, Art. 11 + Annex IV, the Art. 99/101 administrative-fine ceilings, the Art. 113 applicability timeline, CELEX + EUR-Lex / AI Act Explorer deep links |
 | NIST AI RMF 1.0 | `knowledge/nist_rmf.py` | GOVERN/MAP/MEASURE/MANAGE functions and a curated subcategory set, each tagged with the AI Act article it relates to; depth scales with the tier |
 | OWASP LLM Top 10 (2025) + MITRE ATLAS | `knowledge/ai_security.py` | LLM01–LLM10 with ATLAS technique ids/names, AI Act + NIST controls, and a mitigation per item |
 | ISO/IEC 42001:2023 | `knowledge/iso_42001.py` | the publicly-published clause skeleton (4–10) and Annex A control *categories* (A.2–A.10), plus an AI Act crosswalk |
+| NIST AI 800-4 (Mar 2026) | `knowledge/monitoring.py` | the six deployed-AI monitoring categories and five cross-cutting challenges, organised into an Art. 72 post-market monitoring plan |
+| NIST CSF 2.0 + ISO/IEC 27001:2022 | `knowledge/security_frameworks.py` | CSF 2.0 functions, ISO 27001:2022 Annex A control *titles* (public only), and the Framework Integration Matrix bridging both to AI RMF / OWASP / ATLAS / EU AI Act |
 
 ### How citations are produced and resolved
 

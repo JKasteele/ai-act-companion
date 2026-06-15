@@ -51,7 +51,7 @@ flowchart TB
     A["🔒 Local web app<br/>(privacy-first)"]
     B["⚡ Claude Code plugin<br/>(MCP)"]
     E["<b>Deterministic engine</b><br/>classifier · reports · knowledge<br/>= ground truth"]
-    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA"]
+    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA<br/>techdoc · compliance · monitoring · framework-matrix"]
     A -->|"optional local AI:<br/>Ollama or paste-into-your-own-LLM"| E
     B -->|"Claude is the interface<br/>& narrative author"| E
     E --> O
@@ -90,7 +90,13 @@ required. The engine can also be driven headless via the [CLI](#cli).
    - AI risk assessment report
    - DPIA skeleton (GDPR Art. 35, linked to the AI Act)
    - bias audit checklist
-   - AI security assessment (OWASP LLM Top 10 + MITRE ATLAS)
+   - AI security assessment (OWASP LLM Top 10 + MITRE ATLAS, with
+     architecture-aware severity and a NIST CSF 2.0 / ISO 27001 matrix)
+   - FRIA skeleton (fundamental rights impact assessment, Art. 27)
+   - Annex IV technical documentation skeleton (Art. 11)
+   - obligations & conformity tracker with the Art. 99 penalty exposure
+   - post-market monitoring plan (Art. 72)
+   - framework integration matrix (NIST CSF 2.0 / ISO 27001:2022)
    all mapped to EU AI Act + NIST AI RMF, exportable to **Markdown** and **PDF**
    (via browser print-to-PDF).
 4. **Optional AI layer** (human-in-the-loop): turn a free-text system description
@@ -199,10 +205,11 @@ ai-act-companion/
 │   ├── cli.py             scriptable CLI over the engine
 │   ├── questionnaire.py   intake definition (single source of truth)
 │   ├── classifier.py      rule-based EU AI Act classifier
-│   ├── reports.py         risk assessment / DPIA / bias generators
+│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix)
+│   ├── security.py        AI security lens + architecture-aware severity
 │   ├── storage.py         JSON persistence
 │   ├── models.py          pydantic models
-│   ├── knowledge/         EU AI Act + NIST AI RMF as data
+│   ├── knowledge/         EU AI Act, NIST AI RMF, ISO 42001, AI security, monitoring, CSF/ISO 27001 as data
 │   └── llm/               optional local/manual AI assist (web app)
 ├── mcp_server.py          MCP server (Claude Code tools over the engine)
 ├── skills/                Claude Code skill (ai-act-assessment playbook)
@@ -224,7 +231,7 @@ ai-act-companion/
 | GET | `/api/assessments/{id}` | full assessment (JSON export) |
 | DELETE | `/api/assessments/{id}` | delete an assessment |
 | GET | `/api/export.csv` | inventory as a CSV register |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria` | report (markdown) |
+| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix` | report (markdown) |
 | GET | `/api/ai/status` | AI layer status (provider, model, reachability) |
 | POST | `/api/ai/prefill` | free text → draft answers (or a prompt for manual mode) |
 | POST | `/api/ai/parse` | pasted-back LLM answer → validated draft |
@@ -268,6 +275,19 @@ The lens adapts: a non-generative ML system still maps to disclosure, poisoning
 and supply-chain items, while an exposed LLM additionally maps to prompt
 injection, system-prompt leakage and misinformation.
 
+**Architecture-aware severity.** Each applicable item gets a deterministic
+severity (Critical / High / Medium / Low) computed from a small set of
+structured architecture-context fields — e.g. *prompt injection is Critical here
+because the LLM is the only access-control boundary and the API is read-write* —
+with a one-line rationale naming the deciding field(s). Severity is a pure
+function of those fields, so crafted free-text cannot move it (covered by the
+red-team suite).
+
+**Framework bridge.** The security report (and a standalone `framework-matrix`
+report) carries a **Framework Integration Matrix** that aligns the findings to
+**NIST CSF 2.0** and **ISO/IEC 27001:2022** (public control titles only) — the
+frameworks security reviewers and ISMS auditors actually use.
+
 > Identifiers are verified against genai.owasp.org and the MITRE ATLAS data; the
 > cross-mappings are a **Companion-derived analytical alignment** traceable to
 > those identifiers, not an official published crosswalk.
@@ -285,8 +305,12 @@ concrete article/annex per conclusion:
 - **Art. 6 + Annex I/III** — high-risk (incl. the Art. 6(3) derogation)
 - **Art. 50** — transparency obligations
 - **Chapter V (Art. 51–55)** — general-purpose AI (GPAI)
+- **Art. 11 + Annex IV** — technical documentation
+- **Art. 72** — post-market monitoring
+- **Art. 99 / 101** — administrative fines (penalty-exposure block)
 - **NIST AI RMF 1.0** — GOVERN / MAP / MEASURE / MANAGE crosswalk
 - **ISO/IEC 42001:2023** — AI management system crosswalk (analytical alignment)
+- **NIST CSF 2.0 + ISO/IEC 27001:2022** — security-framework integration matrix (analytical alignment)
 
 ## Roadmap
 
@@ -301,6 +325,11 @@ concrete article/annex per conclusion:
 - [x] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
 - [x] AI system inventory (dashboard) + CSV register and JSON export/import
 - [x] ISO/IEC 42001 crosswalk (in the risk assessment report)
+- [x] Annex IV technical-documentation generator (Art. 11)
+- [x] Obligations & conformity tracker with Art. 99 penalty exposure
+- [x] **Architecture-aware severity** for the AI security lens (Critical/High/Medium/Low)
+- [x] Post-market monitoring plan (Art. 72), structured on NIST AI 800-4
+- [x] **NIST CSF 2.0 + ISO/IEC 27001:2022** framework integration matrix
 
 ## License
 

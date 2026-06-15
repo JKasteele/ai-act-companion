@@ -4,6 +4,33 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.2.0] - 2026-06-15
+
+Completes the high-risk documentation pack and deepens the security lens.
+
+### Added
+- **Annex IV technical-documentation** report (`techdoc`, Art. 11) — the nine
+  Annex IV sections as a fill-in skeleton, pre-filled from the intake.
+- **Obligations & conformity tracker** report (`compliance`) — every applicable
+  obligation as a trackable row (status never inferred), plus a deterministic
+  **Art. 99 / 101 penalty-exposure** block keyed to the triggered tier.
+- **Architecture-aware severity** for the AI security lens — a new "Security
+  architecture" intake section (`arch_*` fields) drives a deterministic severity
+  (Critical / High / Medium / Low) per OWASP item, each with a rationale naming
+  the deciding architecture field(s). Severity is a pure function of structured
+  fields; the red-team suite now proves free-text cannot move it.
+- **Post-market monitoring plan** report (`monitoring`, Art. 72) — six monitoring
+  categories from NIST AI 800-4 (March 2026), each a fill-in table with seeded
+  rows derived from the intake.
+- **Framework Integration Matrix** — a new `knowledge/security_frameworks.py`
+  (NIST CSF 2.0 functions + ISO/IEC 27001:2022 Annex A control titles + the
+  matrix), surfaced both as a section in the security report and as a standalone
+  `framework-matrix` report.
+- Tests: techdoc/compliance/monitoring/framework-matrix render tests, severity
+  golden cases, and two new red-team severity-invariant tests.
+
+[0.2.0]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.2.0
+
 ## [0.1.0] - 2026-06-14
 
 First public release.
