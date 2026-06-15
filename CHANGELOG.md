@@ -4,6 +4,26 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+Turns the security lens into an actionable, purple-team artifact.
+
+### Added
+- **AI red-team test plan** generator (`app/redteam.py`, `redteam` report) — turns
+  the architecture-aware security lens into a prioritised, system-specific
+  adversarial **test plan** to scope an *authorized* purple-team exercise. Each
+  test case carries an objective, the MITRE ATLAS technique(s), preconditions,
+  methodology (no exploit payloads), success criteria, expected detection &
+  logging, and the EU AI Act / NIST control it validates. A test case's priority
+  *is* the architecture-aware severity of its parent OWASP risk, and conditional
+  tests are gated on the architecture (e.g. a Critical cross-tenant test only
+  when the LLM is the access-control boundary over all-users data).
+- New MCP tool `generate_red_team_plan` (structured); `redteam` added to
+  `generate_report`, the CLI (`--type redteam`) and the web UI (Red-team plan tab).
+- Tests (`tests/test_redteam_plan.py`): determinism, severity-driven priority,
+  architecture gating, the free-text invariant (prose cannot add/drop/re-prioritise
+  a test), coverage consistency, and rendering.
+
 ## [0.2.0] - 2026-06-15
 
 Completes the high-risk documentation pack and deepens the security lens.

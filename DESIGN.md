@@ -231,6 +231,23 @@ crafted free-text cannot move a severity; the red-team suite asserts exactly tha
 mirror of the tier invariant. Missing architecture context degrades to a stated
 conservative default rather than a silent guess.
 
+### The same contract, applied to the red-team test plan
+
+The red-team test-plan generator (`app/redteam.py`) is the third application of
+the contract. It does not introduce any new judgement: it reuses the security
+lens to decide *which* OWASP risks are in scope and *how severe* each is, then
+selects test-case templates (`knowledge/red_team.py`) for those risks and sets
+**each test case's priority to its parent risk's architecture-aware severity**.
+So the plan is a deterministic, explainable projection of the lens — the same
+inputs produce the same plan, conditional tests carry a one-line reason naming
+the architecture fact that included them (e.g. a *cross-tenant data access* test
+appears only when `arch_data_scope=all-users`), and because selection reads only
+the structured `sec_*`/`arch_*` fields, free-text cannot add, drop or
+re-prioritise a test (asserted in `tests/test_redteam_plan.py`). The templates
+are deliberately methodology-level — objectives, preconditions, technique
+families and pass/fail criteria — and ship **no working exploit payloads**: the
+generator produces a *plan*, never an attack.
+
 ---
 
 ## 4. Framework-mapping methodology & provenance
@@ -382,8 +399,10 @@ Stated plainly, because knowing the boundary is part of the design.
   multi-tenancy, synthetic data only. Hosting it for multiple users is out of
   scope and would require its own security review first.
 - **Not a security scanner or red-team.** The security lens is a mapping and a
-  checklist; it does not replace a penetration test, a red-team exercise or a
-  formal threat model of the assessed system.
+  checklist, and the red-team feature generates a *test plan* to **scope** an
+  authorized exercise — it executes nothing and ships no exploit payloads.
+  Neither replaces a penetration test, an actual red-team exercise or a formal
+  threat model of the assessed system; they are inputs to one.
 - **English-only and EU-AI-Act-centric.** Other jurisdictions' AI regulation are
   out of scope; NIST/ISO appear only as crosswalk anchors.
 

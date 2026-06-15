@@ -40,6 +40,11 @@ This project focuses on three things that are uncommon in free tooling:
   10 for LLM Applications (2025)** and **MITRE ATLAS**, linked to EU AI Act
   Art. 15 and NIST AI RMF — the governance × security intersection that
   otherwise lives only in commercial tools. See [AI security lens](#ai-security-lens).
+- **From findings to a red-team test plan.** Turns the security lens into a
+  prioritised, **architecture-aware** adversarial **test plan** for an
+  *authorized* purple-team exercise — each test case prioritised by the same
+  deterministic severity and traced back to the control it validates. A planning
+  aid (no exploit payloads), not an attack tool. See [Red-team test plan](#red-team-test-plan).
 
 ## Two ways to use it
 
@@ -51,7 +56,7 @@ flowchart TB
     A["🔒 Local web app<br/>(privacy-first)"]
     B["⚡ Claude Code plugin<br/>(MCP)"]
     E["<b>Deterministic engine</b><br/>classifier · reports · knowledge<br/>= ground truth"]
-    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA<br/>techdoc · compliance · monitoring · framework-matrix"]
+    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA<br/>techdoc · compliance · monitoring · framework-matrix · red-team plan"]
     A -->|"optional local AI:<br/>Ollama or paste-into-your-own-LLM"| E
     B -->|"Claude is the interface<br/>& narrative author"| E
     E --> O
@@ -97,6 +102,7 @@ required. The engine can also be driven headless via the [CLI](#cli).
    - obligations & conformity tracker with the Art. 99 penalty exposure
    - post-market monitoring plan (Art. 72)
    - framework integration matrix (NIST CSF 2.0 / ISO 27001:2022)
+   - architecture-aware red-team test plan (authorized purple-team scoping)
    all mapped to EU AI Act + NIST AI RMF, exportable to **Markdown** and **PDF**
    (via browser print-to-PDF).
 4. **Optional AI layer** (human-in-the-loop): turn a free-text system description
@@ -205,8 +211,9 @@ ai-act-companion/
 │   ├── cli.py             scriptable CLI over the engine
 │   ├── questionnaire.py   intake definition (single source of truth)
 │   ├── classifier.py      rule-based EU AI Act classifier
-│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix)
+│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam)
 │   ├── security.py        AI security lens + architecture-aware severity
+│   ├── redteam.py         architecture-aware red-team test-plan generator
 │   ├── storage.py         JSON persistence
 │   ├── models.py          pydantic models
 │   ├── knowledge/         EU AI Act, NIST AI RMF, ISO 42001, AI security, monitoring, CSF/ISO 27001 as data
@@ -231,7 +238,7 @@ ai-act-companion/
 | GET | `/api/assessments/{id}` | full assessment (JSON export) |
 | DELETE | `/api/assessments/{id}` | delete an assessment |
 | GET | `/api/export.csv` | inventory as a CSV register |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix` | report (markdown) |
+| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam` | report (markdown) |
 | GET | `/api/ai/status` | AI layer status (provider, model, reachability) |
 | POST | `/api/ai/prefill` | free text → draft answers (or a prompt for manual mode) |
 | POST | `/api/ai/parse` | pasted-back LLM answer → validated draft |
@@ -292,6 +299,33 @@ frameworks security reviewers and ISMS auditors actually use.
 > cross-mappings are a **Companion-derived analytical alignment** traceable to
 > those identifiers, not an official published crosswalk.
 
+### Red-team test plan
+
+The security lens answers *which* AI risks apply and how severe they are; the
+**red-team test plan** turns that into *how to test for them*. From the same
+structured answers it generates a prioritised, **architecture-aware** adversarial
+test-case catalogue to scope an *authorized* purple-team exercise. Each test case
+carries an objective, the MITRE ATLAS technique(s) it targets, preconditions, a
+methodology, pass/fail (success) criteria, the **detection & logging** the blue
+team should see, and the EU AI Act / NIST control it validates.
+
+Two properties make it more than a generic checklist:
+
+- **Architecture-aware prioritisation.** A test case's priority *is* the
+  architecture-aware severity of its parent OWASP risk, and conditional tests are
+  gated on the architecture — e.g. a **Critical** *cross-tenant data access* test
+  only appears when access control is enforced in the prompt over all-users data,
+  and an *indirect (retrieved-content) injection* test only when the system
+  ingests untrusted content. Same invariant as the classifier: free-text cannot
+  add, drop or re-prioritise a test.
+- **A plan, not an attack tool.** It contains **no working exploit payloads** —
+  only test design — and runs nothing. It is an aid for authorized testing, not a
+  scanner or a substitute for a real red-team.
+
+It surfaces as the **Red-team plan** report tab, as `ai-act report --type
+redteam`, and via the `generate_red_team_plan` MCP tool (structured) /
+`generate_report` (Markdown).
+
 The tool also has its own [THREAT_MODEL.md](THREAT_MODEL.md) — including the
 OWASP LLM Top 10 applied to its *own* AI layer — and a
 [SECURITY.md](SECURITY.md) policy; `bandit` and `pip-audit` run in CI.
@@ -308,6 +342,7 @@ concrete article/annex per conclusion:
 - **Art. 11 + Annex IV** — technical documentation
 - **Art. 72** — post-market monitoring
 - **Art. 99 / 101** — administrative fines (penalty-exposure block)
+- **OWASP LLM Top 10 (2025) + MITRE ATLAS** — security lens & red-team test plan
 - **NIST AI RMF 1.0** — GOVERN / MAP / MEASURE / MANAGE crosswalk
 - **ISO/IEC 42001:2023** — AI management system crosswalk (analytical alignment)
 - **NIST CSF 2.0 + ISO/IEC 27001:2022** — security-framework integration matrix (analytical alignment)
@@ -330,6 +365,7 @@ concrete article/annex per conclusion:
 - [x] **Architecture-aware severity** for the AI security lens (Critical/High/Medium/Low)
 - [x] Post-market monitoring plan (Art. 72), structured on NIST AI 800-4
 - [x] **NIST CSF 2.0 + ISO/IEC 27001:2022** framework integration matrix
+- [x] **Architecture-aware red-team test plan** (OWASP LLM Top 10 + MITRE ATLAS, authorized purple-team scoping)
 
 ## License
 

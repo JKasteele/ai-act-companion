@@ -26,6 +26,7 @@ from mcp.server.fastmcp import FastMCP  # noqa: E402
 from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
 from app.questionnaire import QUESTIONNAIRE  # noqa: E402
+from app.redteam import generate_test_plan as _generate_test_plan  # noqa: E402
 from app.security import assess_security as _assess_security  # noqa: E402
 
 mcp = FastMCP("ai-act-companion")
@@ -64,11 +65,26 @@ def classify_ai_security(answers: dict) -> dict:
 
 
 @mcp.tool()
+def generate_red_team_plan(answers: dict) -> dict:
+    """Generate a prioritised, architecture-aware AI red-team **test plan** from
+    the AI security lens. Returns structured test cases (objective, MITRE ATLAS
+    targets, preconditions, methodology, success criteria, detection and the EU
+    AI Act / NIST controls each validates), each prioritised by the
+    architecture-aware severity of its parent OWASP risk, plus a coverage
+    summary. Driven by the `sec_*`/`arch_*` intake fields.
+
+    This is a planning aid to scope an AUTHORIZED purple-team exercise — it
+    contains no working exploit payloads and executes nothing. Treat it as a
+    draft for human review."""
+    return _generate_test_plan(answers)
+
+
+@mcp.tool()
 def generate_report(
     answers: dict,
     report_type: Literal[
         "risk", "dpia", "bias", "security", "fria",
-        "techdoc", "compliance", "monitoring", "framework-matrix",
+        "techdoc", "compliance", "monitoring", "framework-matrix", "redteam",
     ] = "risk",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
@@ -84,7 +100,9 @@ def generate_report(
       'compliance' - obligations & conformity tracker with Art. 99 penalties;
       'monitoring' - post-market monitoring plan (Art. 72);
       'framework-matrix' - NIST CSF 2.0 / ISO 27001:2022 framework integration
-        matrix.
+        matrix;
+      'redteam' - architecture-aware AI red-team test plan (authorized
+        purple-team scoping; see generate_red_team_plan for the structured form).
     The system is classified deterministically first, then the report is
     rendered. Present the draft to the user for review before treating it as
     final.
@@ -95,6 +113,7 @@ def generate_report(
         "answers": answers,
         "classification": _classify(answers),
         "security": _assess_security(answers),
+        "red_team": _generate_test_plan(answers),
     }
     _rtype, _filename, markdown = reports.render(report_type, assessment)
     return markdown

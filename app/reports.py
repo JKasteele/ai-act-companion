@@ -5,14 +5,16 @@ for preview/print. No external templating dependency: we build the Markdown with
 Python strings, fed by the classifier output.
 """
 
+from .knowledge import ai_security as sec
 from .knowledge import eu_ai_act as eu
 from .knowledge import iso_42001 as iso
 from .knowledge import monitoring as mon
 from .knowledge import security_frameworks as sfw
-from .security import assess_security
+from .redteam import generate_test_plan
+from .security import SEVERITY_ORDER, assess_security
 
 REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria", "techdoc",
-                "compliance", "monitoring", "framework-matrix")
+                "compliance", "monitoring", "framework-matrix", "redteam")
 
 
 # --- helpers ---------------------------------------------------------------
@@ -760,6 +762,131 @@ def render_framework_matrix(assessment):
     return "".join(md)
 
 
+# --- 10. Red-team test plan (OWASP LLM Top 10 + MITRE ATLAS) ---------------
+def render_red_team_plan(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    plan = assessment.get("red_team") or generate_test_plan(answers)
+
+    md = []
+    md.append(f"# AI Red-Team Test Plan - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        "A prioritised, **architecture-aware** adversarial test plan derived from "
+        "the AI security lens (OWASP Top 10 for LLM Applications 2025 + MITRE "
+        "ATLAS). Each test case's priority is the deterministic, "
+        "architecture-aware **severity** of its parent OWASP risk, so this plan "
+        "is specific to the system's architecture rather than a generic "
+        "checklist.\n"
+    )
+    md.append(f"\n> {plan.get('disclaimer','')}\n")
+
+    cases = plan.get("cases", [])
+    if not cases:
+        md.append(
+            "\n_No AI-security risks were triggered by the current answers, so no "
+            "test cases were generated. Complete section 8 (AI security context) "
+            "to scope a test plan._\n"
+        )
+        return "".join(md)
+
+    # --- scope & rules of engagement ---
+    md.append("\n## 1. Scope & rules of engagement\n")
+    md.append(
+        "- **Authorization.** Run only with explicit, written authorization from "
+        "the system owner. This is a test plan, not permission to test.\n"
+        "- **Environment.** Prefer a controlled non-production environment; use "
+        "synthetic data only — never real personal data.\n"
+        "- **Purple-team.** Coordinate with the defending team; for each test, "
+        "confirm what they should detect (the *Detection & logging* column).\n"
+        f"- **Tester access.** {plan.get('access_note','')}\n"
+        "- **Methodology only.** Test cases describe technique families and "
+        "objectives; design concrete payloads for the target — none are shipped "
+        "here.\n"
+    )
+    if not plan.get("arch_provided"):
+        md.append(
+            "\n> Security-architecture context (section 9) was not fully provided, "
+            "so priorities use conservative defaults. Complete it to refine the "
+            "plan.\n"
+        )
+
+    # --- summary ---
+    bp = plan.get("by_priority", {})
+    md.append("\n## 2. Summary\n")
+    md.append(
+        f"{plan.get('count', 0)} test case(s); highest priority "
+        f"**{plan.get('max_priority','-')}**. "
+        f"Covers {len(plan.get('owasp_covered', []))}/10 OWASP LLM items and "
+        f"{len(plan.get('atlas_covered', []))} MITRE ATLAS technique(s).\n\n"
+    )
+    md.append("| Priority | Test cases |\n|---|---|\n")
+    for level in ("Critical", "High", "Medium", "Low"):
+        if bp.get(level):
+            md.append(f"| **{level}** | {bp[level]} |\n")
+
+    # --- prioritised test cases ---
+    md.append("\n## 3. Prioritised test cases\n")
+    for c in cases:
+        atlas = ", ".join(f"{t['id']} ({t['name']})" for t in c.get("atlas", [])) or "-"
+        if c.get("atlas_note"):
+            atlas += f" — {c['atlas_note']}"
+        controls = (
+            f"EU AI Act: {_refs(c['ai_act_refs'])}; "
+            f"NIST AI RMF: {', '.join(c['nist_refs'])}. "
+            f"Mitigation validated: {c['mitigation']}"
+        )
+        md.append(f"\n### {c['ref']} — {c['title']}  · **{c['priority']}**\n")
+        objective = c["objective"]
+        if c.get("gate_reason"):
+            objective += f" _(included because {c['gate_reason']}.)_"
+        md.append(
+            f"| Aspect | Detail |\n|---|---|\n"
+            f"| Priority | **{c['priority']}** (severity of {c['owasp']['id']}) |\n"
+            f"| Targets | {c['owasp']['id']} {c['owasp']['name']} · {atlas} |\n"
+            f"| Objective | {objective} |\n"
+            f"| Preconditions | {c['preconditions']} |\n"
+            f"| Method (methodology only) | {c['method']} |\n"
+            f"| Success criteria | {c['success_criteria']} |\n"
+            f"| Detection & logging | {c['detection']} |\n"
+            f"| Controls validated | {controls} |\n"
+        )
+
+    # --- coverage matrix ---
+    md.append("\n## 4. Coverage matrix\n")
+    md.append("| OWASP LLM item | Tested | Test IDs | Highest priority |\n|---|---|---|---|\n")
+    for info in sec.OWASP_LLM_TOP10.values():
+        full_id = info["id"]
+        matched = [c for c in cases if c["owasp"]["id"] == full_id]
+        if matched:
+            ids = ", ".join(c["ref"] for c in matched)
+            top = max((c["priority"] for c in matched),
+                      key=lambda s: SEVERITY_ORDER.get(s, 0))
+            md.append(f"| {full_id} {info['name']} | Yes | {ids} | {top} |\n")
+        else:
+            md.append(f"| {full_id} {info['name']} | No | | |\n")
+
+    # --- findings / reporting template ---
+    md.append("\n## 5. Findings & reporting (to be completed)\n")
+    md.append(
+        "| Test ID | Result | Evidence | Severity (observed) | Residual risk | "
+        "Remediation owner | Target date |\n"
+        "|---|---|---|---|---|---|---|\n"
+    )
+    for c in cases:
+        md.append(f"| {c['ref']} | Not run | | | | | |\n")
+
+    md.append("\n## 6. Sign-off\n")
+    md.append(
+        "| Role | Name | Date | Signature |\n|---|---|---|---|\n"
+        "| Lead tester | | | |\n"
+        "| System owner (authorising) | | | |\n"
+        "| AI governance reviewer | | | |\n"
+    )
+    md.append(f"\n> _{plan.get('provenance','')}_\n")
+    return "".join(md)
+
+
 # --- dispatcher ------------------------------------------------------------
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
@@ -782,4 +909,6 @@ def render(report_type, assessment):
         return "monitoring", f"post-market-monitoring-{slug}.md", render_post_market_monitoring(assessment)
     if report_type == "framework-matrix":
         return "framework-matrix", f"framework-matrix-{slug}.md", render_framework_matrix(assessment)
+    if report_type == "redteam":
+        return "redteam", f"red-team-test-plan-{slug}.md", render_red_team_plan(assessment)
     raise ValueError(f"Unknown report type: {report_type}")
