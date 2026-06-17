@@ -6,16 +6,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Code style: ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+[![Live demo on Hugging Face Spaces](https://img.shields.io/badge/🤗%20Live%20demo-Spaces-blue.svg)](https://huggingface.co/spaces/JesseKasteele/ai-act-companion)
 
 AI Act Companion helps you run a structured AI risk assessment for an AI system,
 aligned with the **EU AI Act** (Regulation (EU) 2024/1689) and the **NIST AI
 RMF**, and generates the accompanying documentation. It runs entirely on your
 own machine.
 
-> 🔗 **Live demo:** a public sandbox runs the deterministic engine with the AI
-> layer off and ephemeral storage (synthetic data only). See
-> [docs/DEPLOY-HF-SPACE.md](docs/DEPLOY-HF-SPACE.md) for how it is hosted on
-> Hugging Face Spaces. *(Demo URL added once the Space is live.)*
+> 🔗 **[Live demo →](https://huggingface.co/spaces/JesseKasteele/ai-act-companion)**
+> A public sandbox on Hugging Face Spaces that runs the deterministic engine with
+> the AI layer off and ephemeral storage (**synthetic data only**). See
+> [docs/DEPLOY-HF-SPACE.md](docs/DEPLOY-HF-SPACE.md) for how it is hosted.
 
 > ⚠️ **Not legal advice.** This is an aid for a structured self-assessment. It
 > does not replace an assessment by a qualified lawyer or the competent
