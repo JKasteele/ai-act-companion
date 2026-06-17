@@ -3,7 +3,7 @@
     "ai-act-companion": {
       "type": "stdio",
       "command": "python",
-      "args": ["${CLAUDE_PROJECT_DIR}/mcp_server.py"]
+      "args": ["mcp_server.py"]
     }
   }
 }
