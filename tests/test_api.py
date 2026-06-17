@@ -34,6 +34,17 @@ def test_questionnaire_endpoint():
     assert len(r.json()["sections"]) == 10
 
 
+def test_timeline_endpoint_for_countdown():
+    r = client.get("/api/timeline")
+    assert r.status_code == 200
+    milestones = r.json()["milestones"]
+    assert len(milestones) >= 3
+    for m in milestones:
+        assert m["date"] and m["label"] and m["basis"]
+        # ISO date the frontend can parse: YYYY-MM-DD
+        assert len(m["date"]) == 10 and m["date"][4] == "-"
+
+
 def test_assess_report_delete_roundtrip():
     r = client.post("/api/assess", json={
         "answers": {"eu_market": True, "sys_name": "Roundtrip", "p_social_scoring": True}})

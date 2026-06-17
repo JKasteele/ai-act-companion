@@ -49,6 +49,7 @@ function refsSpan(refs, cls) {
 // --- init ------------------------------------------------------------------
 async function init() {
   await loadConfig();
+  loadTimeline();   // non-blocking: render the AI Act countdown when it returns
   QUESTIONNAIRE = await (await fetch("/api/questionnaire")).json();
   $("#form-intro").append(
     el("h2", {}, QUESTIONNAIRE.title),
@@ -91,6 +92,31 @@ async function loadConfig() {
     "Assessments are not persisted and are visible to other visitors during " +
     "the demo. The AI assist is off; this showcases the deterministic engine.");
   main.prepend(banner);
+}
+
+// --- EU AI Act countdown (presentational; dates come from the engine) ------
+async function loadTimeline() {
+  let data;
+  try { data = await (await fetch("/api/timeline")).json(); }
+  catch { return; }
+  const box = document.getElementById("aiact-countdown");
+  if (!box || !data || !data.milestones) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const next = data.milestones
+    .map((m) => ({ ...m, d: new Date(m.date + "T00:00:00") }))
+    .filter((m) => m.d >= today)
+    .sort((a, b) => a.d - b.d)[0];
+  if (!next) return;
+  const days = Math.round((next.d - today) / 86400000);
+  const dateStr = next.d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  box.innerHTML = "";
+  box.append(
+    el("span", { class: "cd-num" }, String(days)),
+    el("span", { class: "cd-unit" }, days === 1 ? "day" : "days"),
+    el("span", { class: "cd-label" }, `until ${next.label}`),
+    el("span", { class: "cd-date" }, dateStr),
+  );
+  box.classList.remove("hidden");
 }
 
 // --- AI layer (phase 4) ----------------------------------------------------

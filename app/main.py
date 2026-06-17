@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__, reports, storage
 from .classifier import classify
+from .knowledge import eu_ai_act as eu
 from .models import (
     AssessmentSummary,
     AssessRequest,
@@ -63,6 +64,14 @@ def health():
 def config():
     """Frontend feature flags (read-only). `demo_mode` toggles the sandbox banner."""
     return {"demo_mode": DEMO_MODE, "version": __version__}
+
+
+@app.get("/api/timeline")
+def timeline():
+    """EU AI Act application milestones (ISO dates) for the UI countdown.
+    Static facts from the knowledge base — the frontend computes days remaining."""
+    return {"milestones": [{"date": d, "label": label, "basis": basis}
+                           for d, label, basis in eu.MILESTONES]}
 
 
 # --- AI layer (phase 4) ----------------------------------------------------

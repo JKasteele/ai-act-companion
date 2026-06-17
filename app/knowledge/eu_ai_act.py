@@ -444,6 +444,17 @@ TIMELINE = [
 ]
 
 
+# Key application milestones with machine-readable (ISO) dates, for a UI
+# countdown. Same facts as TIMELINE; kept as data so the frontend never
+# hard-codes a date. (date_iso, short label, legal basis)
+MILESTONES = [
+    ("2025-02-02", "Prohibited practices (Art. 5) & AI literacy (Art. 4)", "Art. 113(a)"),
+    ("2025-08-02", "GPAI obligations, governance & penalties", "Art. 113(b)"),
+    ("2026-08-02", "High-risk (Annex III) & Art. 50 transparency obligations", "Art. 113"),
+    ("2027-08-02", "High-risk under Art. 6(1)/Annex I (regulated products)", "Art. 113(c)"),
+]
+
+
 def applies_from(tier, answers):
     """When the core obligations for THIS system start to apply."""
     answers = answers or {}

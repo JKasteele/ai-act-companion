@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Act Companion</title>
+  <title>AI Act Companion — EU AI Act risk classifier</title>
+  <meta name="description" content="Local, rule-based EU AI Act risk classifier with an AI-security lens. Explainable, cited, deterministic." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="stylesheet" href="/static/print.css" media="print" />
 </head>
 <body>
   <header class="topbar no-print">
-    <div class="wrap">
+    <div class="wrap hero">
+      <span class="kicker">EU AI Act &middot; NIST AI RMF &middot; AI security</span>
       <h1>AI Act Companion</h1>
-      <p class="tagline">Local, rule-based AI risk assessment &mdash; EU AI Act &amp; NIST AI RMF</p>
+      <p class="tagline">Local, rule-based AI risk assessment &mdash; explainable, cited, deterministic.</p>
+      <div id="aiact-countdown" class="countdown hidden" aria-live="polite"></div>
     </div>
   </header>
 
@@ -130,7 +136,7 @@
   </main>
 
   <footer class="no-print wrap">
-    <small>AI Act Companion v0.5 &middot; runs locally (privacy-first) or as a
+    <small>AI Act Companion v0.6 &middot; runs locally (privacy-first) or as a
     <a href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noopener">Claude Code plugin</a>
     &middot; MIT license</small>
   </footer>

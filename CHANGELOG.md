@@ -4,6 +4,35 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.6.0] - 2026-06-17
+
+A visibility + polish release: a redesigned UI, a live EU AI Act deadline
+countdown, and two new examples that exercise the security and GPAI depth.
+
+### Added
+- **UI refresh** — a refined "regtech" dark theme: Fraunces (display) / IBM Plex
+  Sans (body) / IBM Plex Mono (legal citations), a layered atmospheric backdrop,
+  a stronger hero, staggered load-in motion (respecting `prefers-reduced-motion`),
+  and refined cards, tabs, badges and the report "document" preview. No engine or
+  report-content changes; print/PDF output is unaffected.
+- **EU AI Act deadline countdown** — the hero shows a live "N days until <next
+  milestone>" pill (e.g. high-risk & Art. 50 obligations on 2 Aug 2026). Dates come
+  from the knowledge base via a new `GET /api/timeline`; the countdown itself is
+  presentational (client-side), so the deterministic engine stays date-independent.
+- **Two new examples** — `GridSentinel autonomous operations agent` (Annex III-2
+  critical-infrastructure, **High risk** with a **Critical** AI-security profile —
+  showcases architecture-aware severity, STRIDE, the red-team plan and control
+  catalogue) and `OpenScribe-7B foundation model` (a **GPAI** provider — showcases
+  the Chapter V obligations and the OWASP GenAI Data Security lens). Six examples now.
+- `docs/DEMO-SCRIPT.md` — a 60–90s demo-video script + shot list for the README
+  hero / LinkedIn.
+
+### Fixed
+- Mixed-language UI: the form's select placeholder and Yes/No toggle now render in
+  English (were `— kies —` / `Ja`/`Nee`).
+
+[0.6.0]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.6.0
+
 ## [0.5.1] - 2026-06-17
 
 Completes the last roadmap item: the ISO/IEC 42001 Annex A control mapping.
