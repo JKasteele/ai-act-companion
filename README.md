@@ -12,6 +12,11 @@ aligned with the **EU AI Act** (Regulation (EU) 2024/1689) and the **NIST AI
 RMF**, and generates the accompanying documentation. It runs entirely on your
 own machine.
 
+> 🔗 **Live demo:** a public sandbox runs the deterministic engine with the AI
+> layer off and ephemeral storage (synthetic data only). See
+> [docs/DEPLOY-HF-SPACE.md](docs/DEPLOY-HF-SPACE.md) for how it is hosted on
+> Hugging Face Spaces. *(Demo URL added once the Space is live.)*
+
 > ⚠️ **Not legal advice.** This is an aid for a structured self-assessment. It
 > does not replace an assessment by a qualified lawyer or the competent
 > supervisory authority. Use synthetic / generic example data only.

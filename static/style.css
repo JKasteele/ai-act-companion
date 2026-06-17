@@ -36,6 +36,17 @@ body {
 
 main { padding: 24px 20px 60px; }
 
+.demo-banner {
+  background: var(--panel);
+  border: 1px solid var(--high);
+  border-left: 4px solid var(--high);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: .9rem;
+  color: var(--text);
+}
+
 .disclaimer {
   background: var(--panel);
   border: 1px solid var(--border);

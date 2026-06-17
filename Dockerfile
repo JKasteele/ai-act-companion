@@ -24,5 +24,7 @@ RUN mkdir -p data
 # -e OLLAMA_HOST=http://host.docker.internal:11434 if desired.
 ENV LLM_PROVIDER=manual
 
+# Honour $PORT so the same image runs locally (8000) and on hosts that inject a
+# port, e.g. Hugging Face Spaces sets PORT=7860. Shell form so $PORT expands.
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

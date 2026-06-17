@@ -14,6 +14,7 @@ Endpoints:
 import csv
 import io
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -39,6 +40,12 @@ from .security import assess_security
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 
+# Public-demo mode: when set, the UI shows a "public sandbox, synthetic data
+# only, not persisted" banner. Pair it with AIACT_DATA_DIR pointing at ephemeral
+# storage (e.g. /tmp on Hugging Face Spaces) and LLM_PROVIDER=none. It changes no
+# engine behaviour — the deterministic core is identical in every mode.
+DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
+
 app = FastAPI(
     title="AI Act Companion",
     version=__version__,
@@ -48,7 +55,14 @@ app = FastAPI(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": __version__, "ai_layer": True}
+    return {"status": "ok", "version": __version__, "ai_layer": True,
+            "demo_mode": DEMO_MODE}
+
+
+@app.get("/api/config")
+def config():
+    """Frontend feature flags (read-only). `demo_mode` toggles the sandbox banner."""
+    return {"demo_mode": DEMO_MODE, "version": __version__}
 
 
 # --- AI layer (phase 4) ----------------------------------------------------

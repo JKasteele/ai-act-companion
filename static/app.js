@@ -48,6 +48,7 @@ function refsSpan(refs, cls) {
 
 // --- init ------------------------------------------------------------------
 async function init() {
+  await loadConfig();
   QUESTIONNAIRE = await (await fetch("/api/questionnaire")).json();
   $("#form-intro").append(
     el("h2", {}, QUESTIONNAIRE.title),
@@ -76,6 +77,20 @@ async function init() {
     if (e.target.files[0]) importJson(e.target.files[0]);
     e.target.value = "";
   });
+}
+
+// --- demo mode (public sandbox banner) -------------------------------------
+async function loadConfig() {
+  let cfg = {};
+  try { cfg = await (await fetch("/api/config")).json(); } catch { cfg = {}; }
+  if (!cfg.demo_mode) return;
+  const main = document.querySelector("main.wrap") || document.body;
+  const banner = el("div", { class: "demo-banner no-print" },
+    el("strong", {}, "Public sandbox. "),
+    "Synthetic / example data only — do not enter real or personal data. " +
+    "Assessments are not persisted and are visible to other visitors during " +
+    "the demo. The AI assist is off; this showcases the deterministic engine.");
+  main.prepend(banner);
 }
 
 // --- AI layer (phase 4) ----------------------------------------------------
