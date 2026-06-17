@@ -58,6 +58,23 @@ def _arch_view(answers):
     }
 
 
+def arch_view(answers):
+    """Public alias of the normalised architecture-context view (`_arch_view`).
+
+    Exposed so other deterministic lenses (e.g. the STRIDE threat model) read the
+    SAME structured `arch_*` fields and stay injection-proof in the same way."""
+    return _arch_view(answers or {})
+
+
+def severity_for(oid, answers):
+    """Public: the architecture-aware (severity, rationale) for one OWASP id.
+
+    The STRIDE threat model reuses this so each category that maps to an OWASP
+    family carries exactly the severity the security lens reports — the offense
+    and the threat-model agree by construction rather than by re-derivation."""
+    return _severity_for(oid, _arch_view(answers or {}))
+
+
 def _bump(level):
     return _SEVERITY_LEVELS[min(_SEVERITY_LEVELS.index(level) + 1,
                                 len(_SEVERITY_LEVELS) - 1)]

@@ -449,17 +449,43 @@ function downloadMarkdown() {
 
 // --- saved assessments ------------------------------------------------------
 async function loadSaved() {
-  const items = await (await fetch("/api/assessments")).json();
-  $("#saved-count").textContent = items.length;
+  const roll = await (await fetch("/api/portfolio")).json();
+  const items = roll.systems || [];
+  $("#saved-count").textContent = roll.count ?? items.length;
   const list = $("#saved-list");
   list.innerHTML = "";
   if (!items.length) {
     list.append(el("p", { class: "section-desc" }, "No saved assessments yet."));
     return;
   }
+
+  // Portfolio roll-up: risk-tier distribution + obligation/disclosure counts.
+  const TIER_LABELS = {
+    prohibited: "Prohibited", high: "High", limited: "Limited",
+    minimal: "Minimal", unknown: "Unknown",
+  };
+  const summary = el("div", { class: "inv-rollup" });
+  const dist = el("div", { class: "inv-dist" });
+  Object.entries(roll.tier_distribution || {})
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([tier, n]) => dist.append(el("span", {
+      class: `tier-badge tier-${tier}`, style: "font-size:.72rem;padding:2px 9px;margin-right:6px;",
+    }, `${TIER_LABELS[tier] || tier}: ${n}`)));
+  summary.append(dist);
+  summary.append(el("p", { class: "section-desc" },
+    `${roll.high_risk_count || 0} with high-risk obligations · ` +
+    `${roll.art50_count || 0} with an Art. 50 disclosure duty`));
+  const next = (roll.due || [])[0];
+  if (next) {
+    summary.append(el("p", { class: "section-desc" },
+      `Next obligations due: ${next.obligations_date} — ${next.sys_name}`));
+  }
+  list.append(summary);
+
   const table = el("table", { class: "inv-table" });
   table.append(el("thead", {}, el("tr", {},
-    el("th", {}, "System"), el("th", {}, "Risk tier"), el("th", {}, "Security"),
+    el("th", {}, "System"), el("th", {}, "Risk tier"), el("th", {}, "Due from"),
+    el("th", {}, "Art. 50"), el("th", {}, "Security"),
     el("th", {}, "Created"), el("th", {}, "Actions"))));
   const tbody = el("tbody", {});
   items.forEach((it) => {
@@ -474,6 +500,8 @@ async function loadSaved() {
       el("td", {}, el("span", {
         class: `tier-badge tier-${it.tier}`, style: "font-size:.72rem;padding:2px 9px;",
       }, it.tier_label || it.tier || "—")),
+      el("td", { class: "inv-date" }, it.obligations_date || "—"),
+      el("td", {}, it.art50_disclosure ? "Yes" : "—"),
       el("td", {}, String(it.security_risks ?? 0)),
       el("td", { class: "inv-date" },
         (it.created_at || "").replace("T", " ").replace("+00:00", "")),

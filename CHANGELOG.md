@@ -4,6 +4,49 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.5.0] - 2026-06-17
+
+Adds the Tier 3 set: a STRIDE threat model that reuses the architecture-aware
+severity, a serious-incident decision helper, a Model Card generator, and an
+inventory portfolio roll-up.
+
+### Added
+- **STRIDE threat model** (`app/stride.py`, `stride` report) — models the system
+  across the six STRIDE categories (Spoofing, Tampering, Repudiation, Information
+  disclosure, Denial of service, Elevation of privilege), driven by the
+  security-architecture fields (section 9). Four categories reuse the AI security
+  lens's architecture-aware severity (`security.severity_for`) for the OWASP family
+  they map to — so the STRIDE view and the OWASP severity view agree by
+  construction — while Spoofing and Repudiation are scored directly from
+  `arch_auth_strength` / `arch_logging`. Anchored on Art. 15 (and Art. 12 for
+  Repudiation).
+- **Serious-incident decision helper + report** (`app/incident.py`, `incident`
+  report) — a boolean-driven helper over the four Art. 3(49) limbs that returns the
+  binding Art. 73 reporting deadline (15 days general; 2 days for a widespread
+  infringement or a serious/irreversible critical-infrastructure disruption;
+  10 days on death), plus a fill-in incident-report template. Maps to NIST CSF
+  Respond (RS) and ISO 27001 A.5.24/A.5.26. New section-10 `inc_*` intake fields
+  drive it deterministically; they do not affect the risk tier.
+- **Model Card generator** (`app/modelcard.py`, `modelcard` report) — a Model Card
+  skeleton (Mitchell et al., 2019) pre-filled from the intake, anchored on Art. 13
+  transparency, with gaps left as `[to be completed]`.
+- **Inventory portfolio roll-up** — new `GET /api/portfolio` (risk-tier
+  distribution, obligations coming due by date, Art. 50 disclosure count) and
+  extra CSV columns (`obligations_date`, `art50_disclosure`,
+  `has_high_risk_obligations`); the web inventory shows the roll-up summary plus
+  Due-from / Art. 50 columns. Pure aggregation over stored JSON — no new
+  persistence.
+- All three report types wired into the CLI (`--type stride|incident|modelcard`),
+  the web UI (STRIDE threat model / Serious incident / Model card tabs) and the MCP
+  `generate_report`; `security.arch_view` / `security.severity_for` promoted to
+  public so the STRIDE lens reuses the same severity engine.
+- Tests (`tests/test_stride.py`, `tests/test_incident.py`,
+  `tests/test_modelcard.py`, extended `tests/test_api.py`): determinism, the
+  free-text invariant, severity-reuse parity with the security lens, the Art. 73
+  deadline logic, Model Card pre-fill, and the portfolio/CSV roll-up.
+
+[0.5.0]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.5.0
+
 ## [0.4.0] - 2026-06-15
 
 Completes the Tier 2 purple-team set: pairs the red-team plan with its defensive

@@ -283,6 +283,34 @@ QUESTIONNAIRE = {
                  "label": "Are there rate limits / quotas / cost caps?"},
             ],
         },
+        {
+            "id": "incident",
+            "title": "10. Serious-incident assessment (Art. 73)",
+            "description": (
+                "Complete these ONLY when documenting an actual incident that has "
+                "occurred. They drive the serious-incident report (Art. 3(49) "
+                "definition + Art. 73 reporting deadline) and do not affect the "
+                "risk classification."
+            ),
+            "questions": [
+                {"id": "inc_death", "type": "boolean", "required": False,
+                 "label": "Did the incident lead to the death of a person?"},
+                {"id": "inc_health", "type": "boolean", "required": False,
+                 "label": "Did it lead to serious harm to a person's health?"},
+                {"id": "inc_critical_infra", "type": "boolean", "required": False,
+                 "label": "Did it cause a serious and irreversible disruption of "
+                          "the management or operation of critical infrastructure?"},
+                {"id": "inc_fundamental_rights", "type": "boolean", "required": False,
+                 "label": "Did it infringe obligations under Union law intended to "
+                          "protect fundamental rights?"},
+                {"id": "inc_property_env", "type": "boolean", "required": False,
+                 "label": "Did it cause serious harm to property or the environment?"},
+                {"id": "inc_widespread", "type": "boolean", "required": False,
+                 "label": "Is the infringement widespread (affecting many persons "
+                          "or several Member States)?",
+                 "help": "Shortens the Art. 73 reporting deadline."},
+            ],
+        },
     ],
 }
 

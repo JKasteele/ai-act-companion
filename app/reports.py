@@ -7,18 +7,21 @@ Python strings, fed by the classifier output.
 
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
+from .incident import assess_incident
 from .knowledge import ai_security as sec
 from .knowledge import data_security as ds
 from .knowledge import eu_ai_act as eu
 from .knowledge import iso_42001 as iso
 from .knowledge import monitoring as mon
 from .knowledge import security_frameworks as sfw
+from .modelcard import generate_model_card
 from .redteam import generate_test_plan
 from .security import SEVERITY_ORDER, assess_security
+from .stride import generate_stride_model
 
 REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria", "techdoc",
                 "compliance", "monitoring", "framework-matrix", "redteam",
-                "controls", "datasec")
+                "controls", "datasec", "stride", "incident", "modelcard")
 
 
 # --- helpers ---------------------------------------------------------------
@@ -41,7 +44,7 @@ def _header(assessment):
     return (
         f"_Assessment id: `{assessment.get('id', '-')}` · "
         f"Generated: {assessment.get('created_at', '-')} · "
-        f"AI Act Companion v0.4_\n\n"
+        f"AI Act Companion v0.5_\n\n"
         f"> {eu.DISCLAIMER}\n"
     )
 
@@ -1078,6 +1081,206 @@ def render_data_security(assessment):
     return "".join(md)
 
 
+# --- 13. STRIDE threat model (architecture-driven) -------------------------
+def render_stride_threat_model(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    model = assessment.get("stride") or generate_stride_model(answers)
+
+    md = []
+    md.append(f"# STRIDE Threat Model - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        "Models the system across the six **STRIDE** categories (Spoofing, "
+        "Tampering, Repudiation, Information disclosure, Denial of service, "
+        "Elevation of privilege). Each category is driven by the "
+        "security-architecture answers (section 9); the severity is the same "
+        "architecture-aware rating the AI security lens computes, linked to "
+        f"{_ref_link('Art. 15')}.\n"
+    )
+    md.append(f"\n{model.get('summary','')}\n")
+    md.append(f"\n> {model.get('disclaimer','')}\n")
+    if model.get("provenance"):
+        md.append(f">\n> _{model['provenance']}_\n")
+
+    categories = model.get("categories", [])
+    md.append("\n## Severity overview\n")
+    md.append(
+        "Severity is computed deterministically from the security-architecture "
+        f"fields. Highest: **{model.get('max_severity','-')}**.\n\n"
+    )
+    md.append("| STRIDE category | Severity | Driven by |\n|---|---|---|\n")
+    for c in categories:
+        md.append(f"| **{c['code']} — {c['name']}** | {c['severity']} | "
+                  f"{c['severity_rationale']} |\n")
+
+    md.append("\n## Per-category analysis\n")
+    for c in categories:
+        owasp = c.get("owasp") or "—"
+        md.append(f"\n### {c['code']} — {c['name']}\n")
+        md.append(f"{c['summary']}\n\n")
+        md.append("**Questions that determine the risk:**\n")
+        for q in c.get("questions", []):
+            md.append(f"- {q}\n")
+        md.append("\n| Architecture factor | Answer (from intake) |\n|---|---|\n")
+        for f in c.get("fields", []):
+            md.append(f"| {f['question']} | {f['answer']} |\n")
+        md.append(
+            f"\n| Aspect | Detail |\n|---|---|\n"
+            f"| Severity | **{c['severity']}** — {c['severity_rationale']} |\n"
+            f"| OWASP LLM Top 10 | {owasp} |\n"
+            f"| EU AI Act | {_refs(c['ai_act_refs'])} |\n"
+        )
+    return "".join(md)
+
+
+# --- 14. Serious-incident decision helper + report (Art. 3(49), Art. 73) ----
+def render_incident(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    inc = assessment.get("incident") or assess_incident(answers)
+
+    md = []
+    md.append(f"# Serious-Incident Assessment & Report - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        f"A decision helper and report template for **serious incidents** under "
+        f"{_ref_link('Art. 73')}, using the {_ref_link('Art. 3(49)')} definition. "
+        "Maps to NIST CSF **Respond (RS)** and ISO/IEC 27001:2022 **A.5.24 / "
+        "A.5.26** (incident management and response).\n"
+    )
+    md.append(f"\n> _{inc.get('definition','')}_\n")
+
+    md.append("\n## 1. Is this a serious incident? (Art. 3(49))\n")
+    md.append(
+        "A serious incident is one whose effect meets **any** of the four limbs "
+        "below. Mark each limb in the intake (section 10).\n\n"
+    )
+    md.append("| Met? | Limb | Effect |\n|---|---|---|\n")
+    for limb in inc.get("limbs", []):
+        mark = "Yes" if limb["met"] else "—"
+        md.append(f"| {mark} | {_ref_link(limb['ref'])} | {limb['desc']} |\n")
+    md.append(f"\n{inc.get('verdict','')}\n")
+
+    md.append("\n## 2. Reporting deadlines (Art. 73)\n")
+    md.append("| Case | Deadline (no later than) | Basis |\n|---|---|---|\n")
+    for case, deadline, basis in inc.get("timeline", []):
+        md.append(f"| {case} | {deadline} | {_ref_link(basis)} |\n")
+    md.append(f"\n{inc.get('note','')}\n")
+
+    md.append("\n## 3. Serious-incident report (to be completed)\n")
+    md.append(
+        f"| Field | Content |\n|---|---|\n"
+        f"| System / version | {_a(answers,'sys_name')} {_a(answers,'sys_version','')} |\n"
+        f"| Provider / deployer | {_a(answers,'sys_owner')} |\n"
+        f"| Date/time the incident occurred | {_TBC} |\n"
+        f"| Date the causal link was established | {_TBC} |\n"
+        f"| Reportable / deadline | {('Yes — ' + inc['deadline']) if inc.get('reportable') else 'To be determined'} |\n"
+        f"| Description of the incident | {_TBC} |\n"
+        f"| Timeline of events | {_TBC} |\n"
+        f"| Affected persons / groups | {_TBC} |\n"
+        f"| Suspected root cause | {_TBC} |\n"
+        f"| Immediate corrective / mitigating action | {_TBC} |\n"
+        f"| Market surveillance authority notified (when / ref) | {_TBC} |\n"
+        f"| Initial report filed / complete report due | {_TBC} |\n"
+    )
+
+    md.append("\n## 4. Sign-off\n")
+    md.append(
+        "| Role | Name | Date | Signature |\n|---|---|---|---|\n"
+        "| Incident owner | | | |\n"
+        "| AI governance / compliance reviewer | | | |\n"
+    )
+    return "".join(md)
+
+
+# --- 15. Model card (Mitchell et al., 2019) --------------------------------
+def render_model_card(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    card = assessment.get("model_card") or generate_model_card(answers)
+    g = card.get("prefilled", {})
+
+    def val(key):
+        return g.get(key) or _TBC
+
+    md = []
+    md.append(f"# Model Card - {sys_name}\n")
+    md.append(_header(assessment))
+    md.append(
+        f"A Model Card (Mitchell et al., 2019) — a light transparency artifact "
+        f"whose natural EU AI Act anchor is {_ref_link('Art. 13')} (transparency "
+        "and provision of information to deployers). Pre-filled from the intake "
+        f"answers; everything requiring measurement or judgement is marked {_TBC}.\n"
+    )
+
+    md.append("\n## Model details\n")
+    md.append(
+        f"| Field | Value |\n|---|---|\n"
+        f"| Name | {val('sys_name')} |\n"
+        f"| Version | {val('sys_version')} |\n"
+        f"| Owner / provider | {val('sys_owner')} |\n"
+        f"| Role (Art. 3) | {val('provider_role')} |\n"
+        f"| Lifecycle stage | {val('lifecycle_stage')} |\n"
+        f"| Date | {_TBC} |\n"
+        f"| License | {_TBC} |\n"
+    )
+
+    md.append("\n## Intended use\n")
+    md.append(f"- **Intended purpose:** {val('intended_purpose')}\n")
+    md.append(f"- **Description:** {val('sys_description')}\n")
+    md.append(f"- **Primary intended users:** {_TBC}\n")
+    md.append(f"- **Out-of-scope / prohibited uses:** {_TBC}\n")
+
+    md.append("\n## Factors\n")
+    md.append(
+        f"Relevant groups, environments and instrumentation that may affect "
+        f"performance.\n\n"
+        f"- Affects vulnerable groups: {val('affects_vulnerable')}\n"
+        f"- Relevant demographic / subgroup factors: {_TBC}\n"
+        f"- Environmental / instrumentation factors: {_TBC}\n"
+    )
+
+    md.append("\n## Metrics\n")
+    md.append(
+        f"Performance measures, decision thresholds and how they were chosen. "
+        f"{_TBC}\n"
+    )
+
+    md.append("\n## Evaluation data\n")
+    md.append(f"Datasets used for evaluation, with provenance and preprocessing. {_TBC}\n")
+
+    md.append("\n## Training data\n")
+    md.append(f"Stated data origin: {val('data_sources')}\n\n")
+    md.append(f"Distribution, provenance and preprocessing details: {_TBC}\n")
+
+    md.append("\n## Quantitative analyses\n")
+    md.append(
+        f"Disaggregated results across the factors above (see the bias-audit "
+        f"checklist for the structure). {_TBC}\n"
+    )
+
+    md.append("\n## Ethical considerations\n")
+    md.append(
+        f"- Processes personal data: {val('data_personal')}\n"
+        f"- Special-category data (GDPR Art. 9): {val('data_special_category')}\n"
+        f"- Biometric data: {val('data_biometric')}\n"
+        f"- Automated decisions with significant effects (GDPR Art. 22): "
+        f"{val('automated_decision')}\n"
+        f"- Risks, harms and mitigations considered: {_TBC}\n"
+    )
+
+    md.append("\n## Caveats and recommendations\n")
+    md.append(
+        f"- Human oversight: {val('human_oversight')}\n"
+        f"- Autonomy level: {val('autonomy_level')}; a human can override/stop: "
+        f"{val('can_override')}\n"
+        f"- Known limitations and recommendations for use: {_TBC}\n"
+    )
+    md.append(f"\n> _{card.get('provenance','')}_\n")
+    return "".join(md)
+
+
 # --- dispatcher ------------------------------------------------------------
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
@@ -1106,4 +1309,10 @@ def render(report_type, assessment):
         return "controls", f"control-catalogue-{slug}.md", render_control_catalog(assessment)
     if report_type == "datasec":
         return "datasec", f"data-security-{slug}.md", render_data_security(assessment)
+    if report_type == "stride":
+        return "stride", f"stride-threat-model-{slug}.md", render_stride_threat_model(assessment)
+    if report_type == "incident":
+        return "incident", f"serious-incident-{slug}.md", render_incident(assessment)
+    if report_type == "modelcard":
+        return "modelcard", f"model-card-{slug}.md", render_model_card(assessment)
     raise ValueError(f"Unknown report type: {report_type}")

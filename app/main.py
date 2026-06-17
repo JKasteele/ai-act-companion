@@ -14,6 +14,7 @@ Endpoints:
 import csv
 import io
 import json
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -154,15 +155,72 @@ def list_assessments():
     return [AssessmentSummary(**s) for s in storage.list_all()]
 
 
+# --- inventory portfolio roll-up -------------------------------------------
+def _due_sort_key(date_str):
+    """Sort key for an 'applies from' date like '2 Aug 2026'; unknown ('-') last."""
+    try:
+        return (0, datetime.strptime(date_str, "%d %b %Y"))
+    except (ValueError, TypeError):
+        return (1, datetime.max)
+
+
+def _portfolio_rows():
+    """One enriched row per saved assessment (pure aggregation over stored JSON).
+
+    Extends each list_all() summary with the obligation due-date and the
+    Art. 50 / high-risk obligation flags pulled from the stored classification."""
+    rows = []
+    for s in storage.list_all():
+        full = storage.load(s["id"]) or {}
+        cls = full.get("classification", {})
+        appl = cls.get("applicability", {}) or {}
+        rows.append({
+            **s,
+            "obligations_date": appl.get("date", "-"),
+            "obligations_what": appl.get("what", ""),
+            "art50_disclosure": bool(cls.get("transparency_obligations")),
+            "has_high_risk_obligations": bool(cls.get("high_risk_obligations")),
+        })
+    return rows
+
+
+@app.get("/api/portfolio")
+def portfolio():
+    """Aggregate roll-up across all saved assessments: risk-tier distribution,
+    obligations coming due by date, and the Art. 50 disclosure flag per system.
+    Single-user/local; pure aggregation, no new persistence."""
+    rows = _portfolio_rows()
+    distribution = {}
+    for r in rows:
+        tier = r.get("tier") or "unknown"
+        distribution[tier] = distribution.get(tier, 0) + 1
+    due = sorted(
+        (r for r in rows if r["obligations_date"] and r["obligations_date"] != "-"),
+        key=lambda r: _due_sort_key(r["obligations_date"]))
+    return {
+        "count": len(rows),
+        "tier_distribution": distribution,
+        "art50_count": sum(1 for r in rows if r["art50_disclosure"]),
+        "high_risk_count": sum(1 for r in rows if r["has_high_risk_obligations"]),
+        "due": due,
+        "systems": rows,
+    }
+
+
 @app.get("/api/export.csv")
 def export_csv():
-    """Export the assessment inventory as a CSV register."""
+    """Export the assessment inventory as a CSV register (with roll-up columns)."""
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["id", "sys_name", "tier", "tier_label", "security_risks", "created_at"])
-    for r in storage.list_all():
+    writer.writerow(["id", "sys_name", "tier", "tier_label", "security_risks",
+                     "obligations_date", "art50_disclosure",
+                     "has_high_risk_obligations", "created_at"])
+    for r in _portfolio_rows():
         writer.writerow([r["id"], r["sys_name"], r["tier"], r["tier_label"],
-                         r.get("security_risks", 0), r["created_at"]])
+                         r.get("security_risks", 0), r["obligations_date"],
+                         "yes" if r["art50_disclosure"] else "no",
+                         "yes" if r["has_high_risk_obligations"] else "no",
+                         r["created_at"]])
     return PlainTextResponse(
         buf.getvalue(), media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=ai-act-inventory.csv"})

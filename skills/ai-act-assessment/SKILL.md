@@ -68,6 +68,15 @@ ground truth; you are the interface and the narrative author.
      data-layer complement covering training data, prompts, retrieval, embeddings,
      telemetry and outputs, anchored on EU AI Act Art. 10 + the GDPR.
      `assess_data_security` returns the structured form.
+   - `stride` — **STRIDE threat model** across the six categories (Spoofing,
+     Tampering, Repudiation, Information disclosure, Denial of service, Elevation
+     of privilege), driven by the `arch_*` fields and carrying the same
+     architecture-aware severity as the security lens (Art. 15).
+   - `incident` — **serious-incident** decision helper (the four Art. 3(49) limbs)
+     plus the Art. 73 reporting-deadline template. Complete the section-10 `inc_*`
+     fields only when documenting an actual incident; they do not affect the tier.
+   - `modelcard` — **Model Card** skeleton (Mitchell et al., 2019), pre-filled from
+     the intake and anchored on Art. 13 transparency.
 
    For the architecture-aware severity in the `security` report (and the priority
    of each `redteam` test case and `controls` entry), collect the `arch_*` fields

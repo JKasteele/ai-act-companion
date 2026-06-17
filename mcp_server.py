@@ -27,9 +27,12 @@ from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
 from app.controls import generate_control_catalog as _generate_control_catalog  # noqa: E402
 from app.data_security import assess_data_security as _assess_data_security  # noqa: E402
+from app.incident import assess_incident as _assess_incident  # noqa: E402
+from app.modelcard import generate_model_card as _generate_model_card  # noqa: E402
 from app.questionnaire import QUESTIONNAIRE  # noqa: E402
 from app.redteam import generate_test_plan as _generate_test_plan  # noqa: E402
 from app.security import assess_security as _assess_security  # noqa: E402
+from app.stride import generate_stride_model as _generate_stride_model  # noqa: E402
 
 mcp = FastMCP("ai-act-companion")
 
@@ -111,7 +114,7 @@ def generate_report(
     report_type: Literal[
         "risk", "dpia", "bias", "security", "fria",
         "techdoc", "compliance", "monitoring", "framework-matrix", "redteam",
-        "controls", "datasec",
+        "controls", "datasec", "stride", "incident", "modelcard",
     ] = "risk",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
@@ -133,7 +136,13 @@ def generate_report(
       'controls' - prioritised defensive control catalogue (the blue-team
         counterpart of the red-team plan; see generate_control_catalog);
       'datasec' - OWASP GenAI Data Security assessment (DSGAI01-21; see
-        assess_data_security for the structured form).
+        assess_data_security for the structured form);
+      'stride' - STRIDE threat model across the six categories, driven by the
+        architecture fields and reusing the architecture-aware severity;
+      'incident' - serious-incident decision helper (Art. 3(49)) + Art. 73
+        reporting-deadline template;
+      'modelcard' - Model Card skeleton (Mitchell et al., 2019; Art. 13),
+        pre-filled from the intake.
     The system is classified deterministically first, then the report is
     rendered. Present the draft to the user for review before treating it as
     final.
@@ -147,6 +156,9 @@ def generate_report(
         "red_team": _generate_test_plan(answers),
         "controls": _generate_control_catalog(answers),
         "data_security": _assess_data_security(answers),
+        "stride": _generate_stride_model(answers),
+        "incident": _assess_incident(answers),
+        "model_card": _generate_model_card(answers),
     }
     _rtype, _filename, markdown = reports.render(report_type, assessment)
     return markdown

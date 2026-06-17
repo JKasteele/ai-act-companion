@@ -113,17 +113,22 @@ Three pure functions, no I/O, fully testable:
   injection and system-prompt leakage. It also computes a deterministic
   **severity** per item from the `arch_*` architecture fields (see [§3](#3-the-core-safety-pattern)).
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of twelve Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
+  renders one of fifteen Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
   `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`, `redteam`,
-  `controls`, `datasec`) from the classifier and the security lenses. Markdown is
-  the canonical export; PDF is print-to-PDF in the browser.
+  `controls`, `datasec`, `stride`, `incident`, `modelcard`) from the classifier
+  and the security lenses. Markdown is the canonical export; PDF is print-to-PDF
+  in the browser.
 
-Three further pure functions extend the security lens without adding any new
+Several further pure functions extend the lenses without adding any new
 judgement — `redteam.generate_test_plan` (an offensive test plan),
-`controls.generate_control_catalog` (its defensive mirror), and
-`data_security.assess_data_security` (the OWASP GenAI Data Security lens). The
-first two reuse `assess_security`'s architecture-aware severity as their
-priority (see [§3](#3-the-core-safety-pattern)).
+`controls.generate_control_catalog` (its defensive mirror),
+`data_security.assess_data_security` (the OWASP GenAI Data Security lens),
+`stride.generate_stride_model` (a STRIDE threat model), `incident.assess_incident`
+(the Art. 73 serious-incident helper) and `modelcard.generate_model_card`. The
+red-team plan, the control catalogue and the STRIDE model all reuse
+`assess_security`'s architecture-aware severity — STRIDE via the public
+`security.severity_for` — so the offense, the defense and the threat model agree
+by construction (see [§3](#3-the-core-safety-pattern)).
 
 Underneath sits `knowledge/`, where the frameworks live as data (see
 [§4](#4-framework-mapping-methodology--provenance)).
@@ -293,6 +298,9 @@ real, checkable identifier and the classifier can reference it by key.
 | AI red-team test plan | `knowledge/red_team.py` | methodology-level adversarial test-case templates per OWASP item (objective, preconditions, technique families, pass/fail, expected detection), gated on architecture — **no exploit payloads** |
 | Defensive control catalogue | `knowledge/controls.py` | the control to implement per OWASP item (what, what it prevents, how to verify, CSF 2.0 / ISO 27001 anchors), each naming the red-team test case(s) that verify it |
 | OWASP GenAI Data Security (2026, v1.0) | `knowledge/data_security.py` | the 21 DSGAI data-security risks (DSGAI01–21), each cross-mapped to the OWASP LLM Top 10, EU AI Act Art. 10 and the GDPR |
+| STRIDE (Microsoft) | `knowledge/stride.py` | the six STRIDE categories, each tied to the `arch_*` fields, the OWASP LLM family it maps to and the EU AI Act anchor; severity is computed by the security lens |
+| Serious incidents (Art. 3(49) + Art. 73) | `knowledge/eu_ai_act.py` | the four serious-incident limbs and the Art. 73 reporting deadlines (15 / 2 / 10 days), driving `incident.assess_incident` |
+| Model Cards (Mitchell et al., 2019) | `app/modelcard.py` | the nine Model Card sections, pre-filled from the intake; transparency artifact anchored on Art. 13 |
 
 ### How citations are produced and resolved
 

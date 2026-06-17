@@ -224,11 +224,14 @@ ai-act-companion/
 │   ├── cli.py             scriptable CLI over the engine
 │   ├── questionnaire.py   intake definition (single source of truth)
 │   ├── classifier.py      rule-based EU AI Act classifier
-│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam/controls/datasec)
+│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam/controls/datasec/stride/incident/modelcard)
 │   ├── security.py        AI security lens + architecture-aware severity
 │   ├── redteam.py         architecture-aware red-team test-plan generator
 │   ├── controls.py        defensive control-catalogue generator (blue-team mirror)
 │   ├── data_security.py   OWASP GenAI Data Security lens (DSGAI01–21)
+│   ├── stride.py          STRIDE threat model (reuses the architecture-aware severity)
+│   ├── incident.py        serious-incident helper (Art. 3(49) + Art. 73 deadlines)
+│   ├── modelcard.py       Model Card generator (Mitchell et al., 2019; Art. 13)
 │   ├── storage.py         JSON persistence
 │   ├── models.py          pydantic models
 │   ├── knowledge/         EU AI Act, NIST AI RMF, ISO 42001, AI security, red-team, controls, GenAI data security, monitoring, CSF/ISO 27001 as data
@@ -250,10 +253,11 @@ ai-act-companion/
 | GET | `/api/questionnaire` | questionnaire definition |
 | POST | `/api/assess` | classify + store |
 | GET | `/api/assessments` | list stored assessments (inventory) |
+| GET | `/api/portfolio` | inventory roll-up (tier distribution, obligations due, Art. 50) |
 | GET | `/api/assessments/{id}` | full assessment (JSON export) |
 | DELETE | `/api/assessments/{id}` | delete an assessment |
 | GET | `/api/export.csv` | inventory as a CSV register |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam\|controls\|datasec` | report (markdown) |
+| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam\|controls\|datasec\|stride\|incident\|modelcard` | report (markdown) |
 | GET | `/api/ai/status` | AI layer status (provider, model, reachability) |
 | POST | `/api/ai/prefill` | free text → draft answers (or a prompt for manual mode) |
 | POST | `/api/ai/parse` | pasted-back LLM answer → validated draft |
@@ -368,6 +372,24 @@ Two more lenses complete the purple-team picture:
 > Act ⇄ NIST mappings and the control catalogue's framework anchors are
 > Companion-derived analytical alignments, not official published crosswalks.
 
+### STRIDE, incidents, model cards & a portfolio roll-up
+
+The Tier 3 set rounds out the lifecycle:
+
+- **STRIDE threat model** — the system across the six STRIDE categories, driven by
+  the same security-architecture answers. Four categories reuse the security
+  lens's **architecture-aware severity** (so the STRIDE and OWASP views agree by
+  construction); Spoofing and Repudiation are scored from authentication and
+  logging. **STRIDE threat model** tab / `--type stride`.
+- **Serious-incident helper** — a decision aid over the four **Art. 3(49)** limbs
+  that returns the binding **Art. 73** reporting deadline (15 / 2 / 10 days), plus
+  a fill-in incident report. **Serious incident** tab / `--type incident`.
+- **Model Card** (Mitchell et al., 2019) — a transparency artifact (**Art. 13**)
+  pre-filled from the intake. **Model card** tab / `--type modelcard`.
+- **Inventory portfolio roll-up** — across all saved assessments: risk-tier
+  distribution, obligations coming due by date, and an Art. 50 disclosure column
+  (in the dashboard, `/api/portfolio` and the CSV register).
+
 The tool also has its own [THREAT_MODEL.md](THREAT_MODEL.md) — including the
 OWASP LLM Top 10 applied to its *own* AI layer — and a
 [SECURITY.md](SECURITY.md) policy; `bandit` and `pip-audit` run in CI.
@@ -411,6 +433,11 @@ concrete article/annex per conclusion:
 - [x] **Architecture-aware red-team test plan** (OWASP LLM Top 10 + MITRE ATLAS, authorized purple-team scoping)
 - [x] **Defensive control catalogue** — the blue-team mirror, each control validated by a red-team test
 - [x] **OWASP GenAI Data Security lens** (DSGAI01–21) — data-layer complement, anchored on EU AI Act Art. 10
+- [x] **STRIDE threat model** — six categories, reusing the architecture-aware severity (Art. 15)
+- [x] **Serious-incident helper** — Art. 3(49) limbs + Art. 73 reporting deadlines + report template
+- [x] **Model Card generator** (Mitchell et al., 2019) — transparency artifact (Art. 13), pre-filled from intake
+- [x] **Inventory portfolio roll-up** — tier distribution, obligations due by date, Art. 50 disclosure column
+- [ ] ISO/IEC 42001 Annex A control mapping (optional, requires verification)
 
 ## License
 
