@@ -4,6 +4,25 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.5.1] - 2026-06-17
+
+Completes the last roadmap item: the ISO/IEC 42001 Annex A control mapping.
+
+### Added
+- **ISO/IEC 42001 Annex A control mapping** (`app/knowledge/iso_42001.py`) — the
+  38 Annex A reference controls (A.2.2 … A.10.4), titles only, each tagged with
+  its most-relevant EU AI Act article as a Companion-derived analytical alignment.
+  Rendered as section 5.2.1 of the risk-assessment report to support drafting an
+  AIMS Statement of Applicability alongside the assessment. The control list was
+  cross-verified against multiple public summaries (the depth at which third-party
+  summaries diverge); the 38-control count and the A.6.1.x / A.6.2.x life-cycle
+  sub-structure match the standard.
+- Tests (`tests/test_iso_42001.py`): the 38-control count, well-formedness, that
+  every control resolves to a real EU AI Act article, full category coverage and
+  rendering. 110 tests pass.
+
+[0.5.1]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.5.1
+
 ## [0.5.0] - 2026-06-17
 
 Adds the Tier 3 set: a STRIDE threat model that reuses the architecture-aware

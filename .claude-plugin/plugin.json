@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "ai-act-companion",
   "displayName": "AI Act Companion",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Turn Claude Code into an EU AI Act governance assistant: a deterministic, cited risk classifier (NIST AI RMF crosswalk) plus risk-assessment, DPIA and bias-audit generators, with mandatory human-in-the-loop review.",
   "author": { "name": "Jesse van de Kasteele" },
   "repository": "https://github.com/JKasteele/ai-act-companion",

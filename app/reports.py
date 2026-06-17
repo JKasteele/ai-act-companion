@@ -82,6 +82,17 @@ def _iso_table():
     return "\n".join(rows) + "\n"
 
 
+def _iso_annex_a_table():
+    """Map the 38 ISO/IEC 42001 Annex A controls to their most-relevant EU AI
+    Act article(s). Titles only; the AI Act anchor is an analytical alignment."""
+    rows = ["| Annex A | Control (title) | Most-relevant EU AI Act |",
+            "|---|---|---|"]
+    for cid, title, refs in iso.ANNEX_A_CONTROLS:
+        cat = iso.ANNEX_A.get(iso.annex_a_category(cid), "")
+        rows.append(f"| {cid} | {title} _({cat})_ | {_refs(refs)} |")
+    return "\n".join(rows) + "\n"
+
+
 def _nist_table(crosswalk):
     rows = ["| NIST subcategory | Function | Description | EU AI Act |",
             "|---|---|---|---|"]
@@ -171,6 +182,13 @@ def render_risk_assessment(assessment):
     md.append(_nist_table(cls.get("nist_crosswalk", [])))
     md.append("\n### 5.2 ISO/IEC 42001\n")
     md.append(_iso_table())
+    md.append(
+        "\n#### 5.2.1 Annex A control mapping\n"
+        "The 38 ISO/IEC 42001 Annex A reference controls, each tagged with its "
+        "most-relevant EU AI Act article (analytical alignment — use it to plan "
+        "an AIMS Statement of Applicability alongside this assessment):\n\n"
+    )
+    md.append(_iso_annex_a_table())
     md.append(f"\n_{iso.PROVENANCE}_\n")
 
     md.append("\n## 6. Risk register (to be completed)\n")

@@ -443,7 +443,7 @@ concrete article/annex per conclusion:
 - [x] **Serious-incident helper** — Art. 3(49) limbs + Art. 73 reporting deadlines + report template
 - [x] **Model Card generator** (Mitchell et al., 2019) — transparency artifact (Art. 13), pre-filled from intake
 - [x] **Inventory portfolio roll-up** — tier distribution, obligations due by date, Art. 50 disclosure column
-- [ ] ISO/IEC 42001 Annex A control mapping (optional, requires verification)
+- [x] **ISO/IEC 42001 Annex A control mapping** — all 38 Annex A controls, each anchored to its most-relevant EU AI Act article (in the risk report)
 
 ## License
 
