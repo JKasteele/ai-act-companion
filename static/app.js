@@ -254,11 +254,11 @@ function renderField(q) {
     input = el("textarea", { id: q.id, name: q.id, placeholder: q.placeholder || "" });
   } else if (q.type === "select") {
     input = el("select", { id: q.id, name: q.id });
-    input.append(el("option", { value: "" }, "— kies —"));
+    input.append(el("option", { value: "" }, "— select —"));
     q.options.forEach((o) => input.append(el("option", { value: o.value }, o.label)));
   } else if (q.type === "boolean") {
     input = el("div", { class: "segmented", id: q.id });
-    [["true", "Ja"], ["false", "Nee"]].forEach(([val, lab], i) => {
+    [["true", "Yes"], ["false", "No"]].forEach(([val, lab], i) => {
       input.append(el("label", {},
         el("input", { type: "radio", name: q.id, value: val, ...(i === 1 ? { checked: "checked" } : {}) }),
         el("span", {}, lab)));
