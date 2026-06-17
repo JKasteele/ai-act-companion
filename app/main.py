@@ -275,6 +275,40 @@ def get_report(assessment_id: str, type: str = "risk"):
     return ReportResponse(type=rtype, filename=filename, markdown=markdown)
 
 
+def _seed_demo_inventory():
+    """In DEMO_MODE, pre-load the synthetic examples so the inventory and the
+    portfolio roll-up aren't empty on a fresh (ephemeral) container. Idempotent:
+    uses a fixed id per example, so a re-run overwrites rather than duplicates."""
+    ex_dir = BASE_DIR / "examples"
+    if not ex_dir.exists():
+        return
+    for path in sorted(ex_dir.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(data, dict) or "sys_name" not in data:
+            continue
+        answers = {k: v for k, v in data.items() if not k.startswith("_")}
+        aid = path.stem.replace("_", "-")
+        if not storage.is_valid_id(aid):
+            continue
+        storage.save({
+            "id": aid,
+            "created_at": storage.now_iso(),
+            "answers": answers,
+            "classification": classify(answers),
+            "security": assess_security(answers),
+        })
+
+
+if DEMO_MODE:
+    try:
+        _seed_demo_inventory()
+    except Exception:  # noqa: BLE001 — never block startup on seeding
+        pass
+
+
 # Static frontend. Mounted last so that /api/* takes precedence.
 if STATIC_DIR.exists():
     @app.get("/")

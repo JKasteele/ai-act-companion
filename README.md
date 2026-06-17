@@ -17,6 +17,10 @@ own machine.
 > A public sandbox on Hugging Face Spaces that runs the deterministic engine with
 > the AI layer off and ephemeral storage (**synthetic data only**). See
 > [docs/DEPLOY-HF-SPACE.md](docs/DEPLOY-HF-SPACE.md) for how it is hosted.
+>
+> 📂 **[Browse example reports →](docs/examples/)** — real generated artifacts
+> (risk assessment, AI-security lens, STRIDE, red-team plan, control catalogue,
+> data-security, FRIA, …) for the synthetic examples, viewable right here, no setup.
 
 > ⚠️ **Not legal advice.** This is an aid for a structured self-assessment. It
 > does not replace an assessment by a qualified lawyer or the competent
@@ -238,6 +242,7 @@ ai-act-companion/
 │   ├── stride.py          STRIDE threat model (reuses the architecture-aware severity)
 │   ├── incident.py        serious-incident helper (Art. 3(49) + Art. 73 deadlines)
 │   ├── modelcard.py       Model Card generator (Mitchell et al., 2019; Art. 13)
+│   ├── scan.py            repository AI-usage scanner (EU AI Act relevance flag)
 │   ├── storage.py         JSON persistence
 │   ├── models.py          pydantic models
 │   ├── knowledge/         EU AI Act, NIST AI RMF, ISO 42001, AI security, red-team, controls, GenAI data security, monitoring, CSF/ISO 27001 as data
@@ -400,6 +405,32 @@ The tool also has its own [THREAT_MODEL.md](THREAT_MODEL.md) — including the
 OWASP LLM Top 10 applied to its *own* AI layer — and a
 [SECURITY.md](SECURITY.md) policy; `bandit` and `pip-audit` run in CI.
 
+## Use it as a CI check (GitHub Action)
+
+Catch AI systems early: the bundled **EU AI Act relevance scan** action flags
+whether a repository appears to use AI/ML (dependency manifests, source imports,
+model artifacts) and points to the Articles worth checking. It's a deterministic
+relevance flag — no model calls, no classification — and writes a Markdown summary
+to the job/PR.
+
+```yaml
+# .github/workflows/ai-act.yml
+name: EU AI Act relevance
+on: [pull_request]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JKasteele/ai-act-companion@v0.7.0
+        with:
+          path: .
+          # fail-on-detect: "true"   # optional: turn the scan into a gate
+```
+
+Locally: `ai-act scan .` (or `--json`). Example output names the libraries found,
+any model files, and the EU AI Act questions to consider (Art. 2/5/6/10/50).
+
 ## Legal grounding
 
 References are modelled as data in `app/knowledge/`. The classifier cites the
@@ -444,6 +475,9 @@ concrete article/annex per conclusion:
 - [x] **Model Card generator** (Mitchell et al., 2019) — transparency artifact (Art. 13), pre-filled from intake
 - [x] **Inventory portfolio roll-up** — tier distribution, obligations due by date, Art. 50 disclosure column
 - [x] **ISO/IEC 42001 Annex A control mapping** — all 38 Annex A controls, each anchored to its most-relevant EU AI Act article (in the risk report)
+- [x] **Live demo** (Hugging Face Spaces) + **EU AI Act deadline countdown** + a refreshed UI
+- [x] **Static example report gallery** — real generated artifacts, viewable on GitHub
+- [x] **Repo AI-usage scanner** — `ai-act scan` + a GitHub Action that flags EU AI Act relevance in any codebase
 
 ## License
 

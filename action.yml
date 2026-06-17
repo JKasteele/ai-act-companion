@@ -1,0 +1,38 @@
+name: "EU AI Act relevance scan"
+description: "Flag whether a repository appears to use AI/ML and may fall under the EU AI Act. A relevance check (deterministic, no model calls) — not a classification or legal advice."
+author: "Jesse van de Kasteele"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  path:
+    description: "Path within the repository to scan."
+    required: false
+    default: "."
+  ref:
+    description: "AI Act Companion git ref (tag/branch) to install."
+    required: false
+    default: "main"
+  fail-on-detect:
+    description: "Fail the step when AI/ML usage is detected (turn the scan into a gate)."
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install AI Act Companion
+      shell: bash
+      run: pip install "ai-act-companion @ git+https://github.com/JKasteele/ai-act-companion@${{ inputs.ref }}"
+    - name: Scan for EU AI Act relevance
+      shell: bash
+      run: |
+        set -o pipefail
+        FLAG=""
+        if [ "${{ inputs.fail-on-detect }}" = "true" ]; then FLAG="--fail-on-detect"; fi
+        ai-act scan "${{ inputs.path }}" $FLAG | tee -a "$GITHUB_STEP_SUMMARY"

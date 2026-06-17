@@ -88,6 +88,18 @@ def cmd_list(_args):
     return 0
 
 
+def cmd_scan(args):
+    from .scan import format_report, scan_repo
+    result = scan_repo(args.path)
+    if args.json:
+        _emit(result)
+    else:
+        sys.stdout.write(format_report(result))
+    if args.fail_on_detect and result["ai_detected"]:
+        return 1
+    return 0
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="ai-act", description="AI Act Companion - deterministic CLI."
@@ -110,6 +122,14 @@ def build_parser():
     p_report.add_argument("--out", help="Write Markdown to this path (default: stdout).")
 
     sub.add_parser("list", help="List stored assessments as JSON.")
+
+    p_scan = sub.add_parser("scan", help="Flag whether a repository appears to use "
+                            "AI/ML and may fall under the EU AI Act.")
+    p_scan.add_argument("path", nargs="?", default=".",
+                        help="Path to the repository to scan (default: .).")
+    p_scan.add_argument("--json", action="store_true", help="Emit JSON instead of Markdown.")
+    p_scan.add_argument("--fail-on-detect", action="store_true",
+                        help="Exit non-zero if AI/ML usage is detected (for CI gating).")
     return parser
 
 
@@ -121,6 +141,7 @@ def main(argv=None):
         "classify": cmd_classify,
         "report": cmd_report,
         "list": cmd_list,
+        "scan": cmd_scan,
     }
     return handlers[args.command](args)
 
