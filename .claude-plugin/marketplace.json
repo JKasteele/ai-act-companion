@@ -1,6 +1,10 @@
 {
   "version": "1",
   "name": "ai-act-companion",
+  "owner": {
+    "name": "Jesse van de Kasteele",
+    "url": "https://github.com/JKasteele"
+  },
   "displayName": "AI Act Companion",
   "description": "EU AI Act governance assistant for Claude Code.",
   "plugins": [
