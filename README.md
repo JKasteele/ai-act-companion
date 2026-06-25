@@ -193,6 +193,18 @@ describe a system and let Claude pick it up.
 > The MCP server runs `python mcp_server.py`; make sure the `python` on your
 > PATH has the dependencies installed (`pip install -e ".[mcp]"`).
 
+## Use inside GitHub Copilot
+
+The same MCP engine also works with **GitHub Copilot** — the coding agent,
+**Copilot Cowork**, VS Code agent mode and the Copilot CLI. The repo ships
+`.github/copilot-instructions.md` (the counterpart of `CLAUDE.md`), a
+`.github/prompts/ai-act-assessment.prompt.md` playbook, a `.vscode/mcp.json`
+registration for VS Code, and a `copilot-setup-steps.yml` for the cloud agent.
+As everywhere, the **risk tier and citations come only from the engine** and
+human-in-the-loop review is mandatory. See **[docs/COPILOT.md](docs/COPILOT.md)**
+for the per-surface wiring (including the MCP JSON to paste into repo settings for
+the coding agent / Cowork).
+
 ## CLI
 
 A scriptable entry point over the same engine (used by the MCP server and handy

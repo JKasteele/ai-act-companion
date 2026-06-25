@@ -18,7 +18,9 @@ data/*.json
 .mypy_cache/
 
 # Editor / OS
-.vscode/
+# Ignore .vscode/ except the shared MCP registration (Copilot / VS Code agent mode)
+.vscode/*
+!.vscode/mcp.json
 .idea/
 .DS_Store
 Thumbs.db
