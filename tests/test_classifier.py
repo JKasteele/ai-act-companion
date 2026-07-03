@@ -210,6 +210,36 @@ def test_monitoring_renders_six_categories():
     assert "Outcome drift across protected groups" in md
 
 
+def _assess(answers):
+    return {"id": "t", "created_at": "2026-01-01T00:00:00+00:00",
+            "answers": answers, "classification": classify(answers)}
+
+
+def test_declaration_of_conformity_cites_art47_and_flags_non_high_risk():
+    _t, _f, md = reports.render("doc", _assess({"eu_market": True, "sys_name": "X"}))
+    assert "artificialintelligenceact.eu/article/47/" in md
+    assert "not high-risk" in md  # scope note for a non-high-risk system
+
+
+def test_registration_maps_annex_iii_category():
+    _t, _f, md = reports.render("registration", _assess(
+        {"eu_market": True, "sys_name": "X", "hr_usecases": ["essential_services"]}))
+    assert "artificialintelligenceact.eu/article/49/" in md
+    assert "Annex III(5)" in md  # category pulled from hr_usecases
+
+
+def test_gpai_report_toggles_open_source_carveout():
+    oss = reports.render("gpai", _assess(
+        {"eu_market": True, "gpai_model": True, "gpai_open_source": True}))[2]
+    assert "Open-source carve-out" in oss and "Exempt (Art. 53(2))" in oss
+    systemic = reports.render("gpai", _assess(
+        {"eu_market": True, "gpai_model": True, "gpai_open_source": True,
+         "gpai_systemic": True}))[2]
+    # Systemic risk withdraws the carve-out and adds the Art. 55 duties.
+    assert "Open-source carve-out" not in systemic
+    assert "artificialintelligenceact.eu/article/55/" in systemic
+
+
 def test_reports_render_for_all_types():
     answers = _load("hiring_cv_screening.json")
     assessment = {"id": "test-1", "created_at": "2026-01-01T00:00:00+00:00",

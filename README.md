@@ -156,9 +156,12 @@ uvicorn app.main:app --reload
 Click **"Load example"** for a synthetic high-risk example, or load one of the
 files in `examples/`.
 
-> **Install note.** The package is **not published to PyPI** — install it from
-> source (editable, as above), via [Docker](#docker), or just use the
+> **Install note.** Not yet on PyPI — install from source (editable, as above),
+> via [Docker](#docker), or use the
 > [hosted demo](https://huggingface.co/spaces/JesseKasteele/ai-act-companion).
+> A tag-triggered release workflow (`.github/workflows/release.yml`, PyPI Trusted
+> Publishing) publishes the package on the first `v*` tag, after which
+> `pip install ai-act-companion` will work.
 > Optional extras: `.[dev]` (pytest/ruff/mypy/bandit/pip-audit), `.[mcp]` (the
 > Claude Code MCP server), `.[capture]` (the demo-screenshot tooling). The
 > rule-based core needs none of them — `pip install -r requirements.txt` is
@@ -169,7 +172,7 @@ is a read-only showcase; a local install unlocks the full tool:
 
 | | Public demo (Spaces) | Local install |
 |---|---|---|
-| Deterministic engine + all 15 reports | ✅ | ✅ |
+| Deterministic engine + all 18 reports | ✅ | ✅ |
 | AI assist (Ollama / paste-prompt) | ❌ (off) | ✅ (optional) |
 | Persistent storage & inventory | ❌ (ephemeral, shared) | ✅ (`data/`, private) |
 | Delete assessments | ❌ (read-only sandbox) | ✅ |

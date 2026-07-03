@@ -50,17 +50,36 @@ def test_generate_report_covers_every_type():
         assert isinstance(md, str) and len(md) > 200
 
 
+def test_save_requires_confirmation():
+    # Without confirmed=True nothing is persisted (HITL enforced as a contract).
+    out = m.save_assessment(HIRING)
+    assert out["saved"] is False
+    assert m.list_assessments() == []
+
+
 def test_save_get_list_roundtrip():
-    saved = m.save_assessment(HIRING)
+    saved = m.save_assessment(HIRING, confirmed=True)
     aid = saved["id"]
-    assert saved["classification"]["tier"] == "high"
+    assert saved["saved"] is True and saved["classification"]["tier"] == "high"
     loaded = m.get_assessment(aid)
     assert loaded["id"] == aid and loaded["answers"]["sys_name"] == "MCP test system"
     assert any(row["id"] == aid for row in m.list_assessments())
 
 
-def test_get_assessment_missing_returns_error():
-    assert "error" in m.get_assessment("no-such-id")
+def test_generate_report_by_saved_id():
+    aid = m.save_assessment(HIRING, confirmed=True)["id"]
+    md = m.generate_report(report_type="compliance", assessment_id=aid)
+    assert "Conformity Tracker" in md
+
+
+def test_get_assessment_missing_raises():
+    with pytest.raises(ValueError):
+        m.get_assessment("no-such-id")
+
+
+def test_scan_repository_tool():
+    result = m.scan_repository(str(ROOT / "app"))
+    assert "ai_detected" in result
 
 
 def test_report_type_literal_matches_engine():

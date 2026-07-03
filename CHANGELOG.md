@@ -10,6 +10,15 @@ A review-driven correctness, testing and hardening pass (see
 [docs/ROADMAP-REVIEW.md](docs/ROADMAP-REVIEW.md)).
 
 ### Added
+- **Three new report types** (18 total): EU **Declaration of Conformity**
+  (Art. 47 + Annex V), EU-database **registration** data sheet (Art. 49 +
+  Annex VIII), and a **GPAI obligations** report (Art. 53–55) with
+  copyright-policy and training-content-summary templates.
+- **MCP surface**: a `scan_repository` tool, a report-by-id path in
+  `generate_report`, and a `confirmed` flag on `save_assessment` that enforces
+  human-in-the-loop as a contract (nothing is stored without it).
+- **PyPI release automation** — a tag-triggered `release.yml` using PyPI Trusted
+  Publishing; `pip install ai-act-companion` works after the first `v*` tag.
 - **Art. 2 scope exemptions** — intake fields and classifier logic for the
   military/defence (Art. 2(3)), scientific-R&D (Art. 2(6)), pre-market
   (Art. 2(8)) and personal-use (Art. 2(10)) carve-outs, each returning

@@ -31,6 +31,7 @@ from app.incident import assess_incident as _assess_incident  # noqa: E402
 from app.modelcard import generate_model_card as _generate_model_card  # noqa: E402
 from app.questionnaire import QUESTIONNAIRE  # noqa: E402
 from app.redteam import generate_test_plan as _generate_test_plan  # noqa: E402
+from app.scan import scan_repo as _scan_repo  # noqa: E402
 from app.security import assess_security as _assess_security  # noqa: E402
 from app.stride import generate_stride_model as _generate_stride_model  # noqa: E402
 
@@ -110,12 +111,14 @@ def assess_data_security(answers: dict) -> dict:
 
 @mcp.tool()
 def generate_report(
-    answers: dict,
+    answers: dict | None = None,
     report_type: Literal[
         "risk", "dpia", "bias", "security", "fria",
         "techdoc", "compliance", "monitoring", "framework-matrix", "redteam",
         "controls", "datasec", "stride", "incident", "modelcard",
+        "doc", "registration", "gpai",
     ] = "risk",
+    assessment_id: str = "",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
 
@@ -142,13 +145,24 @@ def generate_report(
       'incident' - serious-incident decision helper (Art. 3(49)) + Art. 73
         reporting-deadline template;
       'modelcard' - Model Card skeleton (Mitchell et al., 2019; Art. 13),
-        pre-filled from the intake.
-    The system is classified deterministically first, then the report is
-    rendered. Present the draft to the user for review before treating it as
-    final.
+        pre-filled from the intake;
+      'doc' - EU Declaration of Conformity skeleton (Art. 47 + Annex V);
+      'registration' - EU-database registration data sheet (Art. 49 + Annex VIII);
+      'gpai' - GPAI provider obligations (Art. 53-55) with copyright-policy and
+        training-content-summary templates.
+    Provide either `answers` (classified on the fly) or `assessment_id` (render
+    from a previously saved assessment). The system is classified
+    deterministically first, then the report is rendered. Present the draft to
+    the user for review before treating it as final.
     """
+    if assessment_id:
+        saved = storage.load(assessment_id)
+        if not saved:
+            raise ValueError(f"Assessment not found: {assessment_id}")
+        answers = saved.get("answers", {})
+    answers = answers or {}
     assessment = {
-        "id": "(unsaved)",
+        "id": assessment_id or "(unsaved)",
         "created_at": storage.now_iso(),
         "answers": answers,
         "classification": _classify(answers),
@@ -165,10 +179,22 @@ def generate_report(
 
 
 @mcp.tool()
-def save_assessment(answers: dict) -> dict:
+def save_assessment(answers: dict, confirmed: bool = False) -> dict:
     """Classify and PERSIST an assessment to disk, returning its id and the
-    classification. Only call this after the user has explicitly reviewed and
-    confirmed the answers (human-in-the-loop)."""
+    classification.
+
+    Human-in-the-loop is enforced as a contract, not just a convention: you must
+    pass `confirmed=True`, and may only do so after the user has explicitly
+    reviewed the answers and asked you to save. If `confirmed` is not True this
+    tool stores nothing and returns a notice telling you to obtain confirmation
+    first."""
+    if not confirmed:
+        return {
+            "saved": False,
+            "reason": "Not saved: human-in-the-loop confirmation required. Show "
+                      "the classification to the user and call again with "
+                      "confirmed=True only after they approve.",
+        }
     assessment = {
         "id": storage.new_id(answers.get("sys_name")),
         "created_at": storage.now_iso(),
@@ -177,7 +203,8 @@ def save_assessment(answers: dict) -> dict:
         "security": _assess_security(answers),
     }
     storage.save(assessment)
-    return {"id": assessment["id"], "classification": assessment["classification"]}
+    return {"saved": True, "id": assessment["id"],
+            "classification": assessment["classification"]}
 
 
 @mcp.tool()
@@ -188,11 +215,22 @@ def list_assessments() -> list:
 
 @mcp.tool()
 def get_assessment(assessment_id: str) -> dict:
-    """Load a previously saved assessment (answers + classification) by id."""
+    """Load a previously saved assessment (answers + classification) by id.
+    Raises if the id is unknown (same not-found contract as the HTTP API)."""
     data = storage.load(assessment_id)
     if not data:
-        return {"error": f"Assessment not found: {assessment_id}"}
+        raise ValueError(f"Assessment not found: {assessment_id}")
     return data
+
+
+@mcp.tool()
+def scan_repository(path: str = ".") -> dict:
+    """Scan a repository tree for AI/ML usage and return a structured EU AI Act
+    **relevance** flag (dependency manifests, source imports, model artifacts),
+    with the Articles worth checking. Deterministic, stdlib-only, no model calls;
+    a relevance signal, NOT a classification — run classify_ai_system on any
+    system it surfaces. Mirrors the `ai-act scan` CLI and the GitHub Action."""
+    return _scan_repo(path)
 
 
 if __name__ == "__main__":
