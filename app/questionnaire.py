@@ -45,6 +45,23 @@ QUESTIONNAIRE = {
                 {"id": "eu_market", "type": "boolean", "required": True,
                  "label": "Placed on the market or used in the EU, or affecting persons in the EU?",
                  "help": "If not, the AI Act may not apply (Art. 2)."},
+                {"id": "exempt_military", "type": "boolean", "required": False,
+                 "label": "Is the system used exclusively for military, defence or "
+                          "national-security purposes?",
+                 "help": "Carve-out under Art. 2(3); if yes, the AI Act does not apply."},
+                {"id": "exempt_research", "type": "boolean", "required": False,
+                 "label": "Is it developed and used solely for scientific research "
+                          "and development?",
+                 "help": "Carve-out under Art. 2(6)."},
+                {"id": "exempt_premarket", "type": "boolean", "required": False,
+                 "label": "Is all activity limited to research, testing or "
+                          "development prior to being placed on the market "
+                          "(not real-world testing)?",
+                 "help": "Carve-out under Art. 2(8); does not cover testing in real-world conditions."},
+                {"id": "exempt_personal", "type": "boolean", "required": False,
+                 "label": "Is it used only by a natural person in a purely "
+                          "personal, non-professional capacity?",
+                 "help": "Carve-out under Art. 2(10)."},
                 {"id": "lifecycle_stage", "type": "select", "required": False,
                  "label": "Lifecycle stage",
                  "options": [
@@ -150,6 +167,12 @@ QUESTIONNAIRE = {
                 {"id": "gpai_systemic", "type": "boolean", "required": False,
                  "label": "Does the model have systemic risk (>= 10^25 FLOP "
                           "training compute or designated as such)?"},
+                {"id": "gpai_open_source", "type": "boolean", "required": False,
+                 "label": "Is the model released under a free and open-source "
+                          "licence, with weights and usage information made "
+                          "publicly available?",
+                 "help": "Art. 53(2) exempts open-source GPAI models from part of "
+                         "the documentation duties — unless they have systemic risk."},
             ],
         },
         {

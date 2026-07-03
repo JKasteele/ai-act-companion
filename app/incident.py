@@ -15,15 +15,8 @@ Deterministic and AI-free. Reads only the structured `inc_*` fields, so crafted
 free-text cannot change the verdict (asserted in the tests).
 """
 
+from ._normalize import truthy as _truthy
 from .knowledge import eu_ai_act as eu
-
-
-def _truthy(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
 
 
 def assess_incident(answers):

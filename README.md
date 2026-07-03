@@ -156,6 +156,26 @@ uvicorn app.main:app --reload
 Click **"Load example"** for a synthetic high-risk example, or load one of the
 files in `examples/`.
 
+> **Install note.** The package is **not published to PyPI** — install it from
+> source (editable, as above), via [Docker](#docker), or just use the
+> [hosted demo](https://huggingface.co/spaces/JesseKasteele/ai-act-companion).
+> Optional extras: `.[dev]` (pytest/ruff/mypy/bandit/pip-audit), `.[mcp]` (the
+> Claude Code MCP server), `.[capture]` (the demo-screenshot tooling). The
+> rule-based core needs none of them — `pip install -r requirements.txt` is
+> enough to run the web app.
+
+**Public demo vs. local install** — the [Hugging Face Space](https://huggingface.co/spaces/JesseKasteele/ai-act-companion)
+is a read-only showcase; a local install unlocks the full tool:
+
+| | Public demo (Spaces) | Local install |
+|---|---|---|
+| Deterministic engine + all 15 reports | ✅ | ✅ |
+| AI assist (Ollama / paste-prompt) | ❌ (off) | ✅ (optional) |
+| Persistent storage & inventory | ❌ (ephemeral, shared) | ✅ (`data/`, private) |
+| Delete assessments | ❌ (read-only sandbox) | ✅ |
+| Claude Code / Copilot MCP + CLI | ❌ | ✅ |
+| Your data leaves your machine | never (synthetic only) | never |
+
 ### Docker
 
 ```bash
@@ -297,6 +317,20 @@ via `.env` (see `.env.example`):
 | `manual` | The app generates a prompt you paste into your **own** LLM session (e.g. Claude); you paste the JSON answer back. No API key needed. |
 | `none` | AI layer off (rule-based only). |
 
+Full configuration (copy `.env.example` to `.env`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` | `ollama` \| `manual` \| `none` (see table above). |
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama endpoint (non-interactive provider). |
+| `OLLAMA_MODEL` | `qwen3:32b` | Local model name; use `qwen3:1.7b` for low VRAM. |
+| `LLM_TIMEOUT` | `180` | Seconds before a slow local model is abandoned. |
+| `DEMO_MODE` | *(unset)* | `1` enables the public-sandbox banner and **server-side read-only** (deletion returns 403). |
+| `AIACT_DATA_DIR` | `./data` | Where assessments are stored; point at ephemeral storage for a demo. |
+
+> A Claude Max/Pro subscription is **not** an API backend. The `manual` provider
+> is the way to use your own subscription — it prints a prompt you paste in.
+
 **Hard guarantee (human-in-the-loop):** all AI output is a *draft*. It only
 pre-fills the questionnaire and is never classified, submitted or stored
 automatically. Answers are validated against the schema — unknown fields and
@@ -434,11 +468,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: JKasteele/ai-act-companion@v0.7.0
+      - uses: JKasteele/ai-act-companion@v0.7.0   # pin a release tag for stability
         with:
           path: .
+          # ref: main                # optional: which ref of the tool to install
           # fail-on-detect: "true"   # optional: turn the scan into a gate
 ```
+
+> **Version pinning.** `uses: …@v0.7.0` selects the **action** version; the
+> action's `ref` input (default `main`) selects which ref of the **tool** it
+> installs. Pin both to the same release tag for reproducible runs.
 
 Locally: `ai-act scan .` (or `--json`). Example output names the libraries found,
 any model files, and the EU AI Act questions to consider (Art. 2/5/6/10/50).
@@ -446,12 +485,17 @@ any model files, and the EU AI Act questions to consider (Art. 2/5/6/10/50).
 ## Legal grounding
 
 References are modelled as data in `app/knowledge/`. The classifier cites the
-concrete article/annex per conclusion:
+concrete article/annex per conclusion, and every citation in the app/reports
+deep-links to the full text (the engine's `ref_url()` resolves tokens to the
+[AI Act Explorer](https://artificialintelligenceact.eu/); the primary source is
+[EUR-Lex CELEX 32024R1689](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)):
 
-- **Art. 5** — prohibited practices
-- **Art. 6 + Annex I/III** — high-risk (incl. the Art. 6(3) derogation)
-- **Art. 50** — transparency obligations
-- **Chapter V (Art. 51–55)** — general-purpose AI (GPAI)
+- **[Art. 2](https://artificialintelligenceact.eu/article/2/)** — scope, incl. the military / R&D / pre-market / personal-use exemptions
+- **[Art. 4](https://artificialintelligenceact.eu/article/4/)** — AI literacy (baseline for all in-scope actors)
+- **[Art. 5](https://artificialintelligenceact.eu/article/5/)** — prohibited practices
+- **[Art. 6](https://artificialintelligenceact.eu/article/6/) + Annex I/III** — high-risk (incl. the Art. 6(3) derogation)
+- **[Art. 50](https://artificialintelligenceact.eu/article/50/)** — transparency obligations
+- **Chapter V ([Art. 51](https://artificialintelligenceact.eu/article/51/)–[55](https://artificialintelligenceact.eu/article/55/))** — general-purpose AI (GPAI), incl. the Art. 53(2) open-source carve-out
 - **Art. 11 + Annex IV** — technical documentation
 - **Art. 72** — post-market monitoring
 - **Art. 99 / 101** — administrative fines (penalty-exposure block)
@@ -490,6 +534,23 @@ concrete article/annex per conclusion:
 - [x] **Live demo** (Hugging Face Spaces) + **EU AI Act deadline countdown** + a refreshed UI
 - [x] **Static example report gallery** — real generated artifacts, viewable on GitHub
 - [x] **Repo AI-usage scanner** — `ai-act scan` + a GitHub Action that flags EU AI Act relevance in any codebase
+
+## Data & privacy
+
+Assessments are stored as **plain JSON**, one file per assessment, under `data/`
+(override with `AIACT_DATA_DIR`). The directory is gitignored and **not encrypted
+at rest** — use synthetic/generic data only. To purge, delete the files (or the
+whole `data/` directory); in the UI, the two-step **Delete** removes one record.
+Writes are atomic (temp file + `os.replace`), so an interrupted save can't corrupt
+an existing record. In `DEMO_MODE` storage is read-only server-side.
+
+## Contributing & changelog
+
+Contributions welcome — see **[CONTRIBUTING.md](CONTRIBUTING.md)** (how to add a
+report type, extend the classifier, and the golden-set convention) and the
+release history in **[CHANGELOG.md](CHANGELOG.md)**. Adding a classification rule
+means labelling a golden-set case from the regulation (never from the classifier)
+and keeping `tests/test_accuracy.py` at 100%.
 
 ## License
 

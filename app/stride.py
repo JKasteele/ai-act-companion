@@ -15,16 +15,9 @@ Deterministic and AI-free. Severity reads only the structured arch_* fields
 injection invariant as the security lens (asserted in the tests).
 """
 
+from ._normalize import truthy as _truthy
 from .knowledge import stride as st
 from .security import SEVERITY_ORDER, arch_view, severity_for
-
-
-def _truthy(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
 
 
 def _spoofing_severity(arch):

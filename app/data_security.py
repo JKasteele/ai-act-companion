@@ -17,20 +17,9 @@ the architecture-aware *severity* story lives in the OWASP LLM Top 10 security
 lens (`security.py`); this lens contributes data-governance breadth.
 """
 
+from ._normalize import select_field as _select
+from ._normalize import truthy as _truthy
 from .knowledge import data_security as ds
-
-
-def _truthy(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
-
-
-def _select(answers, key):
-    v = answers.get(key)
-    return v.strip().lower() if isinstance(v, str) else ""
 
 
 def assess_data_security(answers):

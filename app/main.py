@@ -14,6 +14,7 @@ Endpoints:
 import csv
 import io
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -37,6 +38,8 @@ from .models import (
 )
 from .questionnaire import QUESTIONNAIRE
 from .security import assess_security
+
+logger = logging.getLogger("ai_act_companion")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
@@ -62,8 +65,14 @@ def health():
 
 @app.get("/api/config")
 def config():
-    """Frontend feature flags (read-only). `demo_mode` toggles the sandbox banner."""
-    return {"demo_mode": DEMO_MODE, "version": __version__}
+    """Frontend feature flags (read-only). `demo_mode` toggles the sandbox banner;
+    `report_types` drives the report tabs so they never drift from the engine."""
+    return {
+        "demo_mode": DEMO_MODE,
+        "version": __version__,
+        "report_types": [{"type": t, "label": label}
+                         for t, label in reports.REPORT_CATALOG],
+    }
 
 
 @app.get("/api/timeline")
@@ -103,7 +112,10 @@ def ai_prefill(req: PrefillRequest):
     try:
         return svc.prefill_from_text(req.description)
     except Exception as e:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=f"AI call failed: {e}") from e
+        logger.warning("AI prefill failed: %s", e)
+        raise HTTPException(
+            status_code=502,
+            detail="AI call failed; see server logs for details.") from e
 
 
 @app.post("/api/ai/parse")
@@ -120,7 +132,10 @@ def ai_narrative(req: NarrativeRequest):
     try:
         return svc.draft_narrative(req.field, req.answers)
     except Exception as e:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=f"AI call failed: {e}") from e
+        logger.warning("AI narrative failed: %s", e)
+        raise HTTPException(
+            status_code=502,
+            detail="AI call failed; see server logs for details.") from e
 
 
 @app.get("/api/questionnaire")
@@ -193,12 +208,11 @@ def _portfolio_rows():
     Extends each list_all() summary with the obligation due-date and the
     Art. 50 / high-risk obligation flags pulled from the stored classification."""
     rows = []
-    for s in storage.list_all():
-        full = storage.load(s["id"]) or {}
+    for full in storage.load_all():
         cls = full.get("classification", {})
         appl = cls.get("applicability", {}) or {}
         rows.append({
-            **s,
+            **storage.summarise(full),
             "obligations_date": appl.get("date", "-"),
             "obligations_what": appl.get("what", ""),
             "art50_disclosure": bool(cls.get("transparency_obligations")),
@@ -259,6 +273,12 @@ def get_assessment(assessment_id: str):
 
 @app.delete("/api/assessments/{assessment_id}")
 def delete_assessment(assessment_id: str):
+    # In the public sandbox, storage is shared across visitors — enforce
+    # read-only server-side rather than trusting the UI banner.
+    if DEMO_MODE:
+        raise HTTPException(
+            status_code=403,
+            detail="Deletion is disabled in the public demo (read-only sandbox).")
     if not storage.delete(assessment_id):
         raise HTTPException(status_code=404, detail="Assessment not found")
     return {"deleted": assessment_id}

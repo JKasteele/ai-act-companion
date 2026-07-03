@@ -32,11 +32,22 @@ def new_id(sys_name=None):
 
 
 def save(assessment):
-    """Save an assessment dict. Requires an 'id' field."""
+    """Save an assessment dict atomically. Requires an 'id' field.
+
+    Writes to a temp file in the same directory and os.replace()s it into place,
+    so an interrupted write can never leave a half-written (corrupt) record that
+    list_all()/load() would then skip or fail on.
+    """
     _ensure_dir()
     path = DATA_DIR / f"{assessment['id']}.json"
-    path.write_text(json.dumps(assessment, ensure_ascii=False, indent=2),
-                    encoding="utf-8")
+    tmp = DATA_DIR / f"{assessment['id']}.{uuid.uuid4().hex[:8]}.tmp"
+    payload = json.dumps(assessment, ensure_ascii=False, indent=2)
+    try:
+        tmp.write_text(payload, encoding="utf-8")
+        os.replace(tmp, path)  # atomic on POSIX and Windows
+    finally:
+        if tmp.exists():
+            tmp.unlink()
     return path
 
 
@@ -69,27 +80,38 @@ def delete(assessment_id):
     return False
 
 
-def list_all():
-    """All assessments as short summaries, newest first."""
+def load_all():
+    """Every stored assessment as a full dict, newest first. Reads each file
+    once — callers that need both the summary and the full record (e.g. the
+    portfolio roll-up) should use this instead of list_all() + load() per id."""
     _ensure_dir()
-    items = []
+    out = []
     for path in DATA_DIR.glob("*.json"):
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            out.append(json.loads(path.read_text(encoding="utf-8")))
         except (json.JSONDecodeError, OSError):
             continue
-        cls = data.get("classification", {})
-        security = data.get("security") or {}
-        items.append({
-            "id": data.get("id", path.stem),
-            "sys_name": data.get("answers", {}).get("sys_name", "(unnamed)"),
-            "tier": cls.get("tier", ""),
-            "tier_label": cls.get("tier_label", ""),
-            "security_risks": len(security.get("risks", [])),
-            "created_at": data.get("created_at", ""),
-        })
-    items.sort(key=lambda x: x["created_at"], reverse=True)
-    return items
+    out.sort(key=lambda d: d.get("created_at", ""), reverse=True)
+    return out
+
+
+def summarise(data, fallback_id=""):
+    """Short summary row for one full assessment dict."""
+    cls = data.get("classification", {})
+    security = data.get("security") or {}
+    return {
+        "id": data.get("id", fallback_id),
+        "sys_name": data.get("answers", {}).get("sys_name", "(unnamed)"),
+        "tier": cls.get("tier", ""),
+        "tier_label": cls.get("tier_label", ""),
+        "security_risks": len(security.get("risks", [])),
+        "created_at": data.get("created_at", ""),
+    }
+
+
+def list_all():
+    """All assessments as short summaries, newest first."""
+    return [summarise(data) for data in load_all()]
 
 
 def now_iso():

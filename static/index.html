@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Act Companion — EU AI Act risk classifier</title>
   <meta name="description" content="Local, rule-based EU AI Act risk classifier with an AI-security lens. Explainable, cited, deterministic." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- No external fonts: a local-first, privacy-first tool must not phone home to
+       a font CDN on load. The CSS font stacks fall back to the named families if
+       installed, else Georgia / system-ui / ui-monospace. -->
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="stylesheet" href="/static/print.css" media="print" />
 </head>
@@ -108,23 +108,9 @@
     <!-- STEP 3: reports -->
     <section id="reports-section" class="hidden no-print">
       <h2>Documentation</h2>
-      <div class="report-tabs">
-        <button type="button" class="tab active" data-type="risk">Risk assessment</button>
-        <button type="button" class="tab" data-type="dpia">DPIA skeleton</button>
-        <button type="button" class="tab" data-type="bias">Bias checklist</button>
-        <button type="button" class="tab" data-type="security">AI security</button>
-        <button type="button" class="tab" data-type="fria">FRIA</button>
-        <button type="button" class="tab" data-type="techdoc">Technical documentation</button>
-        <button type="button" class="tab" data-type="compliance">Compliance tracker</button>
-        <button type="button" class="tab" data-type="monitoring">Post-market monitoring</button>
-        <button type="button" class="tab" data-type="framework-matrix">Framework matrix</button>
-        <button type="button" class="tab" data-type="redteam">Red-team plan</button>
-        <button type="button" class="tab" data-type="controls">Control catalogue</button>
-        <button type="button" class="tab" data-type="datasec">Data security</button>
-        <button type="button" class="tab" data-type="stride">STRIDE threat model</button>
-        <button type="button" class="tab" data-type="incident">Serious incident</button>
-        <button type="button" class="tab" data-type="modelcard">Model card</button>
-      </div>
+      <!-- Report tabs are rendered from /api/config (reports.REPORT_CATALOG) so
+           they never drift from the engine. See renderReportTabs() in app.js. -->
+      <div class="report-tabs"></div>
       <div class="report-actions">
         <button type="button" id="btn-download" class="secondary">Download .md</button>
         <button type="button" id="btn-print" class="secondary">Print / PDF</button>

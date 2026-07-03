@@ -5,6 +5,7 @@ for preview/print. No external templating dependency: we build the Markdown with
 Python strings, fed by the classifier output.
 """
 
+from ._normalize import truthy as _truthy
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
 from .incident import assess_incident
@@ -19,12 +20,45 @@ from .redteam import generate_test_plan
 from .security import SEVERITY_ORDER, assess_security
 from .stride import generate_stride_model
 
-REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria", "techdoc",
-                "compliance", "monitoring", "framework-matrix", "redteam",
-                "controls", "datasec", "stride", "incident", "modelcard")
+# Single source of truth for the report catalogue: (type, human label). The API
+# (/api/config), the frontend tabs and the MCP tool all derive from this, so a
+# new report type is added in one place. A guard test (tests/test_mcp.py) asserts
+# the MCP Literal stays in sync with REPORT_TYPES.
+REPORT_CATALOG = (
+    ("risk", "Risk assessment"),
+    ("dpia", "DPIA skeleton"),
+    ("bias", "Bias checklist"),
+    ("security", "AI security"),
+    ("fria", "FRIA"),
+    ("techdoc", "Technical documentation"),
+    ("compliance", "Compliance tracker"),
+    ("monitoring", "Post-market monitoring"),
+    ("framework-matrix", "Framework matrix"),
+    ("redteam", "Red-team plan"),
+    ("controls", "Control catalogue"),
+    ("datasec", "Data security"),
+    ("stride", "STRIDE threat model"),
+    ("incident", "Serious incident"),
+    ("modelcard", "Model card"),
+)
+REPORT_TYPES = tuple(rtype for rtype, _label in REPORT_CATALOG)
 
 
 # --- helpers ---------------------------------------------------------------
+def _safe(text):
+    """Neutralise a free-text answer before interpolating it into Markdown.
+
+    Classification is unaffected — the tier is a pure function of structured
+    fields — but the generated *documents* interpolate free-text (description,
+    intended purpose, oversight notes, data sources). Collapse line breaks so a
+    multi-line answer cannot inject Markdown structure (new headings, list items
+    or table rows), and escape pipes so it cannot break out of a table cell. The
+    frontend additionally HTML-escapes on render, covering the preview path.
+    """
+    s = str(text).replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+    return s.replace("|", "\\|")
+
+
 def _a(answers, key, default="-"):
     val = answers.get(key)
     if val is None or val == "":
@@ -32,12 +66,14 @@ def _a(answers, key, default="-"):
     if isinstance(val, bool):
         return "Yes" if val else "No"
     if isinstance(val, list):
-        return ", ".join(str(v) for v in val) if val else default
-    return str(val)
+        return _safe(", ".join(str(v) for v in val)) if val else default
+    return _safe(val)
 
 
 def _bool(answers, key):
-    return bool(answers.get(key)) and answers.get(key) not in ("false", "no")
+    # Same coercion as the classifier, so a report never disagrees with the tier
+    # about whether a field like data_personal was answered "yes".
+    return _truthy(answers.get(key))
 
 
 def _header(assessment):
@@ -1220,7 +1256,8 @@ def render_model_card(assessment):
     g = card.get("prefilled", {})
 
     def val(key):
-        return g.get(key) or _TBC
+        v = g.get(key)
+        return _safe(v) if v else _TBC
 
     md = []
     md.append(f"# Model Card - {sys_name}\n")

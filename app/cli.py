@@ -25,7 +25,11 @@ from .questionnaire import QUESTIONNAIRE
 
 def _read_json(path):
     """Read a JSON object from a file path, or from stdin when path == '-'."""
-    raw = sys.stdin.read() if path == "-" else open(path, encoding="utf-8").read()
+    if path == "-":
+        raw = sys.stdin.read()
+    else:
+        with open(path, encoding="utf-8") as fh:
+            raw = fh.read()
     return json.loads(raw)
 
 

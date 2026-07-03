@@ -250,6 +250,27 @@ def test_severity_cannot_be_raised_by_fake_arch_text():
     assert _sev_map(tampered)["LLM01:2025"] == "Medium"
 
 
+# --- 4c. Free-text cannot inject Markdown structure into a rendered report --
+# The tier/severity are already injection-proof; this guards the generated
+# *documents*: a crafted description must not break out of a table cell or add
+# new headings/rows to the Markdown.
+def test_report_free_text_cannot_inject_markdown():
+    from app import reports  # noqa: PLC0415
+    payload = "harmless | ROW | inject\n## Fake heading\n| a | b |"
+    answers = {"eu_market": True, "hr_usecases": ["employment"],
+               "sys_name": "T", "sys_description": payload,
+               "intended_purpose": payload, "human_oversight": payload,
+               "data_sources": payload}
+    assessment = {"id": "t", "created_at": "2026-01-01T00:00:00+00:00",
+                  "answers": answers, "classification": classify(answers)}
+    for rtype in ("risk", "dpia", "fria"):
+        _t, _f, md = reports.render(rtype, assessment)
+        # Line breaks are collapsed, so the injected heading never starts a line.
+        assert "\n## Fake heading" not in md, rtype
+        # Raw pipes from free-text are escaped, so they cannot open a table cell.
+        assert "harmless \\| ROW \\| inject" in md, rtype
+
+
 # --- 5. Oversized / weird input doesn't crash classify() -------------------
 def test_classify_handles_empty_and_noneish_input():
     for bad in ({}, None):

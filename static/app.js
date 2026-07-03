@@ -84,7 +84,8 @@ async function init() {
 async function loadConfig() {
   let cfg = {};
   try { cfg = await (await fetch("/api/config")).json(); } catch { cfg = {}; }
-  if (!cfg.demo_mode) return;
+  renderReportTabs(cfg.report_types);
+  if (!cfg.demo_mode) return cfg;
   const main = document.querySelector("main.wrap") || document.body;
   const banner = el("div", { class: "demo-banner no-print" },
     el("strong", {}, "Public sandbox. "),
@@ -92,6 +93,19 @@ async function loadConfig() {
     "Assessments are not persisted and are visible to other visitors during " +
     "the demo. The AI assist is off; this showcases the deterministic engine.");
   main.prepend(banner);
+  return cfg;
+}
+
+// Render the report tabs from the engine's catalogue so the frontend never
+// drifts from reports.REPORT_CATALOG. Falls back to leaving any server-rendered
+// tabs in place if the config is unavailable.
+function renderReportTabs(types) {
+  const container = document.querySelector(".report-tabs");
+  if (!container || !Array.isArray(types) || !types.length) return;
+  container.innerHTML = "";
+  types.forEach((t, i) => container.append(
+    el("button", { type: "button", class: i === 0 ? "tab active" : "tab",
+                   "data-type": t.type }, t.label)));
 }
 
 // --- EU AI Act countdown (presentational; dates come from the engine) ------
@@ -136,7 +150,9 @@ async function loadAiStatus() {
   } else if (AI_STATUS.provider === "manual") {
     dot = "ok"; label = "Manual — paste into your own LLM session";
   }
-  $("#ai-provider").innerHTML = `<span class="dot ${dot}"></span>${label}`;
+  const provEl = $("#ai-provider");
+  provEl.innerHTML = "";
+  provEl.append(el("span", { class: `dot ${dot}` }), label);
 }
 
 function aiSpinner(on) {
@@ -214,7 +230,7 @@ function applyDraft(data) {
   fillFields(data.answers || {});
   const n = Object.keys(data.answers || {}).length;
   showAiNotice(
-    `<strong>${data.hitl_notice || "AI draft — review every field."}</strong> ` +
+    `<strong>${escapeHtml(data.hitl_notice || "AI draft — review every field.")}</strong> ` +
     `${n} field(s) pre-filled.`,
     data.assumptions || [], data.warnings || []);
   $("#form-intro").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -630,35 +646,6 @@ function onExampleSelected(e) {
   setAnswers(ex.answers);
   showIntake();
   toast(`Loaded example: ${ex.name}`);
-}
-
-function fillExample() {
-  setAnswers({
-    sys_name: "TalentMatch CV screening",
-    sys_version: "1.0",
-    sys_owner: "Example Ltd.",
-    sys_description: "A machine-learning model that automatically ranks incoming job application CVs by suitability for a vacancy.",
-    intended_purpose: "Support recruiters in pre-selecting candidates.",
-    provider_role: "provider",
-    eu_market: true,
-    lifecycle_stage: "production",
-    hr_usecases: ["employment"],
-    hr_does_profiling: true,
-    data_personal: true,
-    automated_decision: true,
-    data_scale: "medium",
-    data_sources: "Internal ATS database with synthetic example CVs.",
-    autonomy_level: "advisory",
-    can_override: true,
-    human_oversight: "A recruiter manually reviews every shortlist suggested by the model before candidates are invited.",
-    sec_is_llm: false,
-    sec_third_party_models: true,
-    sec_external_data: true,
-    sec_agentic: false,
-    sec_public: false,
-    sec_outputs_to_systems: false,
-  });
-  toast("Example loaded — adjust and classify.");
 }
 
 // --- toast -----------------------------------------------------------------

@@ -79,6 +79,89 @@ def test_art_6_3_profiling_note_without_minor_task():
     assert "always high-risk" in rationale
 
 
+def test_art2_research_exemption_out_of_scope():
+    # Would be Annex III high-risk, but scientific-R&D exemption removes it from scope.
+    answers = {"eu_market": True, "exempt_research": True,
+               "hr_usecases": ["essential_services"], "hr_does_profiling": True}
+    r = classify(answers)
+    assert r["tier"] == eu.TIER_MINIMAL
+    assert not r["findings"] and not r["high_risk_obligations"]
+    assert r["applicability"]["basis"] == "Art. 2(6)"
+
+
+def test_art2_military_exemption_overrides_prohibited():
+    # Military/defence use is out of the entire Regulation's scope (Art. 2(3)),
+    # so even an otherwise-prohibited practice does not classify.
+    answers = {"eu_market": True, "exempt_military": True, "p_realtime_rbi_le": True}
+    r = classify(answers)
+    assert r["tier"] == eu.TIER_MINIMAL
+    assert r["out_of_scope"]["ref"] == "Art. 2(3)"
+
+
+def test_out_of_scope_emits_no_gpai_obligations():
+    # Chapter V is part of the same Art. 2 scope: an out-of-scope GPAI model
+    # must not carry GPAI obligations.
+    answers = {"eu_market": False, "gpai_model": True}
+    r = classify(answers)
+    assert r["tier"] == eu.TIER_MINIMAL
+    assert r["gpai_obligations"] == []
+
+
+def test_deployer_obligations_exclude_provider_only_duties():
+    answers = {"eu_market": True, "provider_role": "deployer",
+               "hr_usecases": ["essential_services"], "hr_does_profiling": True}
+    r = classify(answers)
+    assert r["tier"] == eu.TIER_HIGH
+    refs = {ref for ref, _desc in r["high_risk_obligations"]}
+    # Deployer duties present, provider-only conformity/CE duties absent.
+    assert "Art. 26" in refs and "Art. 27" in refs
+    assert "Art. 43" not in refs and "Art. 47 + 48" not in refs and "Art. 49" not in refs
+
+
+def test_provider_obligations_include_conformity_and_ce():
+    answers = {"eu_market": True, "provider_role": "provider",
+               "hr_usecases": ["essential_services"], "hr_does_profiling": True}
+    r = classify(answers)
+    refs = {ref for ref, _desc in r["high_risk_obligations"]}
+    assert {"Art. 43", "Art. 47 + 48", "Art. 49"} <= refs
+    # Provider is not shown the deployer-only duties.
+    assert "Art. 26" not in refs and "Art. 27" not in refs
+
+
+def test_open_source_gpai_carveout_present_without_systemic():
+    answers = {"eu_market": True, "gpai_model": True, "gpai_open_source": True,
+               "gpai_systemic": False}
+    r = classify(answers)
+    assert r["tier"] == eu.TIER_MINIMAL
+    refs = [ref for f in r["gpai_obligations"] for ref in f["refs"]]
+    assert "Art. 53(2)" in refs  # open-source carve-out surfaced
+    # Minimal-tier GPAI now has a real applicability date (2 Aug 2025), not "-".
+    assert r["applicability"]["date"] == "2 Aug 2025"
+
+
+def test_open_source_carveout_suppressed_by_systemic_risk():
+    answers = {"eu_market": True, "gpai_model": True, "gpai_open_source": True,
+               "gpai_systemic": True}
+    r = classify(answers)
+    refs = [ref for f in r["gpai_obligations"] for ref in f["refs"]]
+    assert "Art. 53(2)" not in refs  # carve-out withdrawn under systemic risk
+    assert any("55" in ref for ref in refs)  # systemic obligations stand
+
+
+def test_ai_literacy_recommended_for_in_scope_systems():
+    r = classify({"eu_market": True})
+    assert any("Art. 4" in a for a in r["recommended_artifacts"])
+    # Out-of-scope systems do not carry the Art. 4 obligation.
+    out = classify({"eu_market": False})
+    assert not any("Art. 4" in a for a in out["recommended_artifacts"])
+
+
+def test_annex_iii_finding_records_specific_usecase():
+    r = classify({"eu_market": True, "hr_usecases": ["employment"]})
+    sources = [s for f in r["findings"] for s in f["source_questions"]]
+    assert "hr_usecases=employment" in sources
+
+
 def test_techdoc_renders_all_nine_annex_iv_sections():
     answers = _load("hiring_cv_screening.json")
     assessment = {"id": "test-techdoc", "created_at": "2026-01-01T00:00:00+00:00",

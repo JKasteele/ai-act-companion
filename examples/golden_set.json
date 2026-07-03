@@ -396,5 +396,84 @@
       "data_biometric": true,
       "automated_decision": true
     }
+  },
+  {
+    "name": "LabScope research-only diagnostic model",
+    "expected_tier": "minimal",
+    "rationale": "Would be Annex III high-risk in production, BUT developed and used solely for scientific research and development -> Art. 2(6) exemption -> out of scope -> minimal.",
+    "answers": {
+      "sys_name": "LabScope research-only diagnostic model",
+      "sys_description": "An experimental medical-triage model built and evaluated only inside a university research project, never deployed on real patients.",
+      "intended_purpose": "Scientific research into triage accuracy.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "exempt_research": true,
+      "hr_usecases": ["essential_services"],
+      "hr_does_profiling": false,
+      "data_personal": true
+    }
+  },
+  {
+    "name": "Aegis defence targeting aid (military only)",
+    "expected_tier": "minimal",
+    "rationale": "Used exclusively for military/defence purposes -> Art. 2(3) excludes it from the entire Regulation, so even an otherwise-prohibited practice is out of scope -> minimal.",
+    "answers": {
+      "sys_name": "Aegis defence targeting aid",
+      "sys_description": "A biometric identification aid used exclusively by armed forces for defence operations.",
+      "intended_purpose": "Support defence operations.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "exempt_military": true,
+      "p_realtime_rbi_le": true,
+      "data_biometric": true
+    }
+  },
+  {
+    "name": "HireDeploy essential-services scorer (deployer)",
+    "expected_tier": "high",
+    "rationale": "Annex III-5 essential services (credit) -> Art. 6(2) high-risk. The organisation is a deployer, so the applicable obligations are the deployer subset (Art. 26/27), not provider conformity-assessment/CE duties; the tier itself is still high.",
+    "answers": {
+      "sys_name": "HireDeploy essential-services scorer",
+      "sys_description": "A bank deploys a third-party credit-scoring model to decide consumer loan eligibility.",
+      "intended_purpose": "Decide loan eligibility using a bought-in model.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "hr_usecases": ["essential_services"],
+      "hr_does_profiling": true,
+      "data_personal": true,
+      "automated_decision": true
+    }
+  },
+  {
+    "name": "OpenLLaMA open-source foundation model (non-systemic)",
+    "expected_tier": "minimal",
+    "rationale": "A GPAI model released under a free/open-source licence with no systemic risk and no Art. 5/6/50 trigger: tier is minimal; GPAI obligations apply independently but the Art. 53(2) carve-out removes the tech-doc/downstream-info duties.",
+    "answers": {
+      "sys_name": "OpenLLaMA open-source foundation model",
+      "sys_description": "A broadly applicable foundation model released publicly under a permissive open-source licence with open weights.",
+      "intended_purpose": "Serve as an openly available base model for downstream apps.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "gpai_model": true,
+      "gpai_open_source": true,
+      "gpai_systemic": false,
+      "sec_is_llm": true
+    }
+  },
+  {
+    "name": "OpenFrontier open-source systemic GPAI",
+    "expected_tier": "minimal",
+    "rationale": "An open-source GPAI model that also has systemic risk: tier is still minimal (GPAI never sets the risk tier), but the Art. 53(2) open-source carve-out does NOT apply because of systemic risk, so the full Art. 53 + Art. 55 obligations stand.",
+    "answers": {
+      "sys_name": "OpenFrontier open-source systemic GPAI",
+      "sys_description": "A frontier-scale open-weight foundation model trained above the 10^25 FLOP threshold.",
+      "intended_purpose": "Provide a state-of-the-art open base model.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "gpai_model": true,
+      "gpai_open_source": true,
+      "gpai_systemic": true,
+      "sec_is_llm": true
+    }
   }
 ]

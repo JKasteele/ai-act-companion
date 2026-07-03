@@ -36,6 +36,11 @@ def _question_index():
 
 _QIDX = _question_index()
 
+# Cap AI-supplied free-text so a hostile/garbled model response can't push an
+# unbounded string into memory and downstream prompts. Generous vs. any real
+# intake answer; classification ignores free-text entirely.
+_MAX_TEXT_LEN = 20_000
+
 
 def _coerce_bool(v):
     if isinstance(v, bool):
@@ -111,7 +116,12 @@ def validate_answers(raw_answers):
             if kept:
                 clean[key] = kept
         else:  # text / textarea
-            clean[key] = str(value)
+            text = str(value)
+            if len(text) > _MAX_TEXT_LEN:
+                warnings.append(f"Truncated over-long text for {key} "
+                                f"({len(text)} chars).")
+                text = text[:_MAX_TEXT_LEN]
+            clean[key] = text
     return clean, warnings
 
 
