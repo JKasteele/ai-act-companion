@@ -10,10 +10,14 @@ inputs:
     description: "Path within the repository to scan."
     required: false
     default: "."
-  ref:
-    description: "AI Act Companion git ref (tag/branch) to install."
+  version:
+    description: "AI Act Companion version to install from PyPI (default: latest release)."
     required: false
-    default: "main"
+    default: ""
+  ref:
+    description: "Install from a git ref (tag/branch) instead of PyPI. Overrides `version`."
+    required: false
+    default: ""
   fail-on-detect:
     description: "Fail the step when AI/ML usage is detected (turn the scan into a gate)."
     required: false
@@ -28,7 +32,14 @@ runs:
         python-version: "3.12"
     - name: Install AI Act Companion
       shell: bash
-      run: pip install "ai-act-companion @ git+https://github.com/JKasteele/ai-act-companion@${{ inputs.ref }}"
+      run: |
+        if [ -n "${{ inputs.ref }}" ]; then
+          pip install "ai-act-companion @ git+https://github.com/JKasteele/ai-act-companion@${{ inputs.ref }}"
+        elif [ -n "${{ inputs.version }}" ]; then
+          pip install "ai-act-companion==${{ inputs.version }}"
+        else
+          pip install ai-act-companion
+        fi
     - name: Scan for EU AI Act relevance
       shell: bash
       run: |

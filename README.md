@@ -159,9 +159,9 @@ files in `examples/`.
 > **Install note.** Not yet on PyPI — install from source (editable, as above),
 > via [Docker](#docker), or use the
 > [hosted demo](https://huggingface.co/spaces/JesseKasteele/ai-act-companion).
-> A tag-triggered release workflow (`.github/workflows/release.yml`, PyPI Trusted
-> Publishing) publishes the package on the first `v*` tag, after which
-> `pip install ai-act-companion` will work.
+> On [PyPI](https://pypi.org/project/ai-act-companion/) since v0.8.0 —
+> `pip install ai-act-companion`. Releases are published by the tag-triggered
+> trusted-publishing workflow (`.github/workflows/release.yml`).
 > Optional extras: `.[dev]` (pytest/ruff/mypy/bandit/pip-audit), `.[mcp]` (the
 > Claude Code MCP server), `.[capture]` (the demo-screenshot tooling). The
 > rule-based core needs none of them — `pip install -r requirements.txt` is
@@ -478,13 +478,14 @@ jobs:
       - uses: JKasteele/ai-act-companion@v0.8.0   # pin a release tag for stability
         with:
           path: .
-          # ref: main                # optional: which ref of the tool to install
+          # version: "0.8.0"         # optional: pin the PyPI version installed
           # fail-on-detect: "true"   # optional: turn the scan into a gate
 ```
 
 > **Version pinning.** `uses: …@v0.8.0` selects the **action** version; the
-> action's `ref` input (default `main`) selects which ref of the **tool** it
-> installs. Pin both to the same release tag for reproducible runs.
+> `version` input (default: latest PyPI release) selects which version of the
+> **tool** it installs (`ref` installs from a git ref instead). Pin both to the
+> same release for reproducible runs.
 
 Locally: `ai-act scan .` (or `--json`). Example output names the libraries found,
 any model files, and the EU AI Act questions to consider (Art. 2/5/6/10/50).
@@ -543,7 +544,7 @@ deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 - [x] **Repo AI-usage scanner** — `ai-act scan` + a GitHub Action that flags EU AI Act relevance in any codebase
 - [x] **Regulatory-logic pass (0.8.0)** — Art. 2 scope exemptions, provider vs. deployer obligation split, GPAI open-source carve-out (Art. 53(2)), Art. 4 AI literacy as a baseline obligation
 - [x] **Conformity artifacts (0.8.0)** — EU Declaration of Conformity (Art. 47), EU-database registration sheet (Art. 49), GPAI obligations report (Art. 53–55) — 18 report types total
-- [ ] **PyPI release** — `pip install ai-act-companion` via the tag-triggered trusted-publishing workflow
+- [x] **PyPI release** — `pip install ai-act-companion` (since v0.8.0, via the tag-triggered trusted-publishing workflow)
 - [ ] **Demo video** — shot list ready in `docs/DEMO-SCRIPT.md`
 - [ ] **MCP SDK v2 migration** — currently pinned `mcp<2` (the 2.x SDK renamed FastMCP)
 - [ ] **Knowledge-base freshness process** — date-stamped knowledge modules, reviewed against new AI Office guidance and harmonised standards as they land

@@ -4,6 +4,13 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The GitHub Action installs from PyPI now that the package is published: a new
+  `version` input pins the PyPI release (default: latest); `ref` still installs
+  from a git ref when set.
+
 ## [0.8.0] - 2026-08-26
 
 A review-driven correctness, testing and hardening pass (see
