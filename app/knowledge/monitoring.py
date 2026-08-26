@@ -10,6 +10,8 @@ is a Companion-derived structure, not an official AI Act template — see
 PROVENANCE. Identifiers were verified against the primary NIST PDF.
 """
 
+from .._normalize import truthy as _truthy
+
 # (id, title, what it monitors). Titles verbatim from NIST AI 800-4 §2.
 CATEGORIES = [
     ("functionality", "Functionality Monitoring",
@@ -55,14 +57,6 @@ PROVENANCE = (
 # signal (decisions about people).
 _DRIFT_USECASES = {"employment", "essential_services", "education",
                    "law_enforcement", "migration_border", "justice_democracy"}
-
-
-def _truthy(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
 
 
 def seeded_rows(answers):

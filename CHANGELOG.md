@@ -4,6 +4,54 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+A review-driven correctness, testing and hardening pass (see
+[docs/ROADMAP-REVIEW.md](docs/ROADMAP-REVIEW.md)).
+
+### Added
+- **Three new report types** (18 total): EU **Declaration of Conformity**
+  (Art. 47 + Annex V), EU-database **registration** data sheet (Art. 49 +
+  Annex VIII), and a **GPAI obligations** report (Art. 53–55) with
+  copyright-policy and training-content-summary templates.
+- **MCP surface**: a `scan_repository` tool, a report-by-id path in
+  `generate_report`, and a `confirmed` flag on `save_assessment` that enforces
+  human-in-the-loop as a contract (nothing is stored without it).
+- **PyPI release automation** — a tag-triggered `release.yml` using PyPI Trusted
+  Publishing; `pip install ai-act-companion` works after the first `v*` tag.
+- **Art. 2 scope exemptions** — intake fields and classifier logic for the
+  military/defence (Art. 2(3)), scientific-R&D (Art. 2(6)), pre-market
+  (Art. 2(8)) and personal-use (Art. 2(10)) carve-outs, each returning
+  out-of-scope with the specific paragraph cited.
+- **Provider vs. deployer obligations** — `HIGH_RISK_OBLIGATIONS` is split by
+  role and filtered on `provider_role`, so a deployer is no longer shown
+  provider-only conformity-assessment/CE-marking duties. Adds Art. 16/20/22/25.
+- **GPAI open-source carve-out (Art. 53(2))** and a GPAI-aware applicability
+  date, so a minimal-tier GPAI model no longer reports "no mandatory deadline".
+- **Art. 4 AI literacy** surfaced as a baseline obligation for in-scope systems.
+- New test suites: `test_cli.py`, `test_mcp.py`, `test_llm_service.py`,
+  `test_storage.py`, plus report-injection and role-filtering cases; five new
+  golden-set cases (exemptions, deployer-only, open-source GPAI). Coverage now
+  reported in CI (`pytest-cov`), with a Windows matrix entry and a Docker smoke
+  test.
+
+### Changed
+- **Report free-text is sanitised** before Markdown interpolation (pipes escaped,
+  line breaks collapsed) so a crafted description cannot break tables or inject
+  structure — the tier/severity were already injection-proof.
+- **Atomic storage writes** (temp file + `os.replace`); single-read `load_all()`.
+- **`DEMO_MODE` is enforced server-side** (deletion returns 403), no longer
+  honour-system. AI-endpoint errors no longer leak raw exception text.
+- Deduplicated the `_truthy`/`_select` helpers into `app/_normalize.py` (was
+  copied across seven modules); report types now have a single source of truth
+  (`reports.REPORT_CATALOG`) driving the API, frontend tabs and MCP tool.
+- Frontend no longer fetches Google Fonts (privacy); removed dead code and
+  tightened two `innerHTML` sinks.
+
+### Fixed
+- Out-of-scope systems no longer emit GPAI (Chapter V) obligations.
+- `reports._bool` now matches the classifier's truthiness (e.g. `"0"`/`"off"`).
+
 ## [0.7.0] - 2026-06-17
 
 A distribution release: makes the project easy to *see* and to *adopt*.

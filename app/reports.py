@@ -5,6 +5,8 @@ for preview/print. No external templating dependency: we build the Markdown with
 Python strings, fed by the classifier output.
 """
 
+from . import __version__
+from ._normalize import truthy as _truthy
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
 from .incident import assess_incident
@@ -19,12 +21,48 @@ from .redteam import generate_test_plan
 from .security import SEVERITY_ORDER, assess_security
 from .stride import generate_stride_model
 
-REPORT_TYPES = ("risk", "dpia", "bias", "security", "fria", "techdoc",
-                "compliance", "monitoring", "framework-matrix", "redteam",
-                "controls", "datasec", "stride", "incident", "modelcard")
+# Single source of truth for the report catalogue: (type, human label). The API
+# (/api/config), the frontend tabs and the MCP tool all derive from this, so a
+# new report type is added in one place. A guard test (tests/test_mcp.py) asserts
+# the MCP Literal stays in sync with REPORT_TYPES.
+REPORT_CATALOG = (
+    ("risk", "Risk assessment"),
+    ("dpia", "DPIA skeleton"),
+    ("bias", "Bias checklist"),
+    ("security", "AI security"),
+    ("fria", "FRIA"),
+    ("techdoc", "Technical documentation"),
+    ("compliance", "Compliance tracker"),
+    ("monitoring", "Post-market monitoring"),
+    ("framework-matrix", "Framework matrix"),
+    ("redteam", "Red-team plan"),
+    ("controls", "Control catalogue"),
+    ("datasec", "Data security"),
+    ("stride", "STRIDE threat model"),
+    ("incident", "Serious incident"),
+    ("modelcard", "Model card"),
+    ("doc", "Declaration of conformity"),
+    ("registration", "EU-database registration"),
+    ("gpai", "GPAI obligations"),
+)
+REPORT_TYPES = tuple(rtype for rtype, _label in REPORT_CATALOG)
 
 
 # --- helpers ---------------------------------------------------------------
+def _safe(text):
+    """Neutralise a free-text answer before interpolating it into Markdown.
+
+    Classification is unaffected — the tier is a pure function of structured
+    fields — but the generated *documents* interpolate free-text (description,
+    intended purpose, oversight notes, data sources). Collapse line breaks so a
+    multi-line answer cannot inject Markdown structure (new headings, list items
+    or table rows), and escape pipes so it cannot break out of a table cell. The
+    frontend additionally HTML-escapes on render, covering the preview path.
+    """
+    s = str(text).replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+    return s.replace("|", "\\|")
+
+
 def _a(answers, key, default="-"):
     val = answers.get(key)
     if val is None or val == "":
@@ -32,19 +70,21 @@ def _a(answers, key, default="-"):
     if isinstance(val, bool):
         return "Yes" if val else "No"
     if isinstance(val, list):
-        return ", ".join(str(v) for v in val) if val else default
-    return str(val)
+        return _safe(", ".join(str(v) for v in val)) if val else default
+    return _safe(val)
 
 
 def _bool(answers, key):
-    return bool(answers.get(key)) and answers.get(key) not in ("false", "no")
+    # Same coercion as the classifier, so a report never disagrees with the tier
+    # about whether a field like data_personal was answered "yes".
+    return _truthy(answers.get(key))
 
 
 def _header(assessment):
     return (
         f"_Assessment id: `{assessment.get('id', '-')}` · "
         f"Generated: {assessment.get('created_at', '-')} · "
-        f"AI Act Companion v0.7_\n\n"
+        f"AI Act Companion v{__version__}_\n\n"
         f"> {eu.DISCLAIMER}\n"
     )
 
@@ -1220,7 +1260,8 @@ def render_model_card(assessment):
     g = card.get("prefilled", {})
 
     def val(key):
-        return g.get(key) or _TBC
+        v = g.get(key)
+        return _safe(v) if v else _TBC
 
     md = []
     md.append(f"# Model Card - {sys_name}\n")
@@ -1299,6 +1340,231 @@ def render_model_card(assessment):
     return "".join(md)
 
 
+def _role(answers):
+    return str(answers.get("provider_role") or "").strip().lower()
+
+
+# --- 16. EU Declaration of Conformity (Art. 47 + Annex V) ------------------
+def render_declaration_of_conformity(assessment):
+    answers = assessment.get("answers", {})
+    cls = assessment.get("classification", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    is_high = cls.get("tier") == eu.TIER_HIGH
+
+    md = [f"# EU Declaration of Conformity — {sys_name}\n", _header(assessment)]
+    md.append(
+        f"A skeleton **EU declaration of conformity** required by "
+        f"{_ref_link('Art. 47')}, with the content items of {_ref_link('Annex V')}. "
+        "The provider draws up one written DoC per high-risk system and keeps it "
+        f"for 10 years after it is placed on the market or put into service. "
+        f"Complete every {_TBC} before relying on it.\n"
+    )
+    if not is_high:
+        md.append(
+            f"\n> **Scope note.** On the current answers the system is "
+            f"**{cls.get('tier_label', '-')}**, not high-risk. A DoC under "
+            "Art. 47 is only required for high-risk systems — treat this as a "
+            "template until/unless the classification is high-risk.\n"
+        )
+    if _role(answers) == "deployer":
+        md.append(
+            f"\n> **Role note.** Drawing up the DoC is a **provider** obligation "
+            f"({_ref_link('Art. 16')}); a deployer relies on the provider's DoC "
+            "rather than issuing its own.\n"
+        )
+
+    md.append("\n## 1. AI system (Annex V(1))\n")
+    md.append(
+        "| Field | Value |\n|---|---|\n"
+        f"| AI system name / type | {_a(answers, 'sys_name')} |\n"
+        f"| Version | {_a(answers, 'sys_version')} |\n"
+        f"| Unique identifier / traceability to the system | {_TBC} |\n"
+        f"| Intended purpose | {_a(answers, 'intended_purpose')} |\n"
+    )
+    md.append("\n## 2. Provider (Annex V(2))\n")
+    md.append(
+        "| Field | Value |\n|---|---|\n"
+        f"| Provider name | {_a(answers, 'sys_owner')} |\n"
+        f"| Registered trade name / address / contact | {_TBC} |\n"
+        f"| Authorised representative (non-EU provider, {_ref_link('Art. 22')}) | {_TBC} |\n"
+    )
+    md.append("\n## 3. Statement of responsibility (Annex V(3))\n")
+    md.append("> This declaration of conformity is issued under the sole "
+              "responsibility of the provider.\n")
+    md.append("\n## 4. Conformity (Annex V(4)–(6))\n")
+    md.append(
+        f"- The AI system above is in conformity with the {eu.REGULATION} and, "
+        "where applicable, with other Union harmonisation legislation.\n"
+        f"- Harmonised standards / common specifications applied: {_TBC}\n"
+        f"- Where a notified body was involved ({_ref_link('Art. 43')}): its name, "
+        f"identification number, the conformity-assessment procedure performed and "
+        f"the certificate issued: {_TBC}\n"
+    )
+    md.append("\n## 5. Signature (Annex V(7))\n")
+    md.append(
+        "| Field | Value |\n|---|---|\n"
+        f"| Place of issue | {_TBC} |\n"
+        f"| Date of issue | {_TBC} |\n"
+        f"| Name & function of signatory | {_TBC} |\n"
+        "| Signature | |\n"
+    )
+    md.append(
+        f"\n_Legal source: {_ref_link('Art. 47')} + {_ref_link('Annex V')}; "
+        f"CE marking affixed per {_ref_link('Art. 48')}._\n"
+    )
+    return "".join(md)
+
+
+# --- 17. EU database registration data sheet (Art. 49 + Annex VIII) --------
+def render_registration(assessment):
+    answers = assessment.get("answers", {})
+    cls = assessment.get("classification", {})
+    sys_name = _a(answers, "sys_name", "AI system")
+    is_high = cls.get("tier") == eu.TIER_HIGH
+    categories = [f"{eu.HIGH_RISK_USECASES[u]['ref']} — {eu.HIGH_RISK_USECASES[u]['title']}"
+                  for u in (answers.get("hr_usecases") or [])
+                  if u in eu.HIGH_RISK_USECASES]
+    cat_str = "; ".join(categories) if categories else _TBC
+
+    md = [f"# EU Database Registration Data Sheet — {sys_name}\n", _header(assessment)]
+    md.append(
+        f"A data sheet for registering a high-risk AI system in the EU database "
+        f"({_ref_link('Art. 49')} + {_ref_link('Art. 71')}), collecting the "
+        f"information items of {_ref_link('Annex VIII')} Section A. Registration "
+        "happens before the system is placed on the market or put into service.\n"
+    )
+    if not is_high:
+        md.append(
+            f"\n> **Scope note.** On the current answers the system is "
+            f"**{cls.get('tier_label', '-')}**. Registration under Art. 49 applies "
+            "to high-risk systems (and, per Art. 49(3), to certain public-authority "
+            "deployers) — treat this as a template until the classification is high-risk.\n"
+        )
+
+    md.append("\n## Annex VIII Section A — registration information\n")
+    md.append(
+        "| # | Item | Value |\n|---|---|---|\n"
+        f"| 1 | Provider name, address, contact | {_a(answers, 'sys_owner')} / {_TBC} |\n"
+        f"| 2 | Person submitting on the provider's behalf (if any) | {_TBC} |\n"
+        f"| 3 | Authorised representative (if applicable) | {_TBC} |\n"
+        f"| 4 | Trade name + unambiguous reference/identifier | {_a(answers, 'sys_name')} "
+        f"{_a(answers, 'sys_version', '')} / {_TBC} |\n"
+        f"| 5 | Intended purpose + components/functions supported by AI | "
+        f"{_a(answers, 'intended_purpose')} |\n"
+        f"| 6 | Concise description of the information (data, inputs) and operating logic | "
+        f"{_a(answers, 'sys_description')} |\n"
+        f"| 7 | Status of the system (on market / in service / withdrawn / recalled) | "
+        f"{_a(answers, 'lifecycle_stage')} |\n"
+        f"| 8 | Annex III high-risk category(ies) | {cat_str} |\n"
+        f"| 9 | Notified-body certificate (type, number, expiry), if any | {_TBC} |\n"
+        f"| 10 | Member States where on the market / in service / available | "
+        f"{('EU' if _bool(answers, 'eu_market') else _TBC)} |\n"
+        f"| 11 | Copy of the EU declaration of conformity | see the DoC report |\n"
+        f"| 12 | Electronic instructions for use | {_TBC} |\n"
+        f"| 13 | URL for additional information (optional) | {_TBC} |\n"
+    )
+    md.append(
+        "\n> Registration for high-risk systems in **law enforcement, migration, "
+        "asylum and border control** (Annex III(6)–(8)) is made in a **secure "
+        "non-public** section of the database (Art. 49(4)).\n"
+    )
+    md.append(f"\n_Legal source: {_ref_link('Art. 49')} + {_ref_link('Annex VIII')}._\n")
+    return "".join(md)
+
+
+# --- 18. GPAI provider obligations (Chapter V, Art. 53–55) -----------------
+def render_gpai_obligations(assessment):
+    answers = assessment.get("answers", {})
+    sys_name = _a(answers, "sys_name", "AI model")
+    is_gpai = _truthy(answers.get("gpai_model"))
+    is_systemic = _truthy(answers.get("gpai_systemic"))
+    is_oss = _truthy(answers.get("gpai_open_source")) and not is_systemic
+
+    md = [f"# GPAI Provider Obligations — {sys_name}\n", _header(assessment)]
+    md.append(
+        f"General-purpose AI **model** obligations under Chapter V "
+        f"({_ref_link('Art. 53')}–{_ref_link('Art. 55')}), applicable from "
+        "**2 Aug 2025** independently of the system's risk tier. Models already "
+        f"on the market before that date must comply by 2 Aug 2027 ({_ref_link('Art. 111')}).\n"
+    )
+    if not is_gpai:
+        md.append(
+            "\n> **Scope note.** The current answers do not mark this as a GPAI "
+            "model (`gpai_model`). This is shown as a template; the obligations "
+            "below apply to providers of general-purpose AI models.\n"
+        )
+
+    md.append(f"\n## 1. Obligations for all GPAI providers ({_ref_link('Art. 53')}(1))\n")
+    md.append(
+        f"| Ref | Obligation | Status |\n|---|---|---|\n"
+        f"| {_ref_link('Art. 53')}(1)(a) + Annex XI | Technical documentation of the "
+        f"model (training/testing, evaluation). | {'Exempt (Art. 53(2))' if is_oss else 'Not started'} |\n"
+        f"| {_ref_link('Art. 53')}(1)(b) + Annex XII | Information & documentation for "
+        f"downstream providers integrating the model. | {'Exempt (Art. 53(2))' if is_oss else 'Not started'} |\n"
+        f"| {_ref_link('Art. 53')}(1)(c) | Policy to comply with Union copyright law "
+        f"(incl. Art. 4(3) DSM reservations). | Not started |\n"
+        f"| {_ref_link('Art. 53')}(1)(d) | Publicly available **summary of the training "
+        f"content** (AI Office template). | Not started |\n"
+    )
+    if is_oss:
+        md.append(
+            f"\n> **Open-source carve-out ({_ref_link('Art. 53')}(2)).** This model is "
+            "marked as released under a free and open-source licence with no systemic "
+            "risk, so the technical-documentation (a) and downstream-information (b) "
+            "duties do not apply. The copyright policy (c) and training-content "
+            "summary (d) still apply.\n"
+        )
+
+    md.append("\n## 2. Copyright policy — template\n")
+    md.append(
+        f"- [ ] Identify the copyright-relevant data used for training.\n"
+        f"- [ ] Honour rights reservations expressed under Art. 4(3) of Directive "
+        f"(EU) 2019/790 (the TDM opt-out).\n"
+        f"- [ ] Document the measures taken to comply with Union copyright law.\n"
+        f"- Notes: {_a(answers, 'data_sources')}\n"
+    )
+    md.append("\n## 3. Training-content summary — template\n")
+    md.append(
+        f"A sufficiently detailed summary of the content used for training, per the "
+        f"AI Office template ({_ref_link('Art. 53')}(1)(d)):\n\n"
+        f"- Main data collections / sources: {_a(answers, 'data_sources')}\n"
+        f"- Large private/public datasets and their nature: {_TBC}\n"
+        f"- Data obtained from web crawling / scraping (and domains): {_TBC}\n"
+        f"- Other sources (user data, synthetic data, licensing): {_TBC}\n"
+    )
+
+    md.append(f"\n## 4. Systemic-risk obligations ({_ref_link('Art. 55')})\n")
+    if is_systemic:
+        md.append(
+            "This model is marked as having **systemic risk** (≥ 10^25 FLOP training "
+            f"compute or designated). In addition to §1, the provider must "
+            f"({_ref_link('Art. 55')}):\n\n"
+            "| Obligation | Status |\n|---|---|\n"
+            "| Model evaluation incl. adversarial testing (red-teaming) | Not started |\n"
+            "| Assess and mitigate systemic risks at Union level | Not started |\n"
+            "| Track, document and report serious incidents to the AI Office | Not started |\n"
+            "| Ensure an adequate level of cybersecurity for the model and its physical infrastructure | Not started |\n"
+        )
+        md.append(
+            f"\n> Provider must notify the Commission without delay when the model "
+            f"meets the systemic-risk threshold ({_ref_link('Art. 52')}).\n"
+        )
+    else:
+        md.append(
+            "The model is **not** marked as having systemic risk, so the additional "
+            f"{_ref_link('Art. 55')} obligations (evaluation, adversarial testing, "
+            "systemic-risk mitigation, incident reporting, cybersecurity) do not "
+            "currently apply. Re-assess if training compute or designation changes.\n"
+        )
+
+    md.append(
+        f"\n_Adherence to a code of practice ({_ref_link('Art. 56')}) is a means of "
+        f"demonstrating compliance until harmonised standards exist. Legal source: "
+        f"{_ref_link('Art. 53')}, {_ref_link('Art. 55')}, {eu.EURLEX_URL}._\n"
+    )
+    return "".join(md)
+
+
 # --- dispatcher ------------------------------------------------------------
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
@@ -1333,4 +1599,10 @@ def render(report_type, assessment):
         return "incident", f"serious-incident-{slug}.md", render_incident(assessment)
     if report_type == "modelcard":
         return "modelcard", f"model-card-{slug}.md", render_model_card(assessment)
+    if report_type == "doc":
+        return "doc", f"declaration-of-conformity-{slug}.md", render_declaration_of_conformity(assessment)
+    if report_type == "registration":
+        return "registration", f"eu-database-registration-{slug}.md", render_registration(assessment)
+    if report_type == "gpai":
+        return "gpai", f"gpai-obligations-{slug}.md", render_gpai_obligations(assessment)
     raise ValueError(f"Unknown report type: {report_type}")

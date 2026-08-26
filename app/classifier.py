@@ -13,28 +13,13 @@ Decision logic (highest severity wins):
 GPAI obligations (Chapter V) are independent of the tier and listed separately.
 """
 
+from ._normalize import as_list as _as_list
+from ._normalize import truthy as _truthy
 from .knowledge import eu_ai_act as eu
 from .knowledge import nist_rmf as nist
 
 
 # --- normalisation helpers -------------------------------------------------
-def _truthy(value):
-    """Coerce various 'yes' representations to bool."""
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
-
-
-def _as_list(value):
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return value
-    return [value]
-
-
 def _finding(tier, refs, title, rationale, sources):
     return {
         "tier": tier,
@@ -108,7 +93,8 @@ def _check_high_risk(answers):
         else:
             refs = [info["ref"], "Art. 6(2)"]
         findings.append(_finding(
-            eu.TIER_HIGH, refs, f"High-risk: {info['title']}", rationale, ["hr_usecases"],
+            eu.TIER_HIGH, refs, f"High-risk: {info['title']}", rationale,
+            ["hr_usecases", f"hr_usecases={uc}"],
         ))
     return findings
 
@@ -134,6 +120,13 @@ def _check_gpai(answers):
         findings.append(_finding(
             "gpai", [info["ref"]], info["title"], info["summary"], ["gpai_model"],
         ))
+        # Art. 53(2) open-source carve-out — only when there is no systemic risk.
+        if _truthy(answers.get("gpai_open_source")) and not _truthy(answers.get("gpai_systemic")):
+            info = eu.GPAI["open_source"]
+            findings.append(_finding(
+                "gpai", [info["ref"]], info["title"], info["summary"],
+                ["gpai_open_source"],
+            ))
     if _truthy(answers.get("gpai_systemic")):
         info = eu.GPAI["systemic"]
         findings.append(_finding(
@@ -142,9 +135,13 @@ def _check_gpai(answers):
     return findings
 
 
-def _recommended_artifacts(tier, answers):
+def _recommended_artifacts(tier, answers, in_scope=True):
     """Which documents should you produce for this system?"""
     arts = ["AI risk assessment report"]
+    # Art. 4 AI literacy has applied to essentially all in-scope providers and
+    # deployers since 2 Feb 2025, regardless of tier.
+    if in_scope:
+        arts.append("AI literacy measures / staff training record (AI Act Art. 4)")
     if _truthy(answers.get("data_personal")):
         arts.append("DPIA (data protection impact assessment, GDPR Art. 35)")
     if tier in (eu.TIER_HIGH, eu.TIER_PROHIBITED):
@@ -161,32 +158,54 @@ def _recommended_artifacts(tier, answers):
 
 
 # --- public API ------------------------------------------------------------
+def _out_of_scope(answers, ref, summary, description, sources=None):
+    """Build the classification result for a system outside the AI Act's scope
+    (Art. 2). Chapter V (GPAI) is part of the same scope, so no GPAI
+    obligations are emitted here."""
+    return {
+        "tier": eu.TIER_MINIMAL,
+        "tier_label": eu.TIER_LABELS[eu.TIER_MINIMAL],
+        "tier_description": description,
+        "summary": summary,
+        "findings": [],
+        "transparency_obligations": [],
+        "gpai_obligations": [],
+        "high_risk_obligations": [],
+        "nist_crosswalk": [list(s) for s in nist.crosswalk_for_tier(eu.TIER_MINIMAL)],
+        "recommended_artifacts": _recommended_artifacts(eu.TIER_MINIMAL, answers, in_scope=False),
+        "applicability": {"date": "-", "what": summary, "basis": ref},
+        "out_of_scope": {"ref": ref, "source_questions": sources or []},
+        "disclaimer": eu.DISCLAIMER,
+    }
+
+
 def classify(answers):
     """Classify an AI system based on the intake answers."""
     answers = answers or {}
 
     # Applicability check (Art. 2): out of EU scope -> no AI Act requirements.
     if not _truthy(answers.get("eu_market")):
-        return {
-            "tier": eu.TIER_MINIMAL,
-            "tier_label": eu.TIER_LABELS[eu.TIER_MINIMAL],
-            "tier_description": (
-                "According to the answers, the system is not placed on the "
-                "market/used in the EU and does not affect persons in the EU. "
-                "The EU AI Act then appears not to apply (Art. 2). Good "
-                "governance (e.g. NIST AI RMF) remains recommended."
-            ),
-            "summary": "Outside the territorial scope of the EU AI Act (Art. 2).",
-            "findings": [],
-            "transparency_obligations": [],
-            "gpai_obligations": _check_gpai(answers),
-            "high_risk_obligations": [],
-            "nist_crosswalk": [list(s) for s in nist.crosswalk_for_tier(eu.TIER_MINIMAL)],
-            "recommended_artifacts": _recommended_artifacts(eu.TIER_MINIMAL, answers),
-            "applicability": {"date": "-", "what": "Outside the EU AI Act's scope (Art. 2).",
-                              "basis": "Art. 2"},
-            "disclaimer": eu.DISCLAIMER,
-        }
+        return _out_of_scope(
+            answers, "Art. 2",
+            "Outside the territorial scope of the EU AI Act (Art. 2).",
+            "According to the answers, the system is not placed on the "
+            "market/used in the EU and does not affect persons in the EU. "
+            "The EU AI Act then appears not to apply (Art. 2). Good "
+            "governance (e.g. NIST AI RMF) remains recommended.",
+            sources=["eu_market"],
+        )
+
+    # Subject-matter exemptions (Art. 2(3)/(6)/(8)/(10)): also out of scope.
+    for qid, info in eu.SCOPE_EXEMPTIONS.items():
+        if _truthy(answers.get(qid)):
+            return _out_of_scope(
+                answers, info["ref"],
+                f"Out of scope: {info['title']} ({info['ref']}).",
+                f"{info['summary']} The EU AI Act therefore appears not to apply "
+                f"here (exemption under {info['ref']}). Good governance (e.g. "
+                "NIST AI RMF) remains recommended.",
+                sources=[qid],
+            )
 
     prohibited = _check_prohibited(answers)
     high = _check_high_risk(answers)
@@ -210,7 +229,8 @@ def classify(answers):
     summary = _build_summary(tier, primary, transparency, gpai)
 
     high_risk_obligations = (
-        [list(o) for o in eu.HIGH_RISK_OBLIGATIONS] if tier == eu.TIER_HIGH else []
+        [list(o) for o in eu.high_risk_obligations_for_role(answers.get("provider_role"))]
+        if tier == eu.TIER_HIGH else []
     )
 
     return {

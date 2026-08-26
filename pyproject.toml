@@ -29,8 +29,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.5", "mypy>=1.8", "bandit>=1.7", "pip-audit>=2.7"]
-mcp = ["mcp>=1.2"]  # Claude Code / MCP server (mcp_server.py)
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.5", "mypy>=1.8", "bandit>=1.7", "pip-audit>=2.7"]
+# mcp_server.py targets the v1 SDK API (FastMCP); mcp 2.x renamed it to
+# MCPServer and changed other APIs, so stay <2 until the code is migrated.
+mcp = ["mcp>=1.2,<2"]  # Claude Code / MCP server (mcp_server.py)
 capture = ["playwright>=1.40", "pillow>=10"]  # scripts/capture_demo.py (docs/img)
 
 [project.scripts]

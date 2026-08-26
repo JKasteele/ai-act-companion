@@ -22,22 +22,11 @@ This is a planning aid, not an executor: it contains no live payloads and runs
 nothing. See `app/knowledge/red_team.py` for the templates and safety scope.
 """
 
+from ._normalize import select_field as _select
+from ._normalize import truthy as _truthy
 from .knowledge import ai_security as sec
 from .knowledge import red_team as rt
 from .security import SEVERITY_ORDER, assess_security
-
-
-def _truthy(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
-
-
-def _select(answers, key):
-    v = answers.get(key)
-    return v.strip().lower() if isinstance(v, str) else ""
 
 
 def architecture_flags(answers, fired_ids):

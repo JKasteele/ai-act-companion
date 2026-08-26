@@ -21,11 +21,16 @@ import sys
 from . import reports, storage
 from .classifier import classify as classify_fn
 from .questionnaire import QUESTIONNAIRE
+from .security import assess_security
 
 
 def _read_json(path):
     """Read a JSON object from a file path, or from stdin when path == '-'."""
-    raw = sys.stdin.read() if path == "-" else open(path, encoding="utf-8").read()
+    if path == "-":
+        raw = sys.stdin.read()
+    else:
+        with open(path, encoding="utf-8") as fh:
+            raw = fh.read()
     return json.loads(raw)
 
 
@@ -42,11 +47,14 @@ def cmd_classify(args):
     answers = _read_json(args.answers)
     classification = classify_fn(answers)
     if args.save:
+        # Same shape as POST /api/assess and MCP save_assessment, so the
+        # inventory's security_risks count agrees across all three save paths.
         assessment = {
             "id": storage.new_id(answers.get("sys_name")),
             "created_at": storage.now_iso(),
             "answers": answers,
             "classification": classification,
+            "security": assess_security(answers),
         }
         storage.save(assessment)
         _emit({"id": assessment["id"], "classification": classification})
@@ -114,7 +122,7 @@ def build_parser():
     p_classify.add_argument("--save", action="store_true",
                             help="Persist the assessment and print its id.")
 
-    p_report = sub.add_parser("report", help="Generate a report (risk/dpia/bias).")
+    p_report = sub.add_parser("report", help="Generate a report (see --type for all types).")
     src = p_report.add_mutually_exclusive_group(required=True)
     src.add_argument("--assessment", help="Id of a saved assessment.")
     src.add_argument("--answers", help="Path to answers JSON (classified on the fly).")

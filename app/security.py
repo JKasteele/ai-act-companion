@@ -9,6 +9,8 @@ answers, so the lens adapts to the kind of system.
 Deterministic and AI-free, like the governance classifier.
 """
 
+from ._normalize import select_field as _select
+from ._normalize import truthy as _truthy
 from .knowledge import ai_security as sec
 
 # --- architecture-aware severity -------------------------------------------
@@ -23,19 +25,6 @@ _SEVERITY_LEVELS = ["Low", "Medium", "High", "Critical"]
 # OWASP items grouped by how their severity is driven by the architecture.
 _INJECTION_FAMILY = {"LLM01", "LLM02", "LLM07", "LLM08"}   # injection / disclosure
 _TAMPERING_FAMILY = {"LLM05", "LLM06"}                     # integrity / agency
-
-
-def _truthy(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"true", "yes", "ja", "on", "1"}
-    return bool(value)
-
-
-def _select(answers, key):
-    v = answers.get(key)
-    return v.strip().lower() if isinstance(v, str) else ""
 
 
 def _arch_view(answers):

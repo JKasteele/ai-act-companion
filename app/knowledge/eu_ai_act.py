@@ -9,6 +9,8 @@ Disclaimer: this is a self-assessment aid, not legal advice.
 
 import re
 
+from .._normalize import truthy
+
 REGULATION = "Regulation (EU) 2024/1689 (EU AI Act)"
 CELEX = "32024R1689"
 EURLEX_URL = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"
@@ -250,23 +252,93 @@ HIGH_RISK_USECASES = {
 }
 
 # Core obligations for high-risk (summarised), for the report.
+# Each row is (ref, description, role) where role is which actor the duty falls
+# on: "provider", "deployer", or "both". A pure deployer must not be shown the
+# provider-only conformity-assessment / CE-marking duties, and vice versa. Use
+# high_risk_obligations_for_role() to filter, never the raw list.
 HIGH_RISK_OBLIGATIONS = [
-    ("Art. 9", "Risk management system throughout the entire lifecycle."),
+    ("Art. 9", "Risk management system throughout the entire lifecycle.", "provider"),
     ("Art. 10", "Data governance and quality criteria for training, "
-                "validation and test data (incl. bias examination)."),
-    ("Art. 11 + Annex IV", "Draw up and keep technical documentation up to date."),
-    ("Art. 12", "Automatic recording of events (logging)."),
-    ("Art. 13", "Transparency and provision of information to deployers."),
-    ("Art. 14", "Effective human oversight."),
-    ("Art. 15", "Accuracy, robustness and cybersecurity."),
-    ("Art. 17", "Quality management system (for providers)."),
-    ("Art. 43", "Conformity assessment before putting into service."),
-    ("Art. 47 + 48", "EU declaration of conformity and CE marking."),
-    ("Art. 49", "Registration in the EU database for high-risk systems."),
-    ("Art. 72", "Post-market monitoring."),
-    ("Art. 26", "Obligations for deployers."),
-    ("Art. 27", "Fundamental rights impact assessment (FRIA), where applicable."),
+                "validation and test data (incl. bias examination).", "provider"),
+    ("Art. 11 + Annex IV", "Draw up and keep technical documentation up to date.",
+     "provider"),
+    ("Art. 12", "Automatic recording of events (logging).", "provider"),
+    ("Art. 13", "Transparency and provision of information to deployers.", "provider"),
+    ("Art. 14", "Effective human oversight (designed in by the provider).", "provider"),
+    ("Art. 15", "Accuracy, robustness and cybersecurity.", "provider"),
+    ("Art. 16", "Overview of provider obligations for high-risk systems.", "provider"),
+    ("Art. 17", "Quality management system.", "provider"),
+    ("Art. 20", "Corrective actions and duty to inform (withdrawal/recall).",
+     "provider"),
+    ("Art. 22", "Authorised representative in the Union (for providers "
+                "established outside the EU).", "provider"),
+    ("Art. 25", "Responsibilities along the AI value chain (a deployer that "
+                "substantially modifies a system, or puts its name on it, may "
+                "become a provider).", "both"),
+    ("Art. 43", "Conformity assessment before putting into service.", "provider"),
+    ("Art. 47 + 48", "EU declaration of conformity and CE marking.", "provider"),
+    ("Art. 49", "Registration in the EU database for high-risk systems.", "provider"),
+    ("Art. 72", "Post-market monitoring.", "provider"),
+    ("Art. 26", "Obligations for deployers (use per instructions, human "
+                "oversight, monitoring, keep logs).", "deployer"),
+    ("Art. 27", "Fundamental rights impact assessment (FRIA), where applicable.",
+     "deployer"),
 ]
+
+
+def high_risk_obligations_for_role(role):
+    """Return the (ref, description) high-risk obligations for a given Art. 3
+    role. Provider-only and deployer-only duties are filtered so the guidance
+    is not wrong for the actor. Unknown/"both"/"other" -> show everything."""
+    role = (role or "").strip().lower()
+    if role == "provider":
+        keep = {"provider", "both"}
+    elif role == "deployer":
+        keep = {"deployer", "both"}
+    else:
+        keep = {"provider", "deployer", "both"}
+    return [(ref, desc) for ref, desc, r in HIGH_RISK_OBLIGATIONS if r in keep]
+
+
+# --- Article 2: scope exemptions -------------------------------------------
+# Key = intake question id. If any is set, the system is out of the AI Act's
+# scope and the specific paragraph is cited.
+SCOPE_EXEMPTIONS = {
+    "exempt_military": {
+        "ref": "Art. 2(3)",
+        "title": "Military, defence or national-security use",
+        "summary": (
+            "AI systems placed on the market, put into service or used "
+            "exclusively for military, defence or national-security purposes "
+            "fall outside the AI Act."
+        ),
+    },
+    "exempt_research": {
+        "ref": "Art. 2(6)",
+        "title": "Scientific research and development",
+        "summary": (
+            "AI systems and models developed and put into service for the sole "
+            "purpose of scientific research and development are excluded."
+        ),
+    },
+    "exempt_premarket": {
+        "ref": "Art. 2(8)",
+        "title": "Pre-market research, testing and development",
+        "summary": (
+            "Research, testing and development activity concerning AI systems "
+            "prior to being placed on the market is excluded — this does NOT "
+            "cover testing in real-world conditions."
+        ),
+    },
+    "exempt_personal": {
+        "ref": "Art. 2(10)",
+        "title": "Purely personal, non-professional use",
+        "summary": (
+            "Use of an AI system by a natural person in the course of a purely "
+            "personal, non-professional activity is excluded."
+        ),
+    },
+}
 
 # --- Article 50: transparency obligations ----------------------------------
 TRANSPARENCY_OBLIGATIONS = {
@@ -322,6 +394,18 @@ GPAI = {
             "In case of systemic risk (e.g. >= 10^25 FLOP training compute or "
             "designation): model evaluations, adversarial testing, risk "
             "mitigation, incident reporting and cybersecurity."
+        ),
+    },
+    "open_source": {
+        "ref": "Art. 53(2)",
+        "title": "Open-source GPAI model — reduced obligations",
+        "summary": (
+            "Released under a free and open-source licence with public weights "
+            "and usage information: exempt from the technical-documentation "
+            "(Art. 53(1)(a)) and downstream-information (Art. 53(1)(b)) duties. "
+            "The copyright policy (Art. 53(1)(c)) and the training-content "
+            "summary (Art. 53(1)(d)) still apply. This carve-out does NOT apply "
+            "to GPAI models with systemic risk."
         ),
     },
 }
@@ -456,25 +540,51 @@ MILESTONES = [
 
 
 def applies_from(tier, answers):
-    """When the core obligations for THIS system start to apply."""
+    """When the core obligations for THIS system start to apply.
+
+    GPAI-aware: a general-purpose AI model carries Chapter V obligations from
+    2 Aug 2025 independently of its risk tier, so a minimal-tier GPAI model has
+    a real deadline rather than "no mandatory deadline". This keeps the risk
+    report's headline consistent with the obligations & conformity tracker.
+    """
     answers = answers or {}
+    gpai = truthy(answers.get("gpai_model"))
+    gpai_note = (" GPAI model obligations (Chapter V) additionally apply from "
+                 "2 Aug 2025 (Art. 113(b)).")
+
     if tier == TIER_PROHIBITED:
-        return {"date": "2 Feb 2025",
+        base = {"date": "2 Feb 2025",
                 "what": "Prohibition under Art. 5 already applies.",
                 "basis": "Art. 113(a)"}
-    if tier == TIER_HIGH:
-        if answers.get("hr_safety_component"):
-            return {"date": "2 Aug 2027",
+    elif tier == TIER_HIGH:
+        if truthy(answers.get("hr_safety_component")):
+            base = {"date": "2 Aug 2027",
                     "what": "High-risk obligations for Art. 6(1)/Annex I "
                             "(regulated products).",
                     "basis": "Art. 113(c)"}
-        return {"date": "2 Aug 2026",
-                "what": "High-risk obligations for Annex III systems.",
-                "basis": "Art. 113"}
-    if tier == TIER_LIMITED:
-        return {"date": "2 Aug 2026",
+        else:
+            base = {"date": "2 Aug 2026",
+                    "what": "High-risk obligations for Annex III systems.",
+                    "basis": "Art. 113"}
+    elif tier == TIER_LIMITED:
+        base = {"date": "2 Aug 2026",
                 "what": "Transparency obligations (Art. 50) apply.",
                 "basis": "Art. 113"}
-    return {"date": "-",
-            "what": "No mandatory deadline (minimal risk).",
-            "basis": "Art. 95 (voluntary)"}
+    else:
+        base = {"date": "-",
+                "what": "No mandatory deadline (minimal risk).",
+                "basis": "Art. 95 (voluntary)"}
+
+    if not gpai:
+        return base
+    # A minimal-tier system that is a GPAI model: the GPAI date is the only
+    # mandatory deadline, so surface it as the headline.
+    if tier == TIER_MINIMAL:
+        return {"date": "2 Aug 2025",
+                "what": "GPAI model obligations (Chapter V) apply.",
+                "basis": "Art. 113(b)"}
+    # Otherwise keep the tier headline but flag the parallel GPAI deadline.
+    if tier in (TIER_LIMITED, TIER_HIGH):
+        base = dict(base)
+        base["what"] = base["what"] + gpai_note
+    return base

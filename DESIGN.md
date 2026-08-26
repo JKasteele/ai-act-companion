@@ -113,10 +113,11 @@ Three pure functions, no I/O, fully testable:
   injection and system-prompt leakage. It also computes a deterministic
   **severity** per item from the `arch_*` architecture fields (see [§3](#3-the-core-safety-pattern)).
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of fifteen Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
+  renders one of eighteen Markdown artifacts (`risk`, `dpia`, `bias`, `security`,
   `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`, `redteam`,
-  `controls`, `datasec`, `stride`, `incident`, `modelcard`) from the classifier
-  and the security lenses. Markdown is the canonical export; PDF is print-to-PDF
+  `controls`, `datasec`, `stride`, `incident`, `modelcard`, `doc`,
+  `registration`, `gpai`) from the classifier and the security lenses, using the
+  single `reports.REPORT_CATALOG`. Markdown is the canonical export; PDF is print-to-PDF
   in the browser.
 
 Several further pure functions extend the lenses without adding any new
