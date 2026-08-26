@@ -72,7 +72,7 @@ flowchart TB
     A["🔒 Local web app<br/>(privacy-first)"]
     B["⚡ Claude Code plugin<br/>(MCP)"]
     E["<b>Deterministic engine</b><br/>classifier · reports · knowledge<br/>= ground truth"]
-    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA · techdoc<br/>compliance · monitoring · framework-matrix<br/>red-team plan · control catalogue · data security"]
+    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA · techdoc<br/>compliance · monitoring · framework-matrix<br/>red-team plan · control catalogue · data security<br/>STRIDE · incident · model card · DoC · registration · GPAI"]
     A -->|"optional local AI:<br/>Ollama or paste-into-your-own-LLM"| E
     B -->|"Claude is the interface<br/>& narrative author"| E
     E --> O
@@ -269,7 +269,7 @@ ai-act-companion/
 │   ├── cli.py             scriptable CLI over the engine
 │   ├── questionnaire.py   intake definition (single source of truth)
 │   ├── classifier.py      rule-based EU AI Act classifier
-│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam/controls/datasec/stride/incident/modelcard)
+│   ├── reports.py         report generators (risk/DPIA/bias/security/FRIA/techdoc/compliance/monitoring/framework-matrix/redteam/controls/datasec/stride/incident/modelcard/doc/registration/gpai)
 │   ├── security.py        AI security lens + architecture-aware severity
 │   ├── redteam.py         architecture-aware red-team test-plan generator
 │   ├── controls.py        defensive control-catalogue generator (blue-team mirror)
@@ -303,7 +303,11 @@ ai-act-companion/
 | GET | `/api/assessments/{id}` | full assessment (JSON export) |
 | DELETE | `/api/assessments/{id}` | delete an assessment |
 | GET | `/api/export.csv` | inventory as a CSV register |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam\|controls\|datasec\|stride\|incident\|modelcard` | report (markdown) |
+| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam\|controls\|datasec\|stride\|incident\|modelcard\|doc\|registration\|gpai` | report (markdown) |
+| GET | `/api/health` | health/liveness probe |
+| GET | `/api/config` | frontend config (report catalogue, version, demo mode) |
+| GET | `/api/timeline` | EU AI Act application milestones (for the countdown) |
+| GET | `/api/examples` | ready-made synthetic example systems |
 | GET | `/api/ai/status` | AI layer status (provider, model, reachability) |
 | POST | `/api/ai/prefill` | free text → draft answers (or a prompt for manual mode) |
 | POST | `/api/ai/parse` | pasted-back LLM answer → validated draft |

@@ -50,11 +50,17 @@ function refsSpan(refs, cls) {
 async function init() {
   await loadConfig();
   loadTimeline();   // non-blocking: render the AI Act countdown when it returns
-  QUESTIONNAIRE = await (await fetch("/api/questionnaire")).json();
-  $("#form-intro").append(
-    el("h2", {}, QUESTIONNAIRE.title),
-    el("p", { class: "section-desc" }, QUESTIONNAIRE.intro)
-  );
+  // A failed fetch here must not abort init(): the listeners below still need
+  // to be wired so the UI stays responsive and can surface the error.
+  try {
+    QUESTIONNAIRE = await (await fetch("/api/questionnaire")).json();
+    $("#form-intro").append(
+      el("h2", {}, QUESTIONNAIRE.title),
+      el("p", { class: "section-desc" }, QUESTIONNAIRE.intro)
+    );
+  } catch {
+    toast("Could not load the questionnaire — is the server reachable?");
+  }
   await loadAiStatus();   // before renderForm: determines whether narrative buttons appear
   renderForm();
   await loadSaved();
@@ -85,6 +91,10 @@ async function loadConfig() {
   let cfg = {};
   try { cfg = await (await fetch("/api/config")).json(); } catch { cfg = {}; }
   renderReportTabs(cfg.report_types);
+  if (cfg.version) {
+    const v = $("#app-version");
+    if (v) v.textContent = `AI Act Companion v${cfg.version}`;
+  }
   if (!cfg.demo_mode) return cfg;
   const main = document.querySelector("main.wrap") || document.body;
   const banner = el("div", { class: "demo-banner no-print" },
@@ -97,11 +107,14 @@ async function loadConfig() {
 }
 
 // Render the report tabs from the engine's catalogue so the frontend never
-// drifts from reports.REPORT_CATALOG. Falls back to leaving any server-rendered
-// tabs in place if the config is unavailable.
+// drifts from reports.REPORT_CATALOG. If /api/config is unreachable, fall back
+// to the core report so the Documentation section is never left without tabs.
 function renderReportTabs(types) {
   const container = document.querySelector(".report-tabs");
-  if (!container || !Array.isArray(types) || !types.length) return;
+  if (!container) return;
+  if (!Array.isArray(types) || !types.length) {
+    types = [{ type: "risk", label: "Risk assessment" }];
+  }
   container.innerHTML = "";
   types.forEach((t, i) => container.append(
     el("button", { type: "button", class: i === 0 ? "tab active" : "tab",
@@ -274,6 +287,7 @@ async function aiNarrative(field, btn) {
 
 // --- render form -----------------------------------------------------------
 function renderForm() {
+  if (!QUESTIONNAIRE) return;
   const form = $("#intake-form");
   form.innerHTML = "";
   for (const section of QUESTIONNAIRE.sections) {
@@ -286,8 +300,14 @@ function renderForm() {
 
 function renderField(q) {
   const wrap = el("div", { class: "field" });
+  // boolean/radio/multiselect render as a group of inputs inside a <div>, which
+  // is not labelable — use a span + aria-labelledby instead of <label for>.
+  const isGroup = ["boolean", "radio", "multiselect"].includes(q.type);
   const labelText = [q.label, q.required ? el("span", { class: "req" }, " *") : ""];
-  wrap.append(el("label", { class: "q", for: q.id }, ...labelText));
+  wrap.append(isGroup
+    ? el("span", { class: "q", id: `${q.id}-label` }, ...labelText)
+    : el("label", { class: "q", for: q.id }, ...labelText));
+  const groupProps = (role) => ({ id: q.id, role, "aria-labelledby": `${q.id}-label` });
 
   let input;
   if (q.type === "text") {
@@ -299,18 +319,18 @@ function renderField(q) {
     input.append(el("option", { value: "" }, "— select —"));
     q.options.forEach((o) => input.append(el("option", { value: o.value }, o.label)));
   } else if (q.type === "boolean") {
-    input = el("div", { class: "segmented", id: q.id });
+    input = el("div", { class: "segmented", ...groupProps("radiogroup") });
     [["true", "Yes"], ["false", "No"]].forEach(([val, lab], i) => {
       input.append(el("label", {},
         el("input", { type: "radio", name: q.id, value: val, ...(i === 1 ? { checked: "checked" } : {}) }),
         el("span", {}, lab)));
     });
   } else if (q.type === "radio") {
-    input = el("div", { class: "choice", id: q.id });
+    input = el("div", { class: "choice", ...groupProps("radiogroup") });
     q.options.forEach((o) => input.append(el("label", {},
       el("input", { type: "radio", name: q.id, value: o.value }), o.label)));
   } else if (q.type === "multiselect") {
-    input = el("div", { class: "choice", id: q.id });
+    input = el("div", { class: "choice", ...groupProps("group") });
     q.options.forEach((o) => input.append(el("label", {},
       el("input", { type: "checkbox", name: q.id, value: o.value }), o.label)));
   }
@@ -331,6 +351,7 @@ function renderField(q) {
 // --- collect answers --------------------------------------------------------
 function collectAnswers() {
   const a = {};
+  if (!QUESTIONNAIRE) return a;
   for (const section of QUESTIONNAIRE.sections) {
     for (const q of section.questions) {
       if (q.type === "boolean") {
@@ -353,23 +374,26 @@ function collectAnswers() {
 
 // Fill fields on the CURRENT form (without re-render/reset).
 function fillFields(a) {
+  // CSS.escape: imported/AI-drafted values may contain quotes or backslashes,
+  // which would otherwise make querySelector throw mid-import.
   for (const [k, v] of Object.entries(a)) {
+    const name = CSS.escape(k);
     if (Array.isArray(v)) {
       // first clear existing selections of this multiselect
-      document.querySelectorAll(`input[name="${k}"]`).forEach((c) => (c.checked = false));
+      document.querySelectorAll(`input[name="${name}"]`).forEach((c) => (c.checked = false));
       v.forEach((val) => {
-        const c = document.querySelector(`input[name="${k}"][value="${val}"]`);
+        const c = document.querySelector(`input[name="${name}"][value="${CSS.escape(String(val))}"]`);
         if (c) c.checked = true;
       });
     } else if (typeof v === "boolean") {
-      const c = document.querySelector(`input[name="${k}"][value="${v}"]`);
+      const c = document.querySelector(`input[name="${name}"][value="${v}"]`);
       if (c) c.checked = true;
     } else {
       const node = document.getElementById(k);
       if (node && (node.tagName === "INPUT" || node.tagName === "TEXTAREA" || node.tagName === "SELECT")) {
         node.value = v;
       }
-      const radio = document.querySelector(`input[name="${k}"][value="${v}"]`);
+      const radio = document.querySelector(`input[name="${name}"][value="${CSS.escape(String(v))}"]`);
       if (radio) radio.checked = true;
     }
   }
@@ -506,7 +530,9 @@ function downloadMarkdown() {
 
 // --- saved assessments ------------------------------------------------------
 async function loadSaved() {
-  const roll = await (await fetch("/api/portfolio")).json();
+  let roll;
+  try { roll = await (await fetch("/api/portfolio")).json(); }
+  catch { toast("Could not load the inventory."); return; }
   const items = roll.systems || [];
   $("#saved-count").textContent = roll.count ?? items.length;
   const list = $("#saved-list");
@@ -547,9 +573,12 @@ async function loadSaved() {
   const tbody = el("tbody", {});
   items.forEach((it) => {
     const actions = el("td", { class: "inv-actions" });
-    actions.append(el("a", { onclick: () => openSaved(it.id) }, "Open"));
-    actions.append(el("a", { onclick: () => exportJson(it.id) }, "JSON"));
-    const del = el("a", { class: "danger" }, "Delete");
+    // Real buttons (styled as links): href-less <a> is not keyboard-operable.
+    actions.append(el("button", { type: "button", class: "linkish",
+                                  onclick: () => openSaved(it.id) }, "Open"));
+    actions.append(el("button", { type: "button", class: "linkish",
+                                  onclick: () => exportJson(it.id) }, "JSON"));
+    const del = el("button", { type: "button", class: "linkish danger" }, "Delete");
     del.addEventListener("click", () => confirmDelete(del, it.id));
     actions.append(del);
     tbody.append(el("tr", {},
@@ -584,7 +613,9 @@ async function deleteAssessment(id) {
 }
 
 async function exportJson(id) {
-  const data = await (await fetch(`/api/assessments/${id}`)).json();
+  const res = await fetch(`/api/assessments/${id}`);
+  if (!res.ok) { toast("Assessment not found."); return; }
+  const data = await res.json();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = el("a", { href: url, download: `${id}.json` });
@@ -607,7 +638,9 @@ async function importJson(file) {
 }
 
 async function openSaved(id) {
-  const data = await (await fetch(`/api/assessments/${id}`)).json();
+  const res = await fetch(`/api/assessments/${id}`);
+  if (!res.ok) { toast("Assessment not found."); return; }
+  const data = await res.json();
   CURRENT = data;
   setAnswers(data.answers || {});
   renderClassification();
@@ -660,15 +693,21 @@ function toast(msg) {
 
 // --- minimal Markdown -> HTML -----------------------------------------------
 function escapeHtml(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function inline(s) {
   return s
     .replace(/`([^`]+)`/g, (_, x) => `<code>${x}</code>`)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Only linkify http/https/mailto/anchor URLs — never javascript: etc.
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, url) =>
+      /^(https?:\/\/|mailto:|#)/i.test(url)
+        ? `<a href="${url}" target="_blank" rel="noopener">${text}</a>`
+        : m)
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>")
-    .replace(/_([^_]+)_/g, "<em>$1</em>");
+    // Word-bounded so bare snake_case ids (arch_api_write) are left alone.
+    .replace(/(^|[\s(])_([^_\s][^_]*)_(?=$|[\s.,;:)])/g, "$1<em>$2</em>");
 }
 function mdToHtml(md) {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
@@ -732,8 +771,10 @@ function mdToHtml(md) {
       continue;
     }
 
-    // Paragraph
-    const buf = [];
+    // Paragraph — always consume at least one line: a line containing '|' that
+    // is not part of a table would otherwise match no branch and loop forever.
+    const buf = [line];
+    i++;
     while (i < lines.length && !/^\s*$/.test(lines[i]) &&
            !/^(#{1,6})\s/.test(lines[i]) && !lines[i].includes("|") &&
            !/^\s*[-*]\s+/.test(lines[i]) && !/^>\s?/.test(lines[i])) {

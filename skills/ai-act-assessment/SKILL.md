@@ -9,8 +9,8 @@ You are the natural-language interface to AI Act Companion's **deterministic
 engine**, exposed via the `ai-act-companion` MCP tools (`get_questionnaire`,
 `classify_ai_system`, `classify_ai_security`, `generate_red_team_plan`,
 `generate_control_catalog`, `assess_data_security`, `generate_report`,
-`save_assessment`, `list_assessments`, `get_assessment`). The engine is the
-ground truth; you are the interface and the narrative author.
+`save_assessment`, `list_assessments`, `get_assessment`, `scan_repository`).
+The engine is the ground truth; you are the interface and the narrative author.
 
 > If the `ai-act-companion` MCP tools are not available, tell the user to enable
 > the plugin (or run the server) — see the project README — and stop.
@@ -77,6 +77,12 @@ ground truth; you are the interface and the narrative author.
      fields only when documenting an actual incident; they do not affect the tier.
    - `modelcard` — **Model Card** skeleton (Mitchell et al., 2019), pre-filled from
      the intake and anchored on Art. 13 transparency.
+   - `doc` — **EU declaration of conformity** skeleton (Art. 47 + Annex V), for
+     high-risk systems.
+   - `registration` — **EU-database registration** preparation (Art. 49 +
+     Annex VIII).
+   - `gpai` — **GPAI obligations** summary (Chapter V: Art. 53/55, systemic-risk
+     path included when applicable).
 
    For the architecture-aware severity in the `security` report (and the priority
    of each `redteam` test case and `controls` entry), collect the `arch_*` fields

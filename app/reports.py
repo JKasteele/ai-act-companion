@@ -5,6 +5,7 @@ for preview/print. No external templating dependency: we build the Markdown with
 Python strings, fed by the classifier output.
 """
 
+from . import __version__
 from ._normalize import truthy as _truthy
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
@@ -83,7 +84,7 @@ def _header(assessment):
     return (
         f"_Assessment id: `{assessment.get('id', '-')}` · "
         f"Generated: {assessment.get('created_at', '-')} · "
-        f"AI Act Companion v0.7_\n\n"
+        f"AI Act Companion v{__version__}_\n\n"
         f"> {eu.DISCLAIMER}\n"
     )
 

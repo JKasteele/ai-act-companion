@@ -39,7 +39,7 @@
       <div class="inv-toolbar">
         <button type="button" id="btn-export-csv" class="secondary">Export register (CSV)</button>
         <label class="import-btn">Import JSON
-          <input type="file" id="import-file" accept="application/json,.json" hidden />
+          <input type="file" id="import-file" accept="application/json,.json" class="visually-hidden" />
         </label>
       </div>
       <div id="saved-list"></div>
@@ -122,7 +122,7 @@
   </main>
 
   <footer class="no-print wrap">
-    <small>AI Act Companion v0.7 &middot; runs locally (privacy-first) or as a
+    <small><span id="app-version">AI Act Companion</span> &middot; runs locally (privacy-first) or as a
     <a href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noopener">Claude Code plugin</a>
     &middot; MIT license</small>
   </footer>

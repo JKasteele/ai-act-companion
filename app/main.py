@@ -88,7 +88,7 @@ def timeline():
 try:
     from .llm import service as ai_service
 except Exception:  # noqa: BLE001
-    ai_service = None
+    ai_service = None  # type: ignore[assignment]
 
 
 def _require_ai():
