@@ -59,7 +59,12 @@ app = FastAPI(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": __version__, "ai_layer": True,
+    # Report whether an AI provider is *configured*, not whether it is
+    # reachable — this endpoint is a liveness probe (docker CI polls it) and
+    # must never do network I/O. Was hardcoded True, which misreported
+    # LLM_PROVIDER=none deployments such as the public demo.
+    ai_on = ai_service is not None and ai_service.get_provider() is not None
+    return {"status": "ok", "version": __version__, "ai_layer": ai_on,
             "demo_mode": DEMO_MODE}
 
 

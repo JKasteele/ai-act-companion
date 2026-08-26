@@ -41,14 +41,28 @@ docker run --rm -p 7860:7860 -e DEMO_MODE=1 -e LLM_PROVIDER=none \
    matter. In the Space's web editor, create/replace its `README.md` with the
    header in [the Space card](#space-card-readmemd-front-matter) below. Keep this
    as the **Space's** README — do not copy it into the GitHub repo README.
-4. **Push the code.** From a clone of this repo:
+4. **Push the code.** The Space repo keeps its **own git history** — its
+   `README.md` is the Space card (step 3) and `docs/img/*` are LFS stubs — so
+   do **not** push GitHub `main` over it. Layer a deploy commit on top of the
+   Space branch instead:
    ```bash
    git remote add space https://huggingface.co/spaces/<your-hf-username>/ai-act-companion
-   git push space main
+   GIT_LFS_SKIP_SMUDGE=1 git -c protocol.version=1 fetch space
+   GIT_LFS_SKIP_SMUDGE=1 git worktree add ../space-deploy space/main
+   cd ../space-deploy
+   git checkout main -- app static examples tests skills mcp_server.py \
+       pyproject.toml action.yml CHANGELOG.md Dockerfile
+   git commit -m "Deploy vX.Y.Z (<what changed>)"
+   git -c protocol.version=1 push space HEAD:main
+   cd - && git worktree remove ../space-deploy
    ```
-   (Use an HF access token with *write* scope when prompted for a password, or
-   run `huggingface-cli login` first. In Claude Code you can run the login
-   interactively by typing `! huggingface-cli login`.)
+   Notes: `protocol.version=1` works around a protocol-v2 handshake error with
+   the HF git server ("expected 'acknowledgments'"); `GIT_LFS_SKIP_SMUDGE=1`
+   leaves the Space's LFS image stubs untouched (their objects live on HF, not
+   GitHub). Authenticate with your HF username + a *write*-scope access token
+   as the git password (`huggingface-cli login` / `hf auth login` stores one at
+   `~/.cache/huggingface/token`). In Claude Code you can run the login
+   interactively by typing `! hf auth login`.
 5. **Wait for the build**, then open `https://huggingface.co/spaces/<your-hf-username>/ai-act-companion`.
    Confirm the sandbox banner shows, the AI panel is hidden, and a synthetic
    classification + reports render end-to-end.
