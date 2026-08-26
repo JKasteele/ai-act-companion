@@ -5,6 +5,8 @@ anything. All output is a DRAFT that the user reviews in the frontend and only
 then classifies (manually).
 """
 
+import re
+
 from . import prompts
 from .base import extract_json, get_provider, validate_answers
 
@@ -99,7 +101,6 @@ def draft_narrative(field, answers):
 
     text = provider.generate(system, user, as_json=False)
     # Strip any <think> blocks from reasoning models.
-    import re
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL | re.IGNORECASE).strip()
     return {"mode": "auto", "provider": provider.name, "field": field,
             "text": text, "hitl_notice": HITL_NOTICE}
