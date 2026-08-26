@@ -30,20 +30,29 @@ runs:
       uses: actions/setup-python@v6
       with:
         python-version: "3.12"
+    # Inputs reach the shell via env, never ${{ }} interpolation inside `run:`
+    # — template expansion happens before the shell parses, so a crafted input
+    # would otherwise become script.
     - name: Install AI Act Companion
       shell: bash
+      env:
+        AIACT_REF: ${{ inputs.ref }}
+        AIACT_VERSION: ${{ inputs.version }}
       run: |
-        if [ -n "${{ inputs.ref }}" ]; then
-          pip install "ai-act-companion @ git+https://github.com/JKasteele/ai-act-companion@${{ inputs.ref }}"
-        elif [ -n "${{ inputs.version }}" ]; then
-          pip install "ai-act-companion==${{ inputs.version }}"
+        if [ -n "$AIACT_REF" ]; then
+          pip install "ai-act-companion @ git+https://github.com/JKasteele/ai-act-companion@$AIACT_REF"
+        elif [ -n "$AIACT_VERSION" ]; then
+          pip install "ai-act-companion==$AIACT_VERSION"
         else
           pip install ai-act-companion
         fi
     - name: Scan for EU AI Act relevance
       shell: bash
+      env:
+        AIACT_SCAN_PATH: ${{ inputs.path }}
+        AIACT_FAIL_ON_DETECT: ${{ inputs.fail-on-detect }}
       run: |
         set -o pipefail
         FLAG=""
-        if [ "${{ inputs.fail-on-detect }}" = "true" ]; then FLAG="--fail-on-detect"; fi
-        ai-act scan "${{ inputs.path }}" $FLAG | tee -a "$GITHUB_STEP_SUMMARY"
+        if [ "$AIACT_FAIL_ON_DETECT" = "true" ]; then FLAG="--fail-on-detect"; fi
+        ai-act scan "$AIACT_SCAN_PATH" $FLAG | tee -a "$GITHUB_STEP_SUMMARY"
