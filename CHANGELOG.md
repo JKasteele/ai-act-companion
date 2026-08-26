@@ -4,7 +4,7 @@ All notable changes are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); the project uses
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.8.0] - 2026-08-26
 
 A review-driven correctness, testing and hardening pass (see
 [docs/ROADMAP-REVIEW.md](docs/ROADMAP-REVIEW.md)).
@@ -51,6 +51,8 @@ A review-driven correctness, testing and hardening pass (see
 ### Fixed
 - Out-of-scope systems no longer emit GPAI (Chapter V) obligations.
 - `reports._bool` now matches the classifier's truthiness (e.g. `"0"`/`"off"`).
+
+[0.8.0]: https://github.com/JKasteele/ai-act-companion/releases/tag/v0.8.0
 
 ## [0.7.0] - 2026-06-17
 

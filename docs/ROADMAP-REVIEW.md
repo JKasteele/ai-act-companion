@@ -1,12 +1,14 @@
 # Review-Driven Roadmap
 
-_Last reviewed: 2026-07-03_
+_Last reviewed: 2026-08-26_
 
-> **Status (2026-07-03):** Milestones 1–4 are largely implemented — see the
-> `[Unreleased]` section of [../CHANGELOG.md](../CHANGELOG.md) for what shipped.
-> Still open by design: PyPI release automation (M2.8), the optional MCP
-> surface changes (M3.8: `scan` tool, report-by-id, `confirmed` flag), and the
-> deferred items at the bottom. This document is kept as the rationale/reference.
+> **Status (2026-08-26):** Milestones 1–4 shipped in **0.8.0** — see
+> [../CHANGELOG.md](../CHANGELOG.md). That includes M2.8 (the tag-triggered
+> PyPI workflow exists; the first publish still needs the trusted publisher
+> configured on pypi.org) and the M3.8 MCP surface changes (`scan` tool,
+> report-by-id, `confirmed` flag). Of the deferred block at the bottom, the
+> three report types also shipped in 0.8.0; still open by choice: JS test
+> tooling and auth/rate limiting. Kept as the rationale/reference.
 
 This document captures the findings of a full codebase + repository review and
 organizes the follow-up work into milestones. It is meant to be picked up one
@@ -218,7 +220,7 @@ The engine is well covered; the three front-ends and the AI layer are the holes.
 
 ## Deferred (need separate decisions)
 
-- **New report types:** an EU Declaration of Conformity skeleton (Art. 47), an
+- **New report types** *(shipped in 0.8.0)*: an EU Declaration of Conformity skeleton (Art. 47), an
   Art. 49 EU-database registration data sheet, and a dedicated GPAI obligations
   report (Art. 53/55 with a training-data-summary and copyright-policy
   template). GPAI is a first-class regime but currently produces only a couple

@@ -66,8 +66,9 @@ docker run --rm -p 7860:7860 -e DEMO_MODE=1 -e LLM_PROVIDER=none \
 5. **Wait for the build**, then open `https://huggingface.co/spaces/<your-hf-username>/ai-act-companion`.
    Confirm the sandbox banner shows, the AI panel is hidden, and a synthetic
    classification + reports render end-to-end.
-6. **Link it from the README.** Once the URL is live, add the live-demo badge to
-   the top of `README.md` (see the project TODO in the release notes).
+6. **Link it from the README.** Once the URL is live, point the live-demo badge
+   at the top of `README.md` at your Space (the canonical deployment already
+   carries one).
 
 ## Space card (`README.md` front matter)
 

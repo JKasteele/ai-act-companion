@@ -475,14 +475,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: JKasteele/ai-act-companion@v0.7.0   # pin a release tag for stability
+      - uses: JKasteele/ai-act-companion@v0.8.0   # pin a release tag for stability
         with:
           path: .
           # ref: main                # optional: which ref of the tool to install
           # fail-on-detect: "true"   # optional: turn the scan into a gate
 ```
 
-> **Version pinning.** `uses: …@v0.7.0` selects the **action** version; the
+> **Version pinning.** `uses: …@v0.8.0` selects the **action** version; the
 > action's `ref` input (default `main`) selects which ref of the **tool** it
 > installs. Pin both to the same release tag for reproducible runs.
 
@@ -541,6 +541,12 @@ deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 - [x] **Live demo** (Hugging Face Spaces) + **EU AI Act deadline countdown** + a refreshed UI
 - [x] **Static example report gallery** — real generated artifacts, viewable on GitHub
 - [x] **Repo AI-usage scanner** — `ai-act scan` + a GitHub Action that flags EU AI Act relevance in any codebase
+- [x] **Regulatory-logic pass (0.8.0)** — Art. 2 scope exemptions, provider vs. deployer obligation split, GPAI open-source carve-out (Art. 53(2)), Art. 4 AI literacy as a baseline obligation
+- [x] **Conformity artifacts (0.8.0)** — EU Declaration of Conformity (Art. 47), EU-database registration sheet (Art. 49), GPAI obligations report (Art. 53–55) — 18 report types total
+- [ ] **PyPI release** — `pip install ai-act-companion` via the tag-triggered trusted-publishing workflow
+- [ ] **Demo video** — shot list ready in `docs/DEMO-SCRIPT.md`
+- [ ] **MCP SDK v2 migration** — currently pinned `mcp<2` (the 2.x SDK renamed FastMCP)
+- [ ] **Knowledge-base freshness process** — date-stamped knowledge modules, reviewed against new AI Office guidance and harmonised standards as they land
 
 ## Data & privacy
 
