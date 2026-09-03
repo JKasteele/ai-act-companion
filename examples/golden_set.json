@@ -519,5 +519,46 @@
       "data_personal": true,
       "data_special_category": true
     }
+  },
+  {
+    "name": "DeclaratieCheck claims anomaly scoring",
+    "expected_tier": "minimal",
+    "rationale": "Claims control / fraud scoring at a health insurer is not 'risk assessment and pricing' (Annex III-5(c)) and no other Annex III area applies; profiling matters for GDPR Art. 22 and the EIOPA Opinion, not for the AI Act tier. No Art. 50 trigger.",
+    "answers": {
+      "sys_name": "DeclaratieCheck claims anomaly scoring",
+      "sys_description": "Scores claims for anomalies and routes them to investigators.",
+      "intended_purpose": "Prioritise claims for manual control.",
+      "provider_role": "both",
+      "eu_market": true,
+      "org_sector": "insurance",
+      "hr_usecases": [
+        "none"
+      ],
+      "hr_does_profiling": true,
+      "data_personal": true,
+      "data_special_category": true,
+      "automated_decision": false
+    }
+  },
+  {
+    "name": "ZorgChat customer-service assistant",
+    "expected_tier": "limited",
+    "rationale": "A customer-facing chatbot that also generates text triggers the Art. 50(1)/(2) transparency duties; it takes no coverage or payment decisions, so no Annex III area applies.",
+    "answers": {
+      "sys_name": "ZorgChat customer-service assistant",
+      "sys_description": "GenAI assistant answering coverage and claim-status questions.",
+      "intended_purpose": "First-line customer service.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "org_sector": "insurance",
+      "hr_usecases": [
+        "none"
+      ],
+      "t_interacts_humans": true,
+      "t_synthetic_content": true,
+      "sec_is_llm": true,
+      "sec_agentic": true,
+      "data_personal": true
+    }
   }
 ]

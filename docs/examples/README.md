@@ -23,11 +23,13 @@ CV-screening (Annex III-4 employment) — the high-risk governance pack, incl. t
 - [Governance register](hiring-cv-screening-governance.md)
 
 ## OpenScribe-7B foundation model — Minimal risk
-A general-purpose AI model (GPAI, Chapter V) — the data-security lens.
+A general-purpose AI model (GPAI, Chapter V) — the data-security lens and training-data governance (provenance, TDM opt-out, Art. 53 training-content summary).
 
 - [Risk assessment](foundation-model-risk.md)
 - [Data security (DSGAI)](foundation-model-datasec.md)
 - [Model card](foundation-model-modelcard.md)
+- [GPAI obligations (Art. 53–55)](foundation-model-gpai.md)
+- [Data governance & quality (Art. 10)](foundation-model-datagov.md)
 
 ## HelpBot customer service — Limited risk (transparency obligations)
 Public RAG helpbot — the offense↔defense loop (red-team test ↔ control), and what 'not ready' looks like in the forensic-readiness and governance views.
@@ -43,6 +45,26 @@ Public RAG helpbot — the offense↔defense loop (red-team test ↔ control), a
 A prohibited practice (Art. 5) — what a banned system looks like.
 
 - [Risk assessment](social-scoring-risk.md)
+
+## DeclaratieCheck claims anomaly scoring — Minimal risk
+Claims anomaly & fraud scoring at a health insurer — *minimal* risk under the AI Act, yet profiling of insured persons: the 'not high-risk but heavily governed' case (GDPR Art. 22, EIOPA Opinion via DNB, ZN separation of basic/supplementary data, DORA via a vendor dataset).
+
+- [Risk assessment](health-insurer-claims-fraud-risk.md)
+- [Data governance & quality (Art. 10)](health-insurer-claims-fraud-datagov.md)
+- [Governance register](health-insurer-claims-fraud-governance.md)
+- [Post-market monitoring plan](health-insurer-claims-fraud-monitoring.md)
+- [DPIA skeleton](health-insurer-claims-fraud-dpia.md)
+
+## ZorgChat customer-service assistant — Limited risk (transparency obligations)
+GenAI customer-service assistant on a hosted model with claim-status tools — *limited* risk (Art. 50), but health data in prompts, an external model provider (DORA), agentic tool calls and a governance status that is still 'in review'.
+
+- [Risk assessment](health-insurer-service-assistant-risk.md)
+- [AI security lens](health-insurer-service-assistant-security.md)
+- [Control catalogue](health-insurer-service-assistant-controls.md)
+- [Red-team test plan](health-insurer-service-assistant-redteam.md)
+- [Forensic readiness & evidence plan](health-insurer-service-assistant-forensics.md)
+- [Compliance tracker](health-insurer-service-assistant-compliance.md)
+- [Governance register](health-insurer-service-assistant-governance.md)
 
 ## PolisPrijs supplementary health pricing — High risk
 Health-insurance pricing (Annex III-5(c)) — the data-governance layer: dataset inventory, owners/stewards, lineage, quality dimensions, derived gaps.

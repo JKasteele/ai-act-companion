@@ -103,7 +103,7 @@ path, a frontend tab in `static/`, and usually a knowledge module + MCP tool.
 - **Changing classification logic** → add or adjust a labelled case in
   `examples/golden_set.json`, labelling the expected tier by reasoning from the
   regulation, **not** by running the classifier. `tests/test_accuracy.py` runs
-  the 31-case golden set and expects 100%.
+  the 33-case golden set and expects 100%.
 - **Knowledge base honesty** → cite a source for any article/standard reference.
   Where a cross-framework mapping is the project's own analytical alignment and
   not an official published crosswalk, it must say so — in the code/data **and**

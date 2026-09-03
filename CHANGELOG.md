@@ -6,6 +6,21 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Two more health-insurer examples** so the three insurer cases cover three
+  tiers: `health_insurer_claims_fraud` (claims anomaly & fraud scoring — minimal
+  risk under the AI Act but profiling of insured persons: GDPR Art. 22, EIOPA
+  Opinion, ZN separation of basic/supplementary data, DORA via a vendor dataset)
+  and `health_insurer_service_assistant` (GenAI service assistant on a hosted
+  model with claim-status tools — limited risk, health data in prompts, agentic
+  controls, governance still in review). Both in the golden set (33 cases) and
+  the gallery. `foundation_model` gains training-data governance (provenance,
+  TDM opt-out, Art. 53 training-content summary) and evidence fields; the
+  gallery now also renders its GPAI and data-governance reports.
+- `tests/test_examples.py`: every example uses only known fields, classifies
+  to its expected tier, and renders all 21 reports in both languages; README
+  gains an example index.
+
 ## [0.9.2] - 2026-09-03
 
 ### Added
