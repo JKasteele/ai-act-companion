@@ -73,5 +73,28 @@
   "dg_q_validity": "measured",
   "dg_q_uniqueness": "assessed",
   "dg_q_representativeness": "assessed",
-  "dg_q_evidence": "Completeness 98.7% on mandatory fields (DQ dashboard, 2026-08); accuracy: 0.4% error vs. verified sample (DQ-2026-11); representativeness reviewed per age band and region, no metric yet."
+  "dg_q_evidence": "Completeness 98.7% on mandatory fields (DQ dashboard, 2026-08); accuracy: 0.4% error vs. verified sample (DQ-2026-11); representativeness reviewed per age band and region, no metric yet.",
+  "fr_log_scope": [
+    "inference_io",
+    "model_version",
+    "human_override",
+    "config_changes",
+    "eval_reports",
+    "drift_metrics",
+    "data_access",
+    "incident_file"
+  ],
+  "fr_retention_months": "gt24",
+  "fr_retention_basis": "financial_services",
+  "fr_integrity": "hashing",
+  "fr_time_sync": true,
+  "fr_model_pinned": true,
+  "fr_prompt_versioned": false,
+  "fr_rag_snapshot": false,
+  "fr_override_logged": true,
+  "fr_log_pii": "case_id",
+  "fr_vendor_log_access": "portal_only",
+  "fr_legal_hold": false,
+  "fr_evidence_owner": "AI governance lead (custodian: SecOps)",
+  "fr_drill": false
 }

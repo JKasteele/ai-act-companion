@@ -90,6 +90,12 @@ The engine is the ground truth; you are the interface and the narrative author.
      ISO 42001 A.7 / NIST / EIOPA crosswalk. Collect section 11 (`dg_*`) for it;
      `dg_datasets` is a list of row objects (name, origin, owner, steward,
      classification, purpose, retention, legal_basis).
+   - `forensics` — **Forensic readiness & evidence plan** (Art. 12/19/26(6)/73):
+     evidence register (artefact → obligation → location → retention → owner →
+     integrity), an 8-dimension readiness score, the parallel reporting clocks
+     (AI Act / GDPR / DORA / NIS2) and a crosswalk to ISO 27001, ISO 42001, CIS
+     Control 8 and ATLAS AML.M0024. Collect section 12 (`fr_*`); the score is a
+     pure function of those fields.
 
    For the architecture-aware severity in the `security` report (and the priority
    of each `redteam` test case and `controls` entry), collect the `arch_*` fields

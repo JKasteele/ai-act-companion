@@ -63,7 +63,9 @@ The engine is pure functions, no I/O, fully testable:
 - Knowledge lives in `app/knowledge/`: `eu_ai_act.py` (articles, timeline,
   `KNOWLEDGE_VERSION`/`LAST_REVIEWED`/`AMENDMENTS`), `data_governance.py`
   (DAMA-style vocabulary, dataset rows, quality dimensions, gap rules),
-  `sector_frameworks.py` (ALTAI, EIOPA, DNB SAFEST, DORA hook), plus the
+  `sector_frameworks.py` (ALTAI, EIOPA, DNB SAFEST, DORA hook), `forensics.py`
+  (evidence artefacts, readiness dimensions, reporting clocks; scored by
+  `app/forensics.py`, a pure function like `incident.py`), plus the
   security/ISO/NIST modules. Every crosswalk ships a PROVENANCE line.
 - `classifier.classify(answers) -> dict` — EU AI Act decision. Highest severity
   wins: Art. 5 (prohibited) → Art. 6 (high) → Art. 50 (limited) → minimal; GPAI
@@ -76,10 +78,10 @@ The engine is pure functions, no I/O, fully testable:
   `stride.py`, and `data_security.py` reuse this same severity so the offense
   (red-team), defense (controls), and threat-model views agree by construction.
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of nineteen Markdown artifacts: `risk`, `dpia`, `bias`, `security`,
+  renders one of twenty Markdown artifacts: `risk`, `dpia`, `bias`, `security`,
   `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`, `redteam`,
   `controls`, `datasec`, `stride`, `incident`, `modelcard`, `doc`,
-  `registration`, `gpai`, `datagov`. The catalogue is defined once in
+  `registration`, `gpai`, `datagov`, `forensics`. The catalogue is defined once in
   `reports.REPORT_CATALOG` (type + label) and consumed by the API `/api/config`,
   the frontend tabs and the MCP tool. Markdown is the canonical export; PDF is
   browser print-to-PDF (no dependency).

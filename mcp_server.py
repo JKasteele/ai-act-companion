@@ -116,7 +116,7 @@ def generate_report(
         "risk", "dpia", "bias", "security", "fria",
         "techdoc", "compliance", "monitoring", "framework-matrix", "redteam",
         "controls", "datasec", "stride", "incident", "modelcard",
-        "doc", "registration", "gpai", "datagov",
+        "doc", "registration", "gpai", "datagov", "forensics",
     ] = "risk",
     assessment_id: str = "",
 ) -> str:
@@ -153,7 +153,12 @@ def generate_report(
       'datagov' - data governance & quality record (Art. 10 / Art. 26(4)):
         roles (data owner/steward), dataset inventory with provenance and
         classification, lineage, DAMA-style quality dimensions, derived gap
-        list and an ISO 42001 A.7 / NIST / EIOPA crosswalk.
+        list and an ISO 42001 A.7 / NIST / EIOPA crosswalk;
+      'forensics' - forensic readiness & evidence plan (Art. 12/19/26(6)/73):
+        evidence register (artefact -> obligation -> location -> retention ->
+        owner -> integrity), readiness score over eight dimensions, parallel
+        reporting clocks (AI Act / GDPR / DORA / NIS2) and a crosswalk to ISO
+        27001, ISO 42001, CIS Control 8, ATLAS AML.M0024.
     Provide either `answers` (classified on the fly) or `assessment_id` (render
     from a previously saved assessment). The system is classified
     deterministically first, then the report is rendered. Present the draft to

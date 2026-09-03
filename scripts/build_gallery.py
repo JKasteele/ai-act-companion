@@ -42,7 +42,7 @@ GALLERY = [
     ("health_insurance_pricing.json",
      "Health-insurance pricing (Annex III-5(c)) — the data-governance layer: "
      "dataset inventory, owners/stewards, lineage, quality dimensions, derived gaps.",
-     ["risk", "datagov", "fria", "dpia", "compliance"]),
+     ["risk", "datagov", "fria", "dpia", "compliance", "forensics", "incident"]),
 ]
 
 TYPE_LABEL = {
@@ -52,6 +52,7 @@ TYPE_LABEL = {
     "fria": "FRIA (Art. 27)", "compliance": "Compliance tracker",
     "techdoc": "Annex IV technical docs", "modelcard": "Model card",
     "datagov": "Data governance & quality (Art. 10)", "dpia": "DPIA skeleton",
+    "forensics": "Forensic readiness & evidence plan", "incident": "Serious incident (Art. 73)",
 }
 
 

@@ -7,6 +7,24 @@ All notable changes are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Forensic readiness & evidence plan** (report 20, `forensics`). New intake
+  section 12 (`fr_*`) and a pure assessment function (`app/forensics.py`) that
+  derives an **evidence register** (16 artefacts — model identity, prompt version,
+  inference record, parameters/seed, retrieval snapshot, tool-call trace,
+  human-override events, lineage, training snapshot, evaluation/bias reports,
+  drift, change records, guardrail config, data-access logs, incident file,
+  integrity evidence — each mapped to the obligation it proves and its typical
+  location; relevance depends on architecture and role), an 8-dimension
+  **readiness score** (log scope, retention, integrity, time sync, model/prompt
+  pinning, oversight evidence, supplier evidence, legal hold), a
+  **retention-versus-minimisation** check (Art. 19/26(6) six-month floor vs. GDPR;
+  special-category data in logs), the **parallel reporting clocks** (AI Act Art.
+  73 from `ART_73_TIMELINE`, GDPR Art. 33/34, DORA Art. 19 for financial entities,
+  NIS2/Cyberbeveiligingswet where in scope) and a crosswalk (ISO 27001 5.28 /
+  8.15 / 8.17, ISO 42001 A.6.2.8, CIS Control 8, ATLAS AML.M0024, OWASP AI
+  Exchange #MONITORUSE, Rowlingson 2004). The serious-incident report gains the
+  same clocks table and a "preserve evidence first" note (Art. 73(6)). Free text
+  cannot move the score (test).
 - **Sector crosswalks and the DORA hook.** New knowledge module
   `app/knowledge/sector_frameworks.py`: ALTAI (EU HLEG, seven requirements)
   rendered in every risk report with EU AI Act / ISO 42001 anchors and the

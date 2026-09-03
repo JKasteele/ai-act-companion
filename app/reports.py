@@ -10,11 +10,13 @@ from ._normalize import select_field as _select
 from ._normalize import truthy as _truthy
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
+from .forensics import assess_forensic_readiness, reporting_clocks
 from .incident import assess_incident
 from .knowledge import ai_security as sec
 from .knowledge import data_governance as dg
 from .knowledge import data_security as ds
 from .knowledge import eu_ai_act as eu
+from .knowledge import forensics as fx
 from .knowledge import iso_42001 as iso
 from .knowledge import monitoring as mon
 from .knowledge import sector_frameworks as sfx
@@ -48,6 +50,7 @@ REPORT_CATALOG = (
     ("registration", "EU-database registration"),
     ("gpai", "GPAI obligations"),
     ("datagov", "Data governance"),
+    ("forensics", "Forensic readiness"),
 )
 REPORT_TYPES = tuple(rtype for rtype, _label in REPORT_CATALOG)
 
@@ -1307,6 +1310,17 @@ def render_incident(assessment):
         md.append(f"| {case} | {deadline} | {_ref_link(basis)} |\n")
     md.append(f"\n{inc.get('note','')}\n")
 
+    md.append("\n## 2.1 Parallel reporting clocks\n")
+    md.append("The same incident may also be a personal-data breach, a major ICT incident "
+              "(DORA) or a significant incident (NIS2). Each regime has its own start "
+              "trigger; see the forensic-readiness report for the evidence needed to "
+              "classify in time.\n\n")
+    _tier = (assessment.get("classification") or {}).get("tier", "minimal")
+    md.append(_clocks_table(reporting_clocks(answers, _tier)))
+    md.append("\n> **Preserve evidence first.** Art. 73: do not alter the system before "
+              "informing the authorities — declare a legal hold (stop log rotation, pin the "
+              "model version) as the first action.\n")
+
     md.append("\n## 3. Serious-incident report (to be completed)\n")
     md.append(
         f"| Field | Content |\n|---|---|\n"
@@ -1799,6 +1813,169 @@ def render_data_governance(assessment):
     return "".join(md)
 
 
+
+# --- 20. Forensic readiness & evidence plan ---------------------------------
+_STATUS_LABEL = {"in_place": "In place", "gap": "**Gap**", "n/a": "n/a"}
+
+
+def render_forensic_readiness(assessment):
+    answers = assessment.get("answers", {})
+    cls = assessment.get("classification") or {}
+    sys_name = _a(answers, "sys_name", "AI system")
+    fr = assessment.get("forensics") or assess_forensic_readiness(answers, cls)
+    tier = fr["tier"]
+
+    md = [f"# Forensic Readiness & Evidence Plan — {sys_name}\n", _header(assessment)]
+    md.append(
+        "Can the organisation reconstruct and evidence what this system did, why, with "
+        "which data and model version — after an incident, a complaint, a regulator "
+        f"request or a dispute? The EU AI Act makes logging a design requirement "
+        f"({_ref_link('Art. 12')}), retention a duty ({_ref_link('Art. 19')}, "
+        f"{_ref_link('Art. 26')}(6)) and evidence preservation an implicit duty "
+        f"({_ref_link('Art. 73')}: do not alter the system before reporting). Model output "
+        "is non-deterministic, so **evidence comes from recording, not from re-running**. "
+        "This plan says which evidence should exist and where; it is not a SIEM.\n"
+    )
+    md.append(f"\n**Readiness: {fr['total']} / {fr['max']} — {fr['band']}** "
+              f"(risk tier: {cls.get('tier_label', tier)})\n")
+
+    md.append("\n## 1. Scope and legal anchors\n")
+    role = (answers.get("provider_role") or "").strip().lower() or "unknown"
+    md.append(f"- Role ({_ref_link('Art. 3')}): {role}; risk tier: {tier}\n")
+    if tier == "high":
+        md.append(f"- {_ref_link('Art. 12')} automatic logging over the lifetime; "
+                  f"{_ref_link('Art. 19')} (provider) / {_ref_link('Art. 26')}(6) (deployer) "
+                  "keep logs ≥ 6 months; Annex IV(2) traceability content; "
+                  f"{_ref_link('Art. 72')} post-market monitoring; {_ref_link('Art. 73')} "
+                  "serious-incident reporting.\n")
+    else:
+        md.append(f"- Not high-risk: {_ref_link('Art. 12')}/{_ref_link('Art. 19')} do not bind, "
+                  "but GDPR accountability (Art. 5(2)), breach notification (Art. 33) and "
+                  "sector record-keeping still require reconstructable decisions.\n")
+    if truthy_(answers.get("data_personal")):
+        md.append("- GDPR Art. 5(2) accountability, Art. 22(3) human intervention, Art. 33/34 "
+                  "breach notification, Art. 32 security of processing.\n")
+    if fr["financial_entity"]:
+        md.append("- Financial entity: DORA Art. 17–19 incident management and reporting; the "
+                  "AI Act's own carve-ins apply:\n")
+        for ref, what in sfx.FINANCIAL_ENTITY_HOOKS:
+            if ref.startswith(("Art. 18", "Art. 26", "Art. 74")):
+                md.append(f"  - **{_ref_link(ref)}** — {what}\n")
+
+    md.append("\n## 2. Evidence register\n")
+    md.append("One row per artefact: what it proves, where it should live, and whether the "
+              "intake says it exists. Gap rows name the obligation that then cannot be "
+              "evidenced.\n\n")
+    md.append("| Status | Artefact | Proves | Anchors | Typical location | Retention | Owner |\n"
+              "|---|---|---|---|---|---|---|\n")
+    ret = dg_label_retention(answers)
+    owner = _a(answers, "fr_evidence_owner")
+    for r in fr["register"]:
+        md.append(f"| {_STATUS_LABEL[r['status']]} | {r['artefact']} | {r['proves']} | "
+                  f"{r['refs']} | {r['where']} | {ret if r['status'] == 'in_place' else ''} | "
+                  f"{owner if r['status'] == 'in_place' else ''} |\n")
+    n_gap = sum(1 for r in fr["register"] if r["status"] == "gap")
+    n_ok = sum(1 for r in fr["register"] if r["status"] == "in_place")
+    md.append(f"\n_{n_ok} artefact(s) in place, {n_gap} gap(s); rows marked n/a are not "
+              "relevant for this architecture or role._\n")
+
+    md.append("\n## 3. Integrity, time and chain of custody\n")
+    md.append(
+        f"- Log integrity: {_a(answers, 'fr_integrity')} — target: tamper-evident records "
+        "(hash chain + WORM, or signed with an independent time anchor), stored apart from "
+        "the monitored system, with access to the logs itself logged (ISO 27001 5.28, 8.15; "
+        "CIS Control 8.9; NIS2 guidance §3.2.5).\n"
+        f"- Time synchronisation: {_a(answers, 'fr_time_sync')} — one time source across "
+        "application, gateway, workflow and data-access logs (ISO 27001 8.17; CIS 8.4).\n"
+        "- Chain of custody: who collected which artefact when, with hashes; keep the "
+        "collection method documented (ISO/IEC 27037 / 27043).\n"
+    )
+
+    md.append("\n## 4. Retention versus minimisation\n")
+    md.append(
+        f"- Retention: {_a(answers, 'fr_retention_months')} — basis: "
+        f"{_a(answers, 'fr_retention_basis')}\n"
+        f"- Personal data in logs: {_a(answers, 'fr_log_pii')}\n"
+        f"- {_ref_link('Art. 19')}(1) / {_ref_link('Art. 26')}(6): at least six months "
+        "*unless provided otherwise in Union or national law, in particular on the "
+        "protection of personal data* — the GDPR can shorten the floor, a sector term can "
+        "lengthen it. Practical pattern: **layered retention** — technical metadata long, "
+        "prompt/response content short, legal hold as the exception; a hash of the input "
+        "proves what the input was without keeping it.\n"
+    )
+    if fr["conflicts"]:
+        md.append("\n**Conflicts detected:**\n\n")
+        for c in fr["conflicts"]:
+            md.append(f"- **{c['severity'].capitalize()}** — {c['gap']} {c['action']} ({c['ref']})\n")
+
+    md.append("\n## 5. Parallel reporting clocks\n")
+    md.append("One incident can start several clocks with different start triggers. Being "
+              "able to *classify* within hours is what forensic readiness buys.\n\n")
+    md.append(_clocks_table(fr["clocks"]))
+
+    md.append("\n## 6. Supplier evidence and the black-box limit\n")
+    md.append(
+        f"- Access to supplier-held evidence: {_a(answers, 'fr_vendor_log_access')}\n"
+        f"- Contractual lever: {_ref_link('Art. 25')}(4) — written agreement on information, "
+        f"capabilities, technical access and assistance; {_ref_link('Art. 13')}(3) provider "
+        "instructions must describe the logging mechanisms. For financial entities and "
+        "critical/important functions: DORA Art. 30(3) audit and access rights.\n"
+    )
+    if fr["financial_entity"]:
+        md.append("- DORA third-party checklist: see the compliance tracker (ICT third-party "
+                  "risk section).\n")
+
+    md.append("\n## 7. Readiness score and gaps\n")
+    md.append("| Dimension | Score | What 2 means |\n|---|---|---|\n")
+    for did, name, what in fx.READINESS_DIMENSIONS:
+        md.append(f"| {name} | {fr['scores'][did]} / 2 | {what} |\n")
+    md.append(f"\n**Total {fr['total']} / {fr['max']} — {fr['band']}.** Bands: 0–5 not ready, "
+              "6–10 partially ready, 11–14 ready with gaps, 15–16 forensic-ready.\n\n")
+    if fr["gaps"]:
+        md.append("| Severity | Gap | Action | Ref |\n|---|---|---|---|\n")
+        for g in fr["gaps"]:
+            md.append(f"| {g['severity'].capitalize()} | {_safe(g['gap'])} | "
+                      f"{_safe(g['action'])} | {g['ref']} |\n")
+    else:
+        md.append("_No gaps derived from the intake._\n")
+
+    md.append("\n## 8. Crosswalk\n")
+    md.append("| Topic | EU AI Act | ISO/IEC 42001 | ISO/IEC 27001:2022 | CIS Control 8 | "
+              "Other |\n|---|---|---|---|---|---|\n")
+    for topic, act, iso42, iso27, cis, other in fx.CROSSWALK:
+        md.append(f"| {topic} | {act} | {iso42} | {iso27} | {cis} | {other} |\n")
+    md.append(f"\n> _{fx.PROVENANCE}_\n")
+
+    md.append("\n## Sign-off\n")
+    md.append("| Role | Name | Date | Signature |\n|---|---|---|---|\n"
+              "| Evidence owner | | | |\n| SecOps / custodian | | | |\n"
+              "| AI governance reviewer | | | |\n")
+    return "".join(md)
+
+
+def _clocks_table(clocks):
+    rows = ["| Applies | Regime | Trigger | Clock starts at | Deadlines | Recipient |",
+            "|---|---|---|---|---|---|"]
+    notes = []
+    for c in clocks:
+        mark = "**Yes**" if c["applies"] else "check"
+        rows.append(f"| {mark} | {c['regime']} | {c['trigger']} | {c['starts']} | "
+                    f"{c['deadlines']} | {c['recipient']} |")
+        if c.get("note"):
+            notes.append(f"- _{c['regime']}_: {c['note']}")
+    return "\n".join(rows) + "\n" + ("\n" + "\n".join(notes) + "\n" if notes else "")
+
+
+def dg_label_retention(answers):
+    v = (answers.get("fr_retention_months") or "").strip()
+    return {"lt6": "< 6 months", "6": "6 months", "7_24": "7–24 months",
+            "gt24": "> 24 months"}.get(v, "-")
+
+
+def truthy_(v):
+    return _truthy(v)
+
+
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
     slug = "".join(c if c.isalnum() else "-" for c in sys_name.lower()).strip("-") or "ai-system"
@@ -1840,4 +2017,6 @@ def render(report_type, assessment):
         return "gpai", f"gpai-obligations-{slug}.md", render_gpai_obligations(assessment)
     if report_type == "datagov":
         return "datagov", f"data-governance-{slug}.md", render_data_governance(assessment)
+    if report_type == "forensics":
+        return "forensics", f"forensic-readiness-{slug}.md", render_forensic_readiness(assessment)
     raise ValueError(f"Unknown report type: {report_type}")

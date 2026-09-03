@@ -12,6 +12,8 @@ column id. The three front-ends render it; the engine reads it through
 `knowledge.data_governance.dataset_rows()`.
 """
 
+from .knowledge.forensics import LOG_SCOPE_OPTIONS as _LOG_SCOPE_OPTIONS
+
 # Shared option list for the seven data-quality dimensions (section 11).
 _QUALITY_STATUS_OPTIONS = [
     {"value": "unknown", "label": "Unknown — not assessed"},
@@ -478,6 +480,93 @@ QUESTIONNAIRE = {
                  "placeholder": "e.g. completeness 98.7% on mandatory fields (DQ dashboard, "
                                 "2026-08); representativeness: coverage per age band vs. "
                                 "portfolio, report DQ-2026-14"},
+            ],
+        },
+        {
+            "id": "forensics",
+            "title": "12. Forensic readiness & evidence",
+            "description": (
+                "Can you reconstruct and evidence what the system did, why, with which "
+                "data and model version — after an incident, a complaint, a regulator "
+                "request or a dispute? Feeds the forensic-readiness report and the "
+                "parallel reporting clocks in the incident report. Model output is "
+                "non-deterministic, so evidence comes from recording, not re-running. "
+                "None of these fields affect the risk tier."
+            ),
+            "questions": [
+                {"id": "fr_log_scope", "type": "multiselect", "required": False,
+                 "label": "What is recorded? (multiple allowed)",
+                 "options": [{"value": v, "label": lab} for v, lab in _LOG_SCOPE_OPTIONS]},
+                {"id": "fr_retention_months", "type": "select", "required": False,
+                 "label": "Retention of the logs",
+                 "help": "Art. 19 / Art. 26(6): at least six months unless Union or national "
+                         "law (in particular data-protection law) provides otherwise.",
+                 "options": [
+                     {"value": "lt6", "label": "Less than 6 months"},
+                     {"value": "6", "label": "6 months (the AI Act floor)"},
+                     {"value": "7_24", "label": "7–24 months"},
+                     {"value": "gt24", "label": "More than 24 months"},
+                 ]},
+                {"id": "fr_retention_basis", "type": "select", "required": False,
+                 "label": "Basis for that retention period",
+                 "options": [
+                     {"value": "ai_act_floor", "label": "AI Act floor (Art. 19 / 26(6))"},
+                     {"value": "financial_services",
+                      "label": "Financial-services documentation term (Art. 19(2) / 26(6))"},
+                     {"value": "gdpr_limited", "label": "Shorter term required by data-protection law"},
+                     {"value": "other", "label": "Other / not yet decided"},
+                 ]},
+                {"id": "fr_integrity", "type": "select", "required": False,
+                 "label": "Integrity of the logs",
+                 "options": [
+                     {"value": "none", "label": "None"},
+                     {"value": "access_only", "label": "Access control only"},
+                     {"value": "hashing", "label": "Hashing of records"},
+                     {"value": "hash_chain_worm", "label": "Hash chain + WORM / append-only storage"},
+                     {"value": "signed", "label": "Signed records with an independent time anchor"},
+                 ]},
+                {"id": "fr_time_sync", "type": "boolean", "required": False,
+                 "label": "Is there one synchronised time source across all evidence sources "
+                          "(application, gateway, workflow, data access)?"},
+                {"id": "fr_model_pinned", "type": "boolean", "required": False,
+                 "label": "Is the exact model version / revision recorded per inference?"},
+                {"id": "fr_prompt_versioned", "type": "boolean", "required": False,
+                 "label": "Is the system instruction under version control, with the version "
+                          "in each record?"},
+                {"id": "fr_rag_snapshot", "type": "boolean", "required": False,
+                 "label": "Is it recorded which documents were in the context (retrieval snapshot)?"},
+                {"id": "fr_override_logged", "type": "boolean", "required": False,
+                 "label": "Are human reviews and deviations from the model advice logged, with reason?"},
+                {"id": "fr_log_pii", "type": "select", "required": False,
+                 "label": "Personal data in the logs",
+                 "help": "A hash of the input proves what the input was without keeping it.",
+                 "options": [
+                     {"value": "none", "label": "None"},
+                     {"value": "case_id", "label": "Only a reference / case id"},
+                     {"value": "hash", "label": "Hash of the input"},
+                     {"value": "pseudonymised", "label": "Pseudonymised content"},
+                     {"value": "full", "label": "Full content, incl. special categories"},
+                 ]},
+                {"id": "fr_vendor_log_access", "type": "select", "required": False,
+                 "label": "Evidence held by the model / platform supplier",
+                 "options": [
+                     {"value": "own_logs_sufficient", "label": "Own logs suffice (no external model)"},
+                     {"value": "contractual_access",
+                      "label": "Contractual right of access (Art. 25(4) / DORA Art. 30(3))"},
+                     {"value": "portal_only", "label": "Only via the supplier's portal"},
+                     {"value": "none", "label": "No access"},
+                 ]},
+                {"id": "fr_legal_hold", "type": "boolean", "required": False,
+                 "label": "Is there a documented legal-hold / evidence-freeze procedure (stop log "
+                          "rotation, pin the model version)?",
+                 "help": "Art. 73: the system must not be altered before the authorities are "
+                         "informed."},
+                {"id": "fr_evidence_owner", "type": "text", "required": False,
+                 "label": "Owner of the evidence file (role)",
+                 "placeholder": "e.g. AI governance lead, with SecOps as custodian"},
+                {"id": "fr_drill", "type": "boolean", "required": False,
+                 "label": "Has evidence retrieval been exercised in the last 12 months "
+                          "(reconstruct one past decision end-to-end)?"},
             ],
         },
     ],
