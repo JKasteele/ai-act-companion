@@ -32,6 +32,7 @@ bandit -r app mcp_server.py -ll                        # SAST (blocking in CI)
 ai-act questionnaire
 ai-act classify --answers examples/hiring_cv_screening.json
 ai-act report --answers a.json --type dpia --out dpia.md
+ai-act report --answers a.json --type risk --lang nl        # + Dutch summary block
 ai-act scan .                                          # repo AI-usage relevance scan
 ```
 

@@ -21,7 +21,12 @@ from typing import Literal
 # Make the bundled `app` package importable regardless of launch directory.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from mcp.server.fastmcp import FastMCP  # noqa: E402
+# mcp 2.x renamed FastMCP to MCPServer (same decorator/run API for stdio);
+# support both so `pip install ai-act-companion[mcp]` works on either major.
+try:  # noqa: E402
+    from mcp.server.mcpserver import MCPServer as _Server  # mcp >= 2
+except ImportError:  # pragma: no cover - depends on the installed SDK
+    from mcp.server.fastmcp import FastMCP as _Server  # mcp 1.x
 
 from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
@@ -38,7 +43,7 @@ from app.scan import scan_repo as _scan_repo  # noqa: E402
 from app.security import assess_security as _assess_security  # noqa: E402
 from app.stride import generate_stride_model as _generate_stride_model  # noqa: E402
 
-mcp = FastMCP("ai-act-companion")
+mcp = _Server("ai-act-companion")
 
 
 @mcp.tool()
@@ -152,6 +157,7 @@ def generate_report(
         "doc", "registration", "gpai", "datagov", "forensics", "governance",
     ] = "risk",
     assessment_id: str = "",
+    lang: Literal["en", "nl"] = "en",
 ) -> str:
     """Generate a documentation artifact as Markdown from the given answers.
 
@@ -195,8 +201,10 @@ def generate_report(
       'governance' - governance register: policy owner / approval body /
         status / review cadence and overdue flag, exceptions with end dates,
         Art. 4 AI-literacy record, intake completeness and the AI-register entry.
-    Provide either `answers` (classified on the fly) or `assessment_id` (render
-    from a previously saved assessment). The system is classified
+    `lang='nl'` prepends a Dutch summary block (risk tier, applicability, findings,
+    recommended documentation, governance headlines); the citable body stays
+    English. Provide either `answers` (classified on the fly) or `assessment_id`
+    (render from a previously saved assessment). The system is classified
     deterministically first, then the report is rendered. Present the draft to
     the user for review before treating it as final.
     """
@@ -219,7 +227,7 @@ def generate_report(
         "incident": _assess_incident(answers),
         "model_card": _generate_model_card(answers),
     }
-    _rtype, _filename, markdown = reports.render(report_type, assessment)
+    _rtype, _filename, markdown = reports.render(report_type, assessment, lang=lang)
     return markdown
 
 

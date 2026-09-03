@@ -86,6 +86,18 @@ def test_new_tier3_report_types_render():
     client.delete(f"/api/assessments/{aid}")
 
 
+def test_report_lang_nl_and_validation():
+    r = client.post("/api/assess", json={"answers": {
+        "eu_market": True, "sys_name": "Lang Demo", "t_interacts_humans": True}})
+    aid = r.json()["id"]
+    nl = client.get(f"/api/assessments/{aid}/report?type=risk&lang=nl")
+    assert nl.status_code == 200 and "Samenvatting (NL)" in nl.json()["markdown"]
+    en = client.get(f"/api/assessments/{aid}/report?type=risk")
+    assert "Samenvatting (NL)" not in en.json()["markdown"]
+    assert client.get(f"/api/assessments/{aid}/report?type=risk&lang=de").status_code == 400
+    client.delete(f"/api/assessments/{aid}")
+
+
 def test_portfolio_rollup_and_csv_columns():
     r = client.post("/api/assess", json={"answers": {
         "eu_market": True, "sys_name": "Rollup Demo", "t_interacts_humans": True}})

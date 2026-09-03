@@ -81,7 +81,8 @@ def cmd_report(args):
         print("Provide --assessment <id> or --answers <file>.", file=sys.stderr)
         return 2
 
-    _rtype, filename, markdown = reports.render(args.type, assessment)
+    _rtype, filename, markdown = reports.render(args.type, assessment,
+                                                lang=getattr(args, "lang", "en"))
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:
             fh.write(markdown)
@@ -128,6 +129,8 @@ def build_parser():
     src.add_argument("--answers", help="Path to answers JSON (classified on the fly).")
     p_report.add_argument("--type", choices=reports.REPORT_TYPES, default="risk")
     p_report.add_argument("--out", help="Write Markdown to this path (default: stdout).")
+    p_report.add_argument("--lang", choices=("en", "nl"), default="en",
+                          help="nl: prepend a Dutch summary block (body stays English).")
 
     sub.add_parser("list", help="List stored assessments as JSON.")
 

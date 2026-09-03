@@ -80,6 +80,8 @@ async function init() {
   $("#btn-ai-parse").addEventListener("click", aiParse);
 
   $("#btn-export-csv").addEventListener("click", exportCsv);
+  const langSel = $("#report-lang");
+  if (langSel) langSel.addEventListener("change", () => { if (CURRENT) selectReport(REPORT_TYPE); });
   const regBtn = $("#btn-export-register");
   if (regBtn) regBtn.addEventListener("click", exportRegisterCsv);
   $("#import-file").addEventListener("change", (e) => {
@@ -594,7 +596,8 @@ async function selectReport(type) {
   REPORT_TYPE = type;
   document.querySelectorAll(".tab").forEach((t) =>
     t.classList.toggle("active", t.dataset.type === type));
-  const res = await fetch(`/api/assessments/${CURRENT.id}/report?type=${type}`);
+  const lang = ($("#report-lang") || {}).value || "en";
+  const res = await fetch(`/api/assessments/${CURRENT.id}/report?type=${type}&lang=${lang}`);
   if (!res.ok) { toast("Failed to load report."); return; }
   const data = await res.json();
   REPORT_MD = data.markdown;

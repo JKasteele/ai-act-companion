@@ -6,6 +6,33 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-09-03
+
+### Added
+- **Agentic tool-call controls.** For systems flagged `sec_agentic` the control
+  catalogue adds CTL-LLM06-02..05 — per-call identity binding and per-tool least
+  privilege (no token passthrough), a tool allowlist with an approval gate for
+  irreversible actions, a tamper-evident tool-call audit trail with correlation
+  ids (MITRE ATLAS AML.M0024, OWASP AI Exchange #MONITORUSE, EU AI Act Art. 12)
+  and loop / blast-radius bounds with a kill switch (Art. 14(4)(e)) — each
+  verified by new red-team tests RT-LLM06-02 (tool privilege escalation /
+  identity confusion) and RT-LLM06-03 (goal hijack through tool output),
+  referencing the OWASP Top 10 for Agentic Applications 2026 (ASI01–03/05/08)
+  and the CIS MCP Companion Guide. New gate `agentic` (strictly agentic, narrower
+  than `agentic_or_write`).
+- **`--lang nl`.** `reports.render(..., lang="nl")` prepends a Dutch summary
+  block — risk tier, applicability (Omnibus-aware), determining findings,
+  transparency duties, recommended documentation, personal-data flag and the
+  governance headlines (forensic readiness, governance status / next review,
+  data-governance gaps) — built from the structured results, never from free
+  text; the citable English body is unchanged. Exposed as CLI `--lang`, API
+  `?lang=`, MCP `lang` and a language selector above the report preview.
+
+### Changed
+- **MCP SDK 2.x supported.** `mcp_server.py` imports `MCPServer` from mcp 2.x and
+  falls back to `FastMCP` on 1.x; the `mcp` extra now accepts `mcp>=1.2,<3`.
+  Verified against mcp 1.29 and 2.1.
+
 ## [0.9.1] - 2026-09-03
 
 ### Added

@@ -46,6 +46,9 @@ def architecture_flags(answers, fired_ids):
         "indirect": a("sec_external_data") or rag,
         "agentic_or_write": (a("sec_agentic") or a("sec_outputs_to_systems")
                              or a("arch_api_write") or a("arch_downstream_actions")),
+        # Strictly agentic: plans and calls tools itself. Narrower than
+        # agentic_or_write, which also covers plain write access.
+        "agentic": a("sec_agentic"),
         "cross_tenant": _select(answers, "arch_data_scope") == "all-users",
         "no_rate_limits": not a("arch_rate_limits"),
         "auth": _select(answers, "arch_auth_strength"),

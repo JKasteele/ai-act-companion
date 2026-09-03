@@ -168,6 +168,83 @@ CONTROLS = {
             "csf": ["PR"],
             "iso": ["A.8.26"],
         },
+        {
+            "ref": "CTL-LLM06-02",
+            "title": "Bind every tool call to the requesting principal; per-tool least privilege",
+            "gate": "agentic",
+            "control": "Run each tool call under the identity of the principal who "
+                       "asked (delegated, short-lived credentials), never a shared "
+                       "agent service account; grant scopes per tool and per task; "
+                       "reject tokens not issued for the tool server (no token "
+                       "passthrough — MCP security best practices). Reference: "
+                       "OWASP Agentic Top 10 2026 ASI03; CIS MCP Companion Guide.",
+            "intent": "Prevent identity confusion and privilege escalation "
+                      "through the agent.",
+            "verify": "A lower-privileged principal cannot make the agent execute "
+                      "a higher-privileged tool (RT-LLM06-02); per-call identity "
+                      "is visible in the audit trail.",
+            "validated_by": ["RT-LLM06-02"],
+            "csf": ["PR"],
+            "iso": ["A.8.26", "A.5.1"],
+        },
+        {
+            "ref": "CTL-LLM06-03",
+            "title": "Tool allowlist and approval gate for consequential or irreversible actions",
+            "gate": "agentic",
+            "control": "Enumerate the tools the agent may call (deny by default), "
+                       "classify each as read / reversible write / irreversible, "
+                       "and require an explicit human approval step — recorded "
+                       "with who, when and why — before irreversible or "
+                       "high-impact actions; support dry-run / simulate modes. "
+                       "Reference: OWASP Agentic Top 10 2026 ASI02.",
+            "intent": "Keep a human in control of consequential agent actions "
+                      "(EU AI Act Art. 14).",
+            "verify": "Goal-hijack and tool-misuse attempts (RT-LLM06-01, "
+                      "RT-LLM06-03) stop at the approval gate; unlisted tools are "
+                      "refused.",
+            "validated_by": ["RT-LLM06-01", "RT-LLM06-03"],
+            "csf": ["PR", "GV"],
+            "iso": ["A.8.26"],
+        },
+        {
+            "ref": "CTL-LLM06-04",
+            "title": "Tool-call audit trail with correlation ids, tamper-evident",
+            "gate": "agentic",
+            "control": "Log every tool call — tool, arguments (sensitive values "
+                       "redacted), invoking identity, permission decision, approval "
+                       "state, result and duration — with a correlation id that "
+                       "links it to the user request and the model turn; store "
+                       "append-only, isolated from the agent so a compromised "
+                       "agent cannot edit its own records. Reference: MITRE ATLAS "
+                       "AML.M0024 (AI Telemetry Logging); OWASP AI Exchange "
+                       "#MONITORUSE; EU AI Act Art. 12.",
+            "intent": "Make agent actions reconstructable and attributable "
+                      "(forensic readiness).",
+            "verify": "For any test action in RT-LLM06-02/03 the trail shows who, "
+                      "what, under which permission and with which outcome; an "
+                      "attempt to suppress or alter the log fails.",
+            "validated_by": ["RT-LLM06-02", "RT-LLM06-03"],
+            "csf": ["DE"],
+            "iso": ["A.8.15", "A.8.16"],
+        },
+        {
+            "ref": "CTL-LLM06-05",
+            "title": "Bound the agent loop and its blast radius",
+            "gate": "agentic",
+            "control": "Cap steps, tool calls, time and spend per task; sandbox "
+                       "code execution and file/network access; treat tool "
+                       "outputs and inter-agent messages as untrusted input; "
+                       "provide a kill switch that halts all in-flight actions "
+                       "(EU AI Act Art. 14(4)(e)). Reference: OWASP Agentic Top 10 "
+                       "2026 ASI05/ASI08.",
+            "intent": "Contain runaway or hijacked agent behaviour.",
+            "verify": "A hijacked plan (RT-LLM06-03) hits the step/spend cap or the "
+                      "sandbox boundary; the stop control halts the run and the "
+                      "halt is logged.",
+            "validated_by": ["RT-LLM06-03"],
+            "csf": ["PR", "RS"],
+            "iso": ["A.8.26", "A.8.16"],
+        },
     ],
     "LLM07": [
         {

@@ -66,6 +66,11 @@ def test_save_get_list_roundtrip():
     assert any(row["id"] == aid for row in m.list_assessments())
 
 
+def test_generate_report_lang_nl():
+    md = m.generate_report(HIRING, "risk", lang="nl")
+    assert "Samenvatting (NL)" in md and "Hoog risico" in md
+
+
 def test_generate_report_by_saved_id():
     aid = m.save_assessment(HIRING, confirmed=True)["id"]
     md = m.generate_report(report_type="compliance", assessment_id=aid)

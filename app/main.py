@@ -335,13 +335,15 @@ def delete_assessment(assessment_id: str):
 
 
 @app.get("/api/assessments/{assessment_id}/report", response_model=ReportResponse)
-def get_report(assessment_id: str, type: str = "risk"):
+def get_report(assessment_id: str, type: str = "risk", lang: str = "en"):
     if type not in reports.REPORT_TYPES:
         raise HTTPException(status_code=400, detail=f"Unknown type: {type}")
+    if lang not in ("en", "nl"):
+        raise HTTPException(status_code=400, detail=f"Unknown lang: {lang}")
     data = storage.load(assessment_id)
     if not data:
         raise HTTPException(status_code=404, detail="Assessment not found")
-    rtype, filename, markdown = reports.render(type, data)
+    rtype, filename, markdown = reports.render(type, data, lang=lang)
     return ReportResponse(type=rtype, filename=filename, markdown=markdown)
 
 
