@@ -71,12 +71,17 @@ class AnthropicProvider(LLMProvider):
             user_part = user
 
         try:
+            kwargs = {}
+            if not self.model.startswith("claude-haiku"):
+                # Haiku 4.5 rejects the effort parameter; the larger models accept it
+                # and "low" keeps a draft-extraction call cheap.
+                kwargs["output_config"] = {"effort": "low"}
             response = client.messages.create(
                 model=self.model,
                 max_tokens=2048,
-                output_config={"effort": "low"},
                 system=system_blocks,
                 messages=[{"role": "user", "content": user_part}],
+                **kwargs,
             )
         except anthropic.AuthenticationError as e:
             raise RuntimeError("Anthropic API key rejected") from e
