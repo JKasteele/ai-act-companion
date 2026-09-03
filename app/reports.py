@@ -11,6 +11,7 @@ from ._normalize import truthy as _truthy
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
 from .forensics import assess_forensic_readiness, reporting_clocks
+from .governance import REGISTER_COLUMNS, governance_status, register_row
 from .incident import assess_incident
 from .knowledge import ai_security as sec
 from .knowledge import data_governance as dg
@@ -51,6 +52,7 @@ REPORT_CATALOG = (
     ("gpai", "GPAI obligations"),
     ("datagov", "Data governance"),
     ("forensics", "Forensic readiness"),
+    ("governance", "Governance register"),
 )
 REPORT_TYPES = tuple(rtype for rtype, _label in REPORT_CATALOG)
 
@@ -860,7 +862,10 @@ def render_post_market_monitoring(assessment):
         "extend as needed.\n"
     )
 
-    seeded = mon.seeded_rows(answers)
+    tier = (assessment.get("classification") or {}).get("tier")
+    seeded = mon.seeded_rows(answers, tier)
+    md.append(f"\n**Review cadence for the {tier or 'unknown'} tier:** "
+              f"{mon.cadence_for(tier)}.\n")
     header = "| " + " | ".join(mon.COLUMNS) + " |\n"
     divider = "|" + "|".join(["---"] * len(mon.COLUMNS)) + "|\n"
     for cid, title, what in mon.CATEGORIES:
@@ -1976,6 +1981,95 @@ def truthy_(v):
     return _truthy(v)
 
 
+
+# --- 21. Governance register ---------------------------------------------------
+def render_governance_register(assessment):
+    answers = assessment.get("answers", {})
+    cls = assessment.get("classification") or {}
+    sys_name = _a(answers, "sys_name", "AI system")
+    gov = assessment.get("governance") or governance_status(answers, cls)
+    row = register_row({"id": assessment.get("id", ""), "answers": answers,
+                        "classification": cls, "created_at": assessment.get("created_at", "")})
+
+    md = [f"# Governance Register — {sys_name}\n", _header(assessment)]
+    md.append(
+        "The maintenance view of this system's governance: who owns the record, who "
+        "approved it, when it is reviewed, which exceptions run, who has been trained "
+        f"({_ref_link('Art. 4')}), and how complete the intake is. Feeds the portfolio "
+        "status columns and the AI-register export.\n"
+    )
+    md.append(f"\n**Status: {gov['status_label']}** · next review: "
+              f"{gov['next_review'] or 'unknown'}"
+              f"{' — **OVERDUE**' if gov['review_overdue'] else ''} · intake "
+              f"{int(gov['completeness']['overall'] * 100)}% complete\n")
+
+    md.append("\n## 1. Policy metadata\n")
+    md.append(
+        "| Item | Value |\n|---|---|\n"
+        f"| Policy owner | {_a(answers, 'gov_policy_owner')} |\n"
+        f"| Approval body | {_a(answers, 'gov_approval_body')} |\n"
+        f"| Governance status | {gov['status_label']} |\n"
+        f"| Approved on | {gov['approved_on'] or '-'} |\n"
+        f"| Review cadence ({gov['tier']} tier) | every {gov['cadence_months']} months |\n"
+        f"| Next review | {gov['next_review'] or '-'} ({gov['next_review_source']}) |\n"
+        f"| Contact | {_a(answers, 'gov_register_contact')} |\n"
+        f"| Public / internal register entry | {_a(answers, 'gov_public_register')} |\n"
+        f"| DPIA / FRIA reference | {_a(answers, 'gov_dpia_ref')} |\n"
+    )
+
+    md.append("\n## 2. Exceptions and deviations\n")
+    if gov["exceptions"]:
+        md.append("| Exception | Decision / condition | Decided by | Expires | State |\n"
+                  "|---|---|---|---|---|\n")
+        for e in gov["exceptions"]:
+            state = "**expired**" if e["expired"] else ("open-ended" if e["open_ended"] else "active")
+            md.append(f"| {_safe(e['exception'])} | {_safe(e['decision'])} | "
+                      f"{_safe(e['decided_by'])} | {e['expires'] or '-'} | {state} |\n")
+    else:
+        md.append("_No exceptions recorded._\n")
+
+    md.append(f"\n## 3. AI-literacy record ({_ref_link('Art. 4')})\n")
+    md.append("Art. 4 applies since 2 Feb 2025; supervision and enforcement since 2 Aug 2026 "
+              "(Digital Omnibus wording: measures that support the development of AI "
+              "literacy).\n\n")
+    if gov["literacy"]:
+        md.append("| Role / group | Training / briefing | Date |\n|---|---|---|\n")
+        for r in gov["literacy"]:
+            md.append(f"| {_safe(r['role'])} | {_safe(r['training'])} | {r['date'] or '-'} |\n")
+    else:
+        md.append("_No training recorded for this system._\n")
+
+    md.append("\n## 4. Intake completeness\n")
+    md.append("| Section | Answered |\n|---|---|\n")
+    for sec_id, share in gov["completeness"]["per_section"].items():
+        md.append(f"| {sec_id} | {int(share * 100)}% |\n")
+    md.append(f"\nDocumentation complete: **{'yes' if gov['completeness']['complete'] else 'no'}** "
+              "(thresholds per section are Companion-derived).\n")
+
+    md.append("\n## 5. Gaps and actions\n")
+    if gov["gaps"]:
+        md.append("| Severity | Gap | Action | Ref |\n|---|---|---|---|\n")
+        for g in gov["gaps"]:
+            md.append(f"| {g['severity'].capitalize()} | {_safe(g['gap'])} | "
+                      f"{_safe(g['action'])} | {g['ref']} |\n")
+    else:
+        md.append("_No governance gaps derived from the intake._\n")
+
+    md.append("\n## 6. Register entry\n")
+    md.append("The fields a public or internal AI register asks for (modelled on the Dutch "
+              "Algoritmeregister), ready to hand to the register owner:\n\n")
+    md.append("| Field | Value |\n|---|---|\n")
+    for key, header in REGISTER_COLUMNS:
+        if key in ("id", "created_at"):
+            continue
+        md.append(f"| {header} | {_safe(str(row.get(key, '') or '-'))} |\n")
+
+    md.append("\n## Sign-off\n")
+    md.append("| Role | Name | Date | Signature |\n|---|---|---|---|\n"
+              "| Policy owner | | | |\n| Approval body | | | |\n")
+    return "".join(md)
+
+
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
     slug = "".join(c if c.isalnum() else "-" for c in sys_name.lower()).strip("-") or "ai-system"
@@ -2019,4 +2113,6 @@ def render(report_type, assessment):
         return "datagov", f"data-governance-{slug}.md", render_data_governance(assessment)
     if report_type == "forensics":
         return "forensics", f"forensic-readiness-{slug}.md", render_forensic_readiness(assessment)
+    if report_type == "governance":
+        return "governance", f"governance-register-{slug}.md", render_governance_register(assessment)
     raise ValueError(f"Unknown report type: {report_type}")

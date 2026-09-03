@@ -423,3 +423,5 @@ footer { color: var(--muted); margin-top: 44px; text-align: center; font-size: .
   .topbar h1 { font-size: 2rem; }
   .report { padding: 26px 20px; }
 }
+
+.inv-date.overdue { color: var(--danger, #e5484d); font-weight: 500; }

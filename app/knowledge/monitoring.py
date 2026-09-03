@@ -59,11 +59,25 @@ _DRIFT_USECASES = {"employment", "essential_services", "education",
                    "law_enforcement", "migration_border", "justice_democracy"}
 
 
-def seeded_rows(answers):
+# Review cadence per risk tier (Companion-derived good practice; the AI Act sets
+# no fixed interval, but Art. 9(2) and Art. 72 imply a periodic review).
+CADENCE_BY_TIER = {"prohibited": "immediately — stop use", "high": "monthly KPIs, "
+                   "6-monthly review", "limited": "quarterly KPIs, annual review",
+                   "minimal": "annual"}
+
+
+def cadence_for(tier):
+    return CADENCE_BY_TIER.get(tier or "", "annual")
+
+
+def seeded_rows(answers, tier=None):
     """Return {category_id: [row, ...]} seeded deterministically from structured
-    answers only (never free-text). A row is a dict keyed like COLUMNS."""
+    answers only (never free-text). A row is a dict keyed like COLUMNS. `tier`
+    (from the classifier) sets the review cadence and adds the KPI rows that
+    supervisors expect for decisions about people."""
     answers = answers or {}
     rows = {cid: [] for cid, _t, _w in CATEGORIES}
+    cadence = cadence_for(tier)
 
     def row(metric, **kw):
         r = {c: "" for c in COLUMNS}
@@ -87,8 +101,34 @@ def seeded_rows(answers):
             **{"Threshold / trigger": "disparity beyond agreed fairness bound",
                "Review cadence": "quarterly"}))
 
+    # KPI rows: performance vs. baseline, oversight, incidents and complaints.
+    rows["functionality"].append(row(
+        "Primary performance metric vs. release baseline",
+        **{"Baseline": "value at release", "Threshold / trigger": "agreed tolerance "
+           "band; breach -> re-validation", "Data source": "evaluation pipeline",
+           "Review cadence": cadence}))
+    rows["functionality"].append(row(
+        "Input / output drift (distribution shift)",
+        **{"Threshold / trigger": "drift statistic above alert level",
+           "Data source": "monitoring platform", "Review cadence": cadence}))
+    autonomy = str(answers.get("autonomy_level") or "").strip().lower()
+    if autonomy in ("advisory", "human_in_the_loop", "human_on_the_loop"):
+        rows["human_factors"].append(row(
+            "Override rate (human deviates from model advice)",
+            **{"Baseline": "rate at release", "Threshold / trigger": "near 0% = "
+               "automation bias; sharp rise = model or data problem",
+               "Data source": "workflow / case system (override log)",
+               "Review cadence": cadence}))
+    rows["compliance"].append(row(
+        "Complaints, objections and requests for human intervention",
+        **{"Threshold / trigger": "any complaint alleging discrimination",
+           "Data source": "complaints register", "Review cadence": cadence}))
+    rows["compliance"].append(row(
+        "Incidents and near-misses (Art. 73 screening)",
+        **{"Threshold / trigger": "any Art. 3(49) limb -> incident report",
+           "Data source": "incident register", "Review cadence": cadence}))
     # Always seed a compliance row pointing at the obligations tracker.
     rows["compliance"].append(row(
         "Obligations status (see compliance tracker)",
-        **{"Data source": "conformity tracker", "Review cadence": "quarterly"}))
+        **{"Data source": "conformity tracker", "Review cadence": cadence}))
     return rows

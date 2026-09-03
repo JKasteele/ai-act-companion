@@ -167,6 +167,6 @@ def test_fria_carries_insurance_sector_note():
     assert "Supplementary health insurance" in md
 
 
-def test_catalog_has_twenty_types_with_datagov_and_forensics_last():
-    assert len(reports.REPORT_TYPES) == 20
-    assert reports.REPORT_TYPES[-2:] == ("datagov", "forensics")
+def test_catalog_has_twentyone_types_with_governance_last():
+    assert len(reports.REPORT_TYPES) == 21
+    assert reports.REPORT_TYPES[-3:] == ("datagov", "forensics", "governance")

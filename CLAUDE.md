@@ -65,7 +65,9 @@ The engine is pure functions, no I/O, fully testable:
   (DAMA-style vocabulary, dataset rows, quality dimensions, gap rules),
   `sector_frameworks.py` (ALTAI, EIOPA, DNB SAFEST, DORA hook), `forensics.py`
   (evidence artefacts, readiness dimensions, reporting clocks; scored by
-  `app/forensics.py`, a pure function like `incident.py`), plus the
+  `app/forensics.py`, a pure function like `incident.py`), `app/governance.py`
+  (policy metadata, review cadence per tier, exceptions, Art. 4 record,
+  completeness, AI-register row), plus the
   security/ISO/NIST modules. Every crosswalk ships a PROVENANCE line.
 - `classifier.classify(answers) -> dict` — EU AI Act decision. Highest severity
   wins: Art. 5 (prohibited) → Art. 6 (high) → Art. 50 (limited) → minimal; GPAI
@@ -78,10 +80,10 @@ The engine is pure functions, no I/O, fully testable:
   `stride.py`, and `data_security.py` reuse this same severity so the offense
   (red-team), defense (controls), and threat-model views agree by construction.
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of twenty Markdown artifacts: `risk`, `dpia`, `bias`, `security`,
+  renders one of twenty-one Markdown artifacts: `risk`, `dpia`, `bias`, `security`,
   `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`, `redteam`,
   `controls`, `datasec`, `stride`, `incident`, `modelcard`, `doc`,
-  `registration`, `gpai`, `datagov`, `forensics`. The catalogue is defined once in
+  `registration`, `gpai`, `datagov`, `forensics`, `governance`. The catalogue is defined once in
   `reports.REPORT_CATALOG` (type + label) and consumed by the API `/api/config`,
   the frontend tabs and the MCP tool. Markdown is the canonical export; PDF is
   browser print-to-PDF (no dependency).
@@ -100,7 +102,7 @@ path, a frontend tab in `static/`, and usually a knowledge module + MCP tool.
 - **Changing classification logic** → add or adjust a labelled case in
   `examples/golden_set.json`, labelling the expected tier by reasoning from the
   regulation, **not** by running the classifier. `tests/test_accuracy.py` runs
-  the 25-case golden set and expects 100%.
+  the 31-case golden set and expects 100%.
 - **Knowledge base honesty** → cite a source for any article/standard reference.
   Where a cross-framework mapping is the project's own analytical alignment and
   not an official published crosswalk, it must say so — in the code/data **and**

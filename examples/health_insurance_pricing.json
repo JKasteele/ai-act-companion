@@ -96,5 +96,32 @@
   "fr_vendor_log_access": "portal_only",
   "fr_legal_hold": false,
   "fr_evidence_owner": "AI governance lead (custodian: SecOps)",
-  "fr_drill": false
+  "fr_drill": false,
+  "gov_policy_owner": "Data & AI Governance Specialist",
+  "gov_approval_body": "AI & Data Governance Board",
+  "gov_status": "approved",
+  "gov_approved_on": "2026-06-10",
+  "gov_exceptions": [
+    {
+      "exception": "Postcode feature (4-digit) retained pending proxy-discrimination review",
+      "decision": "Allowed until the fairness re-test; monthly disparity report",
+      "decided_by": "AI & Data Governance Board",
+      "expires": "2026-11-30"
+    }
+  ],
+  "gov_literacy": [
+    {
+      "role": "Underwriters",
+      "training": "Model advice, override and escalation",
+      "date": "2026-06-24"
+    },
+    {
+      "role": "Pricing analysts",
+      "training": "Art. 10 data governance and Annex III-5(c)",
+      "date": "2026-06-17"
+    }
+  ],
+  "gov_register_contact": "ai-governance@example-insurer.nl (synthetic)",
+  "gov_public_register": true,
+  "gov_dpia_ref": "DPIA-2026-014 / FRIA-2026-002"
 }

@@ -25,24 +25,27 @@ FIXED_TS = "2026-06-17T00:00:00+00:00"
 GALLERY = [
     ("grid_ops_agent.json",
      "Annex III-2 critical-infrastructure agent — High risk *and* a Critical "
-     "AI-security profile. The architecture-aware depth showcase.",
-     ["risk", "security", "stride", "redteam", "controls"]),
+     "AI-security profile. The architecture-aware depth showcase; also the agentic "
+     "forensic-readiness case (tool-call trace, legal hold).",
+     ["risk", "security", "stride", "redteam", "controls", "forensics", "monitoring"]),
     ("hiring_cv_screening.json",
-     "CV-screening (Annex III-4 employment) — the high-risk governance pack.",
-     ["risk", "fria", "compliance", "techdoc"]),
+     "CV-screening (Annex III-4 employment) — the high-risk governance pack, incl. "
+     "the governance register (approval, Art. 4 literacy record, AI-register entry).",
+     ["risk", "fria", "compliance", "techdoc", "datagov", "governance"]),
     ("foundation_model.json",
      "A general-purpose AI model (GPAI, Chapter V) — the data-security lens.",
      ["risk", "datasec", "modelcard"]),
     ("support_chatbot.json",
-     "Public RAG helpbot — the offense↔defense loop (red-team test ↔ control).",
-     ["security", "redteam", "controls", "datasec"]),
+     "Public RAG helpbot — the offense↔defense loop (red-team test ↔ control), and "
+     "what 'not ready' looks like in the forensic-readiness and governance views.",
+     ["security", "redteam", "controls", "datasec", "forensics", "governance"]),
     ("social_scoring.json",
      "A prohibited practice (Art. 5) — what a banned system looks like.",
      ["risk"]),
     ("health_insurance_pricing.json",
      "Health-insurance pricing (Annex III-5(c)) — the data-governance layer: "
      "dataset inventory, owners/stewards, lineage, quality dimensions, derived gaps.",
-     ["risk", "datagov", "fria", "dpia", "compliance", "forensics", "incident"]),
+     ["risk", "datagov", "fria", "dpia", "compliance", "forensics", "incident", "governance"]),
 ]
 
 TYPE_LABEL = {
@@ -53,6 +56,7 @@ TYPE_LABEL = {
     "techdoc": "Annex IV technical docs", "modelcard": "Model card",
     "datagov": "Data governance & quality (Art. 10)", "dpia": "DPIA skeleton",
     "forensics": "Forensic readiness & evidence plan", "incident": "Serious incident (Art. 73)",
+    "governance": "Governance register", "monitoring": "Post-market monitoring plan",
 }
 
 

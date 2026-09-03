@@ -8,7 +8,9 @@
   "provider_role": "provider",
   "eu_market": true,
   "lifecycle_stage": "production",
-  "hr_usecases": ["employment"],
+  "hr_usecases": [
+    "employment"
+  ],
   "hr_does_profiling": true,
   "data_personal": true,
   "automated_decision": true,
@@ -22,5 +24,81 @@
   "sec_external_data": true,
   "sec_agentic": false,
   "sec_public": false,
-  "sec_outputs_to_systems": false
+  "sec_outputs_to_systems": false,
+  "org_sector": "general",
+  "dg_data_owner": "Head of Recruitment (data domain: candidates)",
+  "dg_data_steward": "HR data steward",
+  "dg_catalog_registered": true,
+  "dg_datasets": [
+    {
+      "name": "Historical applications 2018-2024",
+      "origin": "internal",
+      "owner": "Head of Recruitment",
+      "steward": "HR data steward",
+      "classification": "personal",
+      "purpose": "Training and validation of the ranking model",
+      "retention": "4 weeks after vacancy closes (candidate data); training set pseudonymised",
+      "legal_basis": "legitimate_interest"
+    },
+    {
+      "name": "Incoming CVs (runtime)",
+      "origin": "user_generated",
+      "owner": "Head of Recruitment",
+      "steward": "HR data steward",
+      "classification": "personal",
+      "purpose": "Ranking for one vacancy",
+      "retention": "4 weeks after vacancy closes",
+      "legal_basis": "consent"
+    }
+  ],
+  "dg_lineage": "ATS -> pseudonymise + label (HR data steward) -> train_v2 / val_v2 / test_v2 -> TalentMatch v1.0 -> shortlist score -> recruiter review",
+  "dg_q_accuracy": "assessed",
+  "dg_q_completeness": "measured",
+  "dg_q_consistency": "assessed",
+  "dg_q_timeliness": "assessed",
+  "dg_q_validity": "measured",
+  "dg_q_uniqueness": "measured",
+  "dg_q_representativeness": "measured",
+  "dg_q_evidence": "Representativeness: selection-rate ratio per gender and age band vs. applicant pool, report FAIR-2026-03 (0.86, threshold 0.8).",
+  "fr_log_scope": [
+    "inference_io",
+    "model_version",
+    "human_override",
+    "training_snapshot",
+    "eval_reports",
+    "config_changes",
+    "incident_file"
+  ],
+  "fr_retention_months": "7_24",
+  "fr_retention_basis": "ai_act_floor",
+  "fr_integrity": "hashing",
+  "fr_time_sync": true,
+  "fr_model_pinned": true,
+  "fr_prompt_versioned": false,
+  "fr_rag_snapshot": false,
+  "fr_override_logged": true,
+  "fr_log_pii": "case_id",
+  "fr_vendor_log_access": "own_logs_sufficient",
+  "fr_legal_hold": true,
+  "fr_evidence_owner": "HR compliance officer",
+  "fr_drill": false,
+  "gov_policy_owner": "HR compliance officer",
+  "gov_approval_body": "People & AI Committee",
+  "gov_status": "approved",
+  "gov_approved_on": "2026-05-20",
+  "gov_literacy": [
+    {
+      "role": "Recruiters",
+      "training": "Reading and overriding the shortlist score; automation-bias briefing",
+      "date": "2026-06-03"
+    },
+    {
+      "role": "HR compliance",
+      "training": "EU AI Act Annex III-4 obligations",
+      "date": "2026-05-12"
+    }
+  ],
+  "gov_register_contact": "hr-ai@example.org (synthetic)",
+  "gov_public_register": true,
+  "gov_dpia_ref": "DPIA-2026-007"
 }
