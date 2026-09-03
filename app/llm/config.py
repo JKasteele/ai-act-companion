@@ -44,7 +44,7 @@ def _normalize_host(host):
 
 
 class Settings:
-    # ollama | manual | none
+    # ollama | manual | replay | none
     provider = os.environ.get("LLM_PROVIDER", "ollama").strip().lower()
     ollama_host = _normalize_host(os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"))
     ollama_model = os.environ.get("OLLAMA_MODEL", "qwen3:32b")

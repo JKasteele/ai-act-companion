@@ -53,6 +53,15 @@ STATIC_DIR = BASE_DIR / "static"
 # engine behaviour — the deterministic core is identical in every mode.
 DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
 
+# The public sandbox has no model and no egress. So that visitors still see the
+# AI-assist flow (free text -> draft -> review -> deterministic classification),
+# DEMO_MODE with LLM_PROVIDER=none switches to the "replay" provider: drafts are
+# replayed from the shipped synthetic examples and labelled as such. Set
+# LLM_PROVIDER explicitly to override.
+if DEMO_MODE and os.environ.get("LLM_PROVIDER", "none").strip().lower() == "none":
+    from .llm.config import settings as _llm_settings
+    _llm_settings.provider = "replay"
+
 app = FastAPI(
     title="AI Act Companion",
     version=__version__,

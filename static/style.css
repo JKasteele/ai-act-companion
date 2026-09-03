@@ -428,3 +428,33 @@ footer { color: var(--muted); margin-top: 44px; text-align: center; font-size: .
 
 .report-lang { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); margin-left: 8px; }
 .report-lang select { width: auto; font-size: .82rem; padding: 5px 8px; }
+
+/* --- how it works ------------------------------------------------------------ */
+.howto { margin: 22px 0 6px; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--r); background: var(--panel); }
+.howto-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.howto-head h2 { margin: 0; font-size: 1.15rem; }
+.howto-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.howto-stats { font-family: var(--font-mono); font-size: .72rem; color: var(--muted); }
+.howto-steps { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.howto-steps li { position: relative; padding: 12px 14px 12px 44px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--panel-2); font-size: .85rem; color: var(--muted); }
+.howto-steps li strong { display: block; color: var(--text); margin-bottom: 4px; }
+.howto-steps .step-n { position: absolute; left: 12px; top: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-family: var(--font-mono); font-size: .75rem; display: inline-flex; align-items: center; justify-content: center; }
+.mcp-panel { margin-top: 14px; }
+.mcp-panel > summary { cursor: pointer; font-size: .9rem; color: var(--accent); }
+.mcp-transcript { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.mcp-row { display: flex; gap: 10px; align-items: flex-start; }
+.mcp-who { flex: 0 0 52px; font-family: var(--font-mono); font-size: .7rem; color: var(--muted); padding-top: 8px; text-transform: uppercase; letter-spacing: .06em; }
+.mcp-msg { flex: 1; padding: 9px 13px; border-radius: var(--r-sm); font-size: .86rem; border: 1px solid var(--border); }
+.mcp-user { background: var(--panel-2); }
+.mcp-assistant { background: #241d31; border-color: #463863; }
+.mcp-msg p { margin: 0; }
+.mcp-tool { margin-left: 62px; border: 1px dashed #463863; border-radius: var(--r-sm); background: #171b26; font-size: .78rem; }
+.mcp-tool-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; padding: 6px 10px; border-bottom: 1px dashed #463863; }
+.mcp-tool-name { color: #c9a9ff; font-family: var(--font-mono); font-weight: 600; }
+.mcp-tool-head code { color: var(--muted); font-size: .72rem; word-break: break-all; }
+.mcp-tool-result { margin: 0; padding: 8px 10px; white-space: pre-wrap; word-break: break-word; color: var(--text); font-size: .74rem; max-height: 220px; overflow: auto; }
+.ai-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.ai-suggest-label { font-size: .78rem; color: var(--muted); }
+.chip { background: #241d31; border: 1px solid #463863; color: #c9a9ff; border-radius: 999px; padding: 3px 11px; font-size: .78rem; cursor: pointer; }
+.chip:hover { background: #2e2542; }
+.dot.replay { background: #a877ff; }

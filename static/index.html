@@ -33,6 +33,44 @@
          target="_blank" rel="noopener">Claude Code plugin</a> &mdash; pick whichever fits your workflow.
     </p>
 
+    <!-- How it works: the AI workflow behind the form -->
+    <section class="howto no-print" aria-labelledby="howto-title">
+      <div class="howto-head">
+        <h2 id="howto-title">How it works</h2>
+        <div class="howto-actions">
+          <button type="button" id="btn-tour" class="primary">▶ Guided tour (60 s)</button>
+          <span id="howto-stats" class="howto-stats"></span>
+        </div>
+      </div>
+      <ol class="howto-steps">
+        <li>
+          <span class="step-n">1</span>
+          <strong>Describe the system</strong>
+          <span>Free text via <em>AI assist</em>, the form, or a conversation in Claude Code / any MCP client. The assistant only <em>drafts</em> answers.</span>
+        </li>
+        <li>
+          <span class="step-n">2</span>
+          <strong>The engine decides</strong>
+          <span>A deterministic rule engine sets the risk tier and cites the exact Article / Annex. No LLM can move the tier &mdash; a red-team suite proves it.</span>
+        </li>
+        <li>
+          <span class="step-n">3</span>
+          <strong>You review</strong>
+          <span>Human-in-the-loop by contract: every draft is checked by you, and nothing is stored without an explicit confirmation.</span>
+        </li>
+        <li>
+          <span class="step-n">4</span>
+          <strong>Evidence, not just a verdict</strong>
+          <span>21 reports &mdash; risk, DPIA, FRIA, Annex IV, data governance, forensic readiness, governance register &mdash; plus an inventory, an AI-register export and a Dutch summary.</span>
+        </li>
+      </ol>
+      <details class="mcp-panel" id="mcp-panel">
+        <summary>What this looks like from Claude Code (MCP) &mdash; a real session against the engine</summary>
+        <p class="section-desc" id="mcp-note"></p>
+        <div id="mcp-transcript" class="mcp-transcript"></div>
+      </details>
+    </section>
+
     <!-- AI system inventory -->
     <details class="saved no-print" id="saved-box">
       <summary>AI system inventory (<span id="saved-count">0</span>)</summary>
@@ -59,6 +97,7 @@
           <strong>draft</strong> that you then review. Nothing is submitted
           automatically.
         </p>
+        <div id="ai-suggest" class="ai-suggest hidden"></div>
         <textarea id="ai-desc" rows="4"
           placeholder="e.g. We are building MediTriage, a system that prioritises ER patients based on symptoms and vital signs. A nurse makes the final decision..."></textarea>
         <div class="actions">

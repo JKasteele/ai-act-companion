@@ -15,7 +15,7 @@ repo's existing `Dockerfile` — no code changes per deploy.
 | Variable | Value | Why |
 |---|---|---|
 | `DEMO_MODE` | `1` | Shows the sandbox banner. |
-| `LLM_PROVIDER` | `none` | No AI layer, no API keys, no egress. |
+| `LLM_PROVIDER` | `replay` | Pre-recorded drafts from the shipped examples (no model, no keys, no egress) so the AI-assist flow is visible. `none` hides the AI panel; with `DEMO_MODE=1`, `none` falls back to `replay` anyway. |
 | `AIACT_DATA_DIR` | `/tmp/data` | Ephemeral storage; reset on rebuild/restart. |
 | `PORT` | `7860` | HF Spaces injects this; the Dockerfile honours `$PORT`. |
 

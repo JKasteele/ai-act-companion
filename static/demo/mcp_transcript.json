@@ -1,0 +1,119 @@
+{
+  "title": "What this looks like from Claude Code (MCP)",
+  "note": "A reconstructed session: every tool result below is the engine's real output for the shipped health-insurer example. Claude runs the intake and writes prose; the risk tier and every citation come only from the engine, and nothing is stored without an explicit confirmation.",
+  "steps": [
+    {
+      "role": "user",
+      "text": "Run an EU AI Act assessment for our supplementary health-insurance pricing model. It scores applicants and proposes a premium band; an underwriter decides. We're the deployer, the model comes from a vendor."
+    },
+    {
+      "role": "assistant",
+      "text": "I'll collect the intake against the questionnaire first, then let the engine classify it — I won't guess the tier myself."
+    },
+    {
+      "role": "tool",
+      "name": "get_questionnaire",
+      "args": {},
+      "result": "13 sections, 102 fields (ids, types, allowed values)"
+    },
+    {
+      "role": "tool",
+      "name": "classify_ai_system",
+      "args": {
+        "answers": {
+          "sys_name": "PolisPrijs supplementary health pricing",
+          "provider_role": "deployer",
+          "org_sector": "insurance",
+          "hr_usecases": [
+            "essential_services"
+          ],
+          "hr_essential_subarea": "insurance_life_health",
+          "hr_does_profiling": true,
+          "…": "…"
+        }
+      },
+      "result": {
+        "tier": "high",
+        "tier_label": "High risk",
+        "finding": "High-risk: Risk assessment and pricing in life and health insurance",
+        "refs": [
+          "Annex III(5)(c)",
+          "Art. 6(2)",
+          "Art. 6(3)",
+          "Art. 27(1)"
+        ],
+        "applies_from": "2 Dec 2027",
+        "rationale": "Use in Annex III(5)(c) (Risk assessment and pricing in life and health insurance): Risk assessment and pricing in relation to natural persons in the case of life and health insurance (underwriting, acceptance, premium setting, risk selection). Therefore high-risk in principle on the basis of Art. 6…"
+      }
+    },
+    {
+      "role": "assistant",
+      "text": "The engine classifies it as **High risk** under Annex III(5)(c) — risk assessment and pricing in health insurance — with obligations applying from 2 Dec 2027. Because it is a 5(c) system, the fundamental-rights impact assessment is mandatory for every deployer, private insurers included (Art. 27(1)). Let me check how well you could evidence a decision afterwards."
+    },
+    {
+      "role": "tool",
+      "name": "assess_forensic_readiness",
+      "args": {
+        "answers": "… (same intake, incl. section 12 fr_* fields)"
+      },
+      "result": {
+        "total": 12,
+        "max": 16,
+        "band": "Ready with gaps",
+        "top_gap": "No legal-hold / evidence-freeze procedure.",
+        "clocks": [
+          "EU AI Act Art. 73",
+          "GDPR Art. 33 / 34",
+          "DORA Art. 19"
+        ]
+      }
+    },
+    {
+      "role": "tool",
+      "name": "governance_status",
+      "args": {
+        "answers": "…"
+      },
+      "result": {
+        "status": "Approved",
+        "next_review": "2026-12-10",
+        "review_overdue": false,
+        "literacy_records": 2
+      }
+    },
+    {
+      "role": "tool",
+      "name": "generate_report",
+      "args": {
+        "report_type": "forensics",
+        "lang": "nl"
+      },
+      "result": "> _Deze samenvatting is een Nederlandse weergave van de kern van het rapport; het volledige, citeerbare rapport hieronder is in het Engels. Dit is een hulpmiddel voor een gestructureerde zelfbeoordeling, geen juridisch advies._ | Onderwerp | Waarde | |---|---| | Systeem | PolisPrijs supplementary health pricing | | Rol (art. 3) | gebruiksverantwoordelijke | | Risicoklasse | **…"
+    },
+    {
+      "role": "assistant",
+      "text": "Forensic readiness is 12/16 (Ready with gaps); the first gap to close is: No legal-hold / evidence-freeze procedure. I've drafted the Dutch-summarised forensic-readiness plan above. Shall I save the assessment to your inventory?"
+    },
+    {
+      "role": "user",
+      "text": "Yes, save it."
+    },
+    {
+      "role": "tool",
+      "name": "save_assessment",
+      "args": {
+        "answers": "…",
+        "confirmed": true
+      },
+      "result": {
+        "saved": true,
+        "id": "a1b2c3d4",
+        "tier": "high"
+      }
+    },
+    {
+      "role": "assistant",
+      "text": "Saved with your confirmation. The inventory now shows this system with its tier, obligations date, forensic-readiness score and next review; `/api/register.csv` exports the register entry."
+    }
+  ]
+}

@@ -69,6 +69,9 @@ async function init() {
   $("#btn-reset").addEventListener("click", () => { renderForm(); });
   $("#example-select").addEventListener("change", onExampleSelected);
   await loadExamples();
+  await loadHowto();
+  const tourBtn = $("#btn-tour");
+  if (tourBtn) tourBtn.addEventListener("click", guidedTour);
   $("#btn-back").addEventListener("click", showIntake);
   $("#btn-download").addEventListener("click", downloadMarkdown);
   $("#btn-print").addEventListener("click", () => window.print());
@@ -105,7 +108,8 @@ async function loadConfig() {
     el("strong", {}, "Public sandbox. "),
     "Synthetic / example data only — do not enter real or personal data. " +
     "Assessments are not persisted and are visible to other visitors during " +
-    "the demo. The AI assist is off; this showcases the deterministic engine.");
+    "the demo. The AI assist runs in replay mode (pre-recorded drafts, no live " +
+    "model); the classification is the real deterministic engine.");
   main.prepend(banner);
   return cfg;
 }
@@ -171,10 +175,100 @@ async function loadAiStatus() {
     label = `Ollama · ${AI_STATUS.model}` + (AI_STATUS.available ? "" : " (unreachable)");
   } else if (AI_STATUS.provider === "manual") {
     dot = "ok"; label = "Manual — paste into your own LLM session";
+  } else if (AI_STATUS.provider === "replay") {
+    dot = "replay"; label = "Sandbox replay — drafts are pre-recorded (no live model)";
   }
   const provEl = $("#ai-provider");
   provEl.innerHTML = "";
   provEl.append(el("span", { class: `dot ${dot}` }), label);
+  if (AI_STATUS.replay) renderReplaySuggestions();
+}
+
+// In replay mode, offer a few descriptions that map onto shipped examples so a
+// visitor can see the whole flow in three clicks.
+const REPLAY_SUGGESTIONS = [
+  ["Health-insurance pricing", "We score applicants for a supplementary health insurance package and propose a premium band; an underwriter decides. We are the deployer, the model is licensed from a vendor."],
+  ["Claims fraud scoring", "A model scores incoming care-provider claims for anomalies and possible fraud and routes high scores to an investigator before payment."],
+  ["Customer-service assistant", "A chat assistant on a hosted large language model answers insured persons' questions about coverage and looks up their own claim status through an API."],
+  ["CV screening", "A machine-learning model ranks incoming job applications by suitability for a vacancy to support recruiters in pre-selecting candidates."],
+];
+
+function renderReplaySuggestions() {
+  const box = $("#ai-suggest");
+  if (!box) return;
+  box.innerHTML = "";
+  box.append(el("span", { class: "ai-suggest-label" }, "Try one:"));
+  REPLAY_SUGGESTIONS.forEach(([label, text]) => box.append(el("button", {
+    type: "button", class: "chip", onclick: () => { $("#ai-desc").value = text; $("#ai-desc").focus(); },
+  }, label)));
+  box.classList.remove("hidden");
+  const desc = $("#ai-desc");
+  if (desc && !desc.value) desc.value = REPLAY_SUGGESTIONS[0][1];
+}
+
+// --- how it works: stats, MCP transcript, guided tour ------------------------------
+async function loadHowto() {
+  const stats = $("#howto-stats");
+  if (stats) {
+    const reports = (document.querySelectorAll(".report-tabs .tab") || []).length;
+    const sections = QUESTIONNAIRE ? QUESTIONNAIRE.sections.length : 0;
+    const ex = ($("#example-select") || {}).options ? $("#example-select").options.length - 1 : 0;
+    stats.textContent = `${reports} reports · ${sections} intake sections · ${ex} synthetic examples · rule-based, cited, deterministic`;
+  }
+  try {
+    const t = await (await fetch("/static/demo/mcp_transcript.json")).json();
+    renderTranscript(t);
+  } catch { /* asset optional */ }
+}
+
+function renderTranscript(t) {
+  const box = $("#mcp-transcript");
+  if (!box || !t || !t.steps) return;
+  $("#mcp-note").textContent = t.note || "";
+  box.innerHTML = "";
+  t.steps.forEach((s) => {
+    if (s.role === "tool") {
+      const card = el("div", { class: "mcp-tool" });
+      card.append(el("div", { class: "mcp-tool-head" },
+        el("span", { class: "mcp-tool-name" }, `⚙ ${s.name}`),
+        el("code", {}, JSON.stringify(s.args))));
+      const res = typeof s.result === "string" ? s.result : JSON.stringify(s.result, null, 1);
+      card.append(el("pre", { class: "mcp-tool-result" }, res));
+      box.append(card);
+    } else {
+      const bubble = el("div", { class: `mcp-msg mcp-${s.role}` });
+      bubble.innerHTML = mdToHtml(s.text || "");
+      box.append(el("div", { class: "mcp-row" },
+        el("span", { class: "mcp-who" }, s.role === "user" ? "You" : "Claude"), bubble));
+    }
+  });
+}
+
+async function guidedTour() {
+  const btn = $("#btn-tour");
+  if (btn) btn.disabled = true;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    toast("1/4 — Loading the health-insurer example into the intake…");
+    const sel = $("#example-select");
+    sel.value = "health_insurance_pricing";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    await wait(1400);
+    const dg = document.getElementById("dg_datasets");
+    if (dg) { dg.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    toast("2/4 — Sections 11–13 carry the data-governance, evidence and governance record…");
+    await wait(2600);
+    toast("3/4 — The deterministic engine classifies it and cites Annex III(5)(c)…");
+    await assess();
+    await wait(1800);
+    toast("4/4 — Forensic readiness: can you evidence a decision afterwards?");
+    await selectReport("forensics");
+    await wait(600);
+    const h = [...document.querySelectorAll("#report-preview h2")].find((x) => /Evidence register/.test(x.textContent));
+    if (h) h.scrollIntoView({ behavior: "smooth", block: "start" });
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function aiSpinner(on) {

@@ -335,13 +335,14 @@ via `.env` (see `.env.example`):
 |---|---|
 | `ollama` *(default)* | Local model via Ollama. Private, free. |
 | `manual` | The app generates a prompt you paste into your **own** LLM session (e.g. Claude); you paste the JSON answer back. No API key needed. |
+| `replay` | **Sandbox mode**: no model, no egress. Drafts are replayed from the shipped synthetic examples (closest keyword match) and labelled as such, so the AI-assist flow is visible in the public demo. `DEMO_MODE=1` with `LLM_PROVIDER=none` selects it automatically. |
 | `none` | AI layer off (rule-based only). |
 
 Full configuration (copy `.env.example` to `.env`):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LLM_PROVIDER` | `ollama` | `ollama` \| `manual` \| `none` (see table above). |
+| `LLM_PROVIDER` | `ollama` | `ollama` \| `manual` \| `replay` \| `none` (see table above). |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama endpoint (non-interactive provider). |
 | `OLLAMA_MODEL` | `qwen3:32b` | Local model name; use `qwen3:1.7b` for low VRAM. |
 | `LLM_TIMEOUT` | `180` | Seconds before a slow local model is abandoned. |
