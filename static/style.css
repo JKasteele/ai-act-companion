@@ -458,3 +458,49 @@ footer { color: var(--muted); margin-top: 44px; text-align: center; font-size: .
 .chip { background: #241d31; border: 1px solid #463863; color: #c9a9ff; border-radius: 999px; padding: 3px 11px; font-size: .78rem; cursor: pointer; }
 .chip:hover { background: #2e2542; }
 .dot.replay { background: #a877ff; }
+
+/* --- guided tour: coach-mark panel + target highlight --------------------- */
+.tour-panel {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 18px 20px 16px;
+  z-index: 60;
+  font-size: .88rem;
+}
+.tour-panel:focus { outline: none; }
+.tour-close {
+  position: absolute; top: 8px; right: 10px; background: none; border: none;
+  color: var(--muted); font-size: 1.2rem; line-height: 1; cursor: pointer; padding: 4px 6px;
+  border-radius: 6px;
+}
+.tour-close:hover { color: var(--text); background: var(--panel-2); }
+.tour-title {
+  margin: 0 26px 8px 0; font-family: var(--font-display); font-weight: 560;
+  font-size: 1.1rem; color: var(--accent);
+}
+.tour-body { color: var(--text); font-size: .87rem; line-height: 1.55; margin: 0 0 14px; }
+.tour-body em { color: var(--gold); font-style: normal; }
+.tour-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tour-count { font-family: var(--font-mono); font-size: .72rem; color: var(--muted); margin-right: auto; }
+.tour-actions button { padding: 8px 15px; font-size: .84rem; }
+.tour-actions button:disabled { opacity: .4; cursor: default; }
+
+.tour-highlight {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--accent-soft), 0 0 26px rgba(91, 155, 255, .35);
+  border-radius: var(--r-sm);
+  scroll-margin-top: 90px;
+  transition: box-shadow .2s ease;
+}
+
+@media (max-width: 560px) {
+  .tour-panel { left: 12px; right: 12px; bottom: 12px; width: auto; max-width: none; }
+}
