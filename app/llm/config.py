@@ -52,7 +52,7 @@ class Settings:
     request_timeout = float(os.environ.get("LLM_TIMEOUT", "180"))
     # Hosted Anthropic provider. The API key itself is read by the SDK from
     # ANTHROPIC_API_KEY directly (never stored on this object, never logged).
-    anthropic_model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+    anthropic_model = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
     # Identity-linked API keys must name the workspace they act in (sent as the
     # `anthropic-workspace-id` header); classic keys leave this empty.
     anthropic_workspace_id = os.environ.get("ANTHROPIC_WORKSPACE_ID", "").strip()

@@ -7,6 +7,7 @@ then classifies (manually).
 
 import logging
 import re
+import time
 
 from . import budget, prompts
 from .base import extract_json, get_provider, validate_answers
@@ -109,6 +110,30 @@ def _parse_prefill_payload(raw_text):
     }
 
 
+# Identical descriptions within an hour get the earlier live draft back at no
+# cost (a bot replaying the same text stops costing money after one call).
+_PREFILL_CACHE: dict[str, tuple[float, dict]] = {}
+_PREFILL_TTL = 3600.0
+_PREFILL_CACHE_MAX = 200
+
+
+def _cache_key(description):
+    return " ".join(description.lower().split())
+
+
+def _cache_get(key):
+    hit = _PREFILL_CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < _PREFILL_TTL:
+        return dict(hit[1], cached=True)
+    return None
+
+
+def _cache_put(key, result):
+    if len(_PREFILL_CACHE) >= _PREFILL_CACHE_MAX:
+        _PREFILL_CACHE.pop(next(iter(_PREFILL_CACHE)))
+    _PREFILL_CACHE[key] = (time.monotonic(), dict(result))
+
+
 def prefill_from_text(description, ip=None):
     """Pre-fill the questionnaire based on a free-text description.
 
@@ -122,6 +147,11 @@ def prefill_from_text(description, ip=None):
     if configured is None:
         return {"mode": "disabled", "hitl_notice": HITL_NOTICE}
 
+    key = _cache_key(description)
+    if configured.name == "anthropic":
+        cached = _cache_get(key)
+        if cached:
+            return cached
     provider = provider_for(ip)
     system, user = prompts.build_prefill_prompt(description)
 
@@ -144,6 +174,7 @@ def prefill_from_text(description, ip=None):
     result["provider"] = provider.name
     if provider.name == "anthropic":
         budget.note_ip(ip)
+        _cache_put(key, result)
     elif configured.name == "anthropic":
         result["fallback_from"] = "anthropic"
         result["fallback_reason"] = error_reason or getattr(provider, "fallback_reason", "")

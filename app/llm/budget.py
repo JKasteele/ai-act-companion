@@ -2,11 +2,12 @@
 
 Three independent caps, all env-configurable, all deterministic:
 
-  * a lifetime budget in USD (`AI_BUDGET_USD`, default 5.00) estimated from the
+  * a lifetime budget in USD (`AI_BUDGET_USD`, default 4.00) estimated from the
     token usage the API reports, persisted as JSON next to the assessments;
-  * a daily call cap (`AI_DAILY_CALLS`, default 40) so a restart that wipes the
+  * a daily call cap (`AI_DAILY_CALLS`, default 25) so a restart that wipes the
     spend file can never turn into an expensive day;
-  * a per-client daily cap (`AI_CALLS_PER_IP_DAY`, default 8), in memory.
+  * a per-client daily cap (`AI_CALLS_PER_IP_DAY`, default 8) and a per-client
+    cooldown (`AI_COOLDOWN_SECONDS`, default 20), in memory.
 
 When any cap is hit the service degrades to the *replay* provider (pre-recorded
 drafts) and says so in the status — the demo keeps working, it just stops
@@ -21,6 +22,7 @@ model the provider uses; cache reads are 0.1x, cache writes 1.25x input.
 import json
 import os
 import threading
+import time
 from datetime import date
 from pathlib import Path
 
@@ -34,6 +36,7 @@ _DEFAULT_PRICE = PRICES["claude-sonnet-5"]
 
 _LOCK = threading.Lock()
 _IP_CALLS: dict[str, dict[str, int]] = {}   # day -> ip -> calls
+_IP_LAST: dict[str, float] = {}               # ip -> monotonic time of last call
 
 
 def _env_float(name, default):
@@ -51,15 +54,19 @@ def _env_int(name, default):
 
 
 def budget_usd():
-    return _env_float("AI_BUDGET_USD", 5.0)
+    return _env_float("AI_BUDGET_USD", 4.0)
 
 
 def daily_cap():
-    return _env_int("AI_DAILY_CALLS", 40)
+    return _env_int("AI_DAILY_CALLS", 25)
 
 
 def per_ip_cap():
     return _env_int("AI_CALLS_PER_IP_DAY", 8)
+
+
+def cooldown_seconds():
+    return _env_float("AI_COOLDOWN_SECONDS", 20.0)
 
 
 def _spend_path():
@@ -130,6 +137,7 @@ def state():
         "calls_today": calls_today,
         "daily_cap": daily_cap(),
         "per_ip_cap": per_ip_cap(),
+        "cooldown_seconds": cooldown_seconds(),
         "exhausted": spent >= budget_usd() or calls_today >= daily_cap(),
     }
 
@@ -148,6 +156,10 @@ def allow(ip=None):
             n = _IP_CALLS.get(today, {}).get(ip, 0)
         if n >= per_ip_cap():
             return False, "per_ip_cap"
+        with _LOCK:
+            last = _IP_LAST.get(ip)
+        if last is not None and time.monotonic() - last < cooldown_seconds():
+            return False, "cooldown"
     return True, ""
 
 
@@ -160,11 +172,16 @@ def note_ip(ip):
             _IP_CALLS.pop(k, None)
         day = _IP_CALLS.setdefault(today, {})
         day[ip] = day.get(ip, 0) + 1
+        _IP_LAST[ip] = time.monotonic()
+        if len(_IP_LAST) > 5000:          # bounded memory
+            for k in list(_IP_LAST)[:1000]:
+                _IP_LAST.pop(k, None)
 
 
 def reset_for_tests():
     with _LOCK:
         _IP_CALLS.clear()
+        _IP_LAST.clear()
     p = _spend_path()
     if p.exists():
         p.unlink()

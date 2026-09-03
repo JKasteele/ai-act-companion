@@ -30,6 +30,7 @@ optionally, three **variables**:
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | **secret** | your API key | Never set this as a plain variable — Space *variables* are visible to anyone who can view the Space; *secrets* are not. Also set a spend limit on this key in the Anthropic Console as the hard guarantee. |
 | `ANTHROPIC_WORKSPACE_ID` | `wrkspc_…` | Only for identity-linked keys (the API answers 400 "anthropic-workspace-id is required" otherwise). A variable, not a secret. |
+| `AI_COOLDOWN_SECONDS` | `20` | Per-client cooldown; repeats of the same description are cached for an hour. |
 | `AI_BUDGET_USD` | variable | `5.00` (default) | Lifetime USD spend cap; the app degrades to `replay` once it's hit. |
 | `AI_DAILY_CALLS` | variable | `40` (default) | Daily call cap, independent of the budget. |
 | `AI_CALLS_PER_IP_DAY` | variable | `8` (default) | Per-visitor daily call cap. |

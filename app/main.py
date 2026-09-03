@@ -123,8 +123,12 @@ def _client_ip(request):
     Trusts X-Forwarded-For (set by the reverse proxy in front of the Space);
     falls back to the direct connection when there is no proxy.
     """
+    # The proxy APPENDS the real client to X-Forwarded-For; a client can put any
+    # value in front, so take the LAST hop (never the first) to keep the per-IP
+    # cap honest.
     fwd = request.headers.get("x-forwarded-for") or ""
-    return fwd.split(",")[0].strip() or (request.client.host if request.client else "")
+    hops = [h.strip() for h in fwd.split(",") if h.strip()]
+    return (hops[-1] if hops else "") or (request.client.host if request.client else "")
 
 
 @app.get("/api/ai/status")

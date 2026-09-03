@@ -114,7 +114,7 @@ def test_prefill_via_anthropic_uses_expected_request_shape(monkeypatch, with_key
     assert out["assumptions"] == ["assumed EU deployment"]
 
     call = holder["client"].messages.calls[0]
-    assert call["model"] == "claude-sonnet-5"
+    assert call["model"] == "claude-haiku-4-5"   # default hosted model
     assert call["output_config"] == {"effort": "low"}
     system = call["system"]
     assert len(system) == 2
@@ -129,6 +129,14 @@ def test_prefill_via_anthropic_uses_expected_request_shape(monkeypatch, with_key
 # --- (b) budget accounting ---------------------------------------------------
 def test_estimate_cost_matches_the_documented_rate():
     assert budget.estimate_cost({"input_tokens": 1_000_000}, "claude-sonnet-5") == 2.0
+
+
+@pytest.fixture(autouse=True)
+def _clear_prefill_cache():
+    from app.llm import service as _svc
+    _svc._PREFILL_CACHE.clear()
+    yield
+    _svc._PREFILL_CACHE.clear()
 
 
 def test_record_grows_spent_and_shrinks_remaining():
@@ -315,3 +323,72 @@ def test_live_call_failure_degrades_to_replay(monkeypatch, tmp_path):
     assert budget.state()["calls_total"] == 0                  # nothing was billed
     nar = service.draft_narrative("human_oversight", {"sys_name": "x"})
     assert nar["provider"] == "replay" and nar["fallback_reason"] == "credits"
+
+
+def _fake_sdk(monkeypatch, seen=None):
+    import anthropic as sdk
+
+    class _Usage:
+        input_tokens = 10
+        output_tokens = 5
+        cache_read_input_tokens = 0
+        cache_creation_input_tokens = 0
+
+    class _Block:
+        type = "text"
+        text = '{"answers": {"sys_name": "Live draft"}, "assumptions": []}'
+
+    class _Resp:
+        stop_reason = "end_turn"
+        content = [_Block()]
+        usage = _Usage()
+
+    class _Messages:
+        def create(self, **kw):
+            if seen is not None:
+                seen.append(kw)
+            return _Resp()
+
+    class _Client:
+        def __init__(self, **kw):
+            self.messages = _Messages()
+
+    monkeypatch.setattr(sdk, "Anthropic", _Client)
+
+
+def test_cooldown_and_dedupe_cache_stop_rapid_repeats(monkeypatch, tmp_path):
+    from app.llm import budget, service
+    from app.llm.config import settings
+
+    monkeypatch.setenv("AIACT_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("AI_COOLDOWN_SECONDS", "60")
+    monkeypatch.setattr(settings, "provider", "anthropic")
+    budget.reset_for_tests()
+    service._PREFILL_CACHE.clear()
+    calls = []
+    _fake_sdk(monkeypatch, calls)
+    first = service.prefill_from_text("A brand new description one", ip="1.1.1.1")
+    assert first["provider"] == "anthropic" and len(calls) == 1
+    again = service.prefill_from_text("  a BRAND new   description one ", ip="1.1.1.1")
+    assert again.get("cached") is True and len(calls) == 1          # served from cache
+    other = service.prefill_from_text("A different description two", ip="1.1.1.1")
+    assert other["provider"] == "replay" and other["fallback_reason"] == "cooldown"
+    assert len(calls) == 1
+    third = service.prefill_from_text("A different description two", ip="2.2.2.2")
+    assert third["provider"] == "anthropic" and len(calls) == 2     # other client unaffected
+    assert budget.state()["cooldown_seconds"] == 60.0
+    assert budget.budget_usd() == 4.0 and budget.daily_cap() == 25
+
+
+def test_client_ip_uses_the_proxy_appended_hop():
+    from app.main import _client_ip
+
+    class _Req:
+        def __init__(self, xff, host="10.0.0.9"):
+            self.headers = {"x-forwarded-for": xff} if xff else {}
+            self.client = type("C", (), {"host": host})()
+
+    assert _client_ip(_Req("1.2.3.4, 203.0.113.7")) == "203.0.113.7"   # spoofed first hop ignored
+    assert _client_ip(_Req("203.0.113.7")) == "203.0.113.7"
+    assert _client_ip(_Req("")) == "10.0.0.9"

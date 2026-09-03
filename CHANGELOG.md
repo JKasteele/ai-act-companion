@@ -7,6 +7,7 @@ All notable changes are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Abuse hardening for the hosted AI provider**: the per-client cap keys on the proxy-appended hop of `X-Forwarded-For` (a client-supplied first value no longer bypasses it), a per-client cooldown (`AI_COOLDOWN_SECONDS`, 20 s), a one-hour dedupe cache for identical descriptions (repeats cost nothing), tighter defaults (`AI_DAILY_CALLS` 25, `AI_BUDGET_USD` 4.00) so the in-app ceiling stays under the Console spend limit, and Claude Haiku 4.5 as the default hosted model.
 - Hosted Anthropic provider (Claude Sonnet 5) with a spend guard: a lifetime
   USD budget, a daily call cap and a per-IP daily cap (`AI_BUDGET_USD`,
   `AI_DAILY_CALLS`, `AI_CALLS_PER_IP_DAY`), all persisted next to the
