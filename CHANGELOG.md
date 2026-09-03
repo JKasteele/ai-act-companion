@@ -6,6 +6,11 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-03
+
+The governance-depth release: AI governance built on data governance, the
+sector frameworks insurers and banks actually use, and forensic readiness.
+
 ### Added
 - **Forensic readiness & evidence plan** (report 20, `forensics`). New intake
   section 12 (`fr_*`) and a pure assessment function (`app/forensics.py`) that
