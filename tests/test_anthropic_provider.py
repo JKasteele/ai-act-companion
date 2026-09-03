@@ -283,3 +283,35 @@ def test_workspace_id_is_sent_as_default_header(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "anthropic_workspace_id", "")
     AnthropicProvider().generate("sys", "user text", as_json=True)
     assert seen["default_headers"] is None
+
+
+def test_live_call_failure_degrades_to_replay(monkeypatch, tmp_path):
+    """Auth/credit/network errors at call time must not surface as a 502: the
+    demo replays a draft and names the reason."""
+    import anthropic as sdk
+
+    from app.llm import budget, service
+    from app.llm.config import settings
+
+    monkeypatch.setenv("AIACT_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setattr(settings, "provider", "anthropic")
+    budget.reset_for_tests()
+
+    class _Messages:
+        def create(self, **kw):
+            raise RuntimeError("Your credit balance is too low to access the Anthropic API.")
+
+    class _Client:
+        def __init__(self, **kw):
+            self.messages = _Messages()
+
+    monkeypatch.setattr(sdk, "Anthropic", _Client)
+    out = service.prefill_from_text("A chat assistant answers insured persons questions "
+                                    "about coverage and looks up their claim status.")
+    assert out["mode"] == "auto" and out["provider"] == "replay"
+    assert out["fallback_from"] == "anthropic" and out["fallback_reason"] == "credits"
+    assert out["answers"].get("sys_name")                      # a replayed draft, not empty
+    assert budget.state()["calls_total"] == 0                  # nothing was billed
+    nar = service.draft_narrative("human_oversight", {"sys_name": "x"})
+    assert nar["provider"] == "replay" and nar["fallback_reason"] == "credits"

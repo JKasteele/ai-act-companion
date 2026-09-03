@@ -542,7 +542,14 @@ async function aiParse() {
 function applyDraft(data) {
   fillFields(data.answers || {});
   const n = Object.keys(data.answers || {}).length;
-  const prefix = data.fallback_from ? "Live-AI budget reached — this draft was replayed. " : "";
+  const REASONS = {
+    budget: "Live-AI budget for this demo is used up", daily_cap: "Daily live-AI cap reached",
+    per_ip_cap: "Your daily live-AI allowance is used up", credits: "Live AI is unavailable right now",
+    error: "Live AI is unavailable right now", unavailable: "Live AI is not configured",
+  };
+  const prefix = data.fallback_from
+    ? `${REASONS[data.fallback_reason] || "Live AI unavailable"} — this draft was replayed. `
+    : "";
   showAiNotice(
     `<strong>${escapeHtml(prefix + (data.hitl_notice || "AI draft — review every field."))}</strong> ` +
     `${n} field(s) pre-filled.`,
