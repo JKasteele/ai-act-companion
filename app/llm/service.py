@@ -5,10 +5,13 @@ anything. All output is a DRAFT that the user reviews in the frontend and only
 then classifies (manually).
 """
 
+import logging
 import re
 
 from . import budget, prompts
 from .base import extract_json, get_provider, validate_answers
+
+logger = logging.getLogger(__name__)
 
 # Added to every AI response, so the frontend always shows it.
 HITL_NOTICE = (
@@ -39,6 +42,24 @@ def provider_for(ip=None):
         fallback.fallback_reason = reason
         return fallback
     return p
+
+
+def _call_live_or_replay(provider, system, user, as_json):
+    """Call `provider`. Only the hosted provider can fail at call time (auth,
+    credits, network); when it does the demo must keep working, so log the
+    failure for the operator and return a replayed draft instead of a 502.
+    Returns (raw_output, provider_used, error_reason_or_None)."""
+    try:
+        return provider.generate(system, user, as_json=as_json), provider, None
+    except Exception as e:  # noqa: BLE001
+        if provider.name != "anthropic":
+            raise
+        from .replay import ReplayProvider
+        logger.warning("Live AI call failed, replaying a draft instead: %s", e)
+        replay = ReplayProvider()
+        reason = "credits" if "credit balance" in str(e).lower() else "error"
+        replay.fallback_reason = reason
+        return replay.generate(system, user, as_json=as_json), replay, reason
 
 
 def status():
@@ -117,7 +138,7 @@ def prefill_from_text(description, ip=None):
             "hitl_notice": HITL_NOTICE,
         }
 
-    raw = provider.generate(system, user, as_json=True)
+    raw, provider, error_reason = _call_live_or_replay(provider, system, user, as_json=True)
     result = _parse_prefill_payload(raw)
     result["mode"] = "auto"
     result["provider"] = provider.name
@@ -125,7 +146,7 @@ def prefill_from_text(description, ip=None):
         budget.note_ip(ip)
     elif configured.name == "anthropic":
         result["fallback_from"] = "anthropic"
-        result["fallback_reason"] = getattr(provider, "fallback_reason", "")
+        result["fallback_reason"] = error_reason or getattr(provider, "fallback_reason", "")
     return result
 
 
@@ -157,7 +178,7 @@ def draft_narrative(field, answers, ip=None):
             "hitl_notice": HITL_NOTICE,
         }
 
-    text = provider.generate(system, user, as_json=False)
+    text, provider, error_reason = _call_live_or_replay(provider, system, user, as_json=False)
     # Strip any <think> blocks from reasoning models.
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL | re.IGNORECASE).strip()
     result = {"mode": "auto", "provider": provider.name, "field": field,
@@ -166,5 +187,5 @@ def draft_narrative(field, answers, ip=None):
         budget.note_ip(ip)
     elif configured.name == "anthropic":
         result["fallback_from"] = "anthropic"
-        result["fallback_reason"] = getattr(provider, "fallback_reason", "")
+        result["fallback_reason"] = error_reason or getattr(provider, "fallback_reason", "")
     return result
