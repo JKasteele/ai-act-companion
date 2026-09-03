@@ -332,6 +332,9 @@ const TOUR_STEPS = [
       while (content && !content.children.length && Date.now() - start < 3000) {
         await tourWait(100);
       }
+      // showResult() smooth-scrolls to the top; let that finish before the
+      // tour scrolls the result block into view, or the two scrolls race.
+      await tourWait(1000);
     },
   },
   {
@@ -394,7 +397,22 @@ function tourHighlight(step) {
   if (!target) return;
   target.classList.add("tour-highlight");
   TOUR_STATE.prevTarget = target;
-  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  // Tall targets (a whole report, the result block) start at the top; small
+  // ones are centred. Re-scroll once more after render/other scroll effects
+  // (assess() and report loading move the page) so the target stays in view.
+  const block = target.getBoundingClientRect().height > window.innerHeight * 0.6
+    ? "start" : "center";
+  target.scrollIntoView({ behavior: "smooth", block });
+  // A smooth scroll started elsewhere (showResult() scrolls to the top) can
+  // swallow ours; check twice more and jump instantly if the target left view.
+  const ensure = () => {
+    if (!TOUR_STATE.active || TOUR_STATE.prevTarget !== target) return;
+    const r = target.getBoundingClientRect();
+    const inView = r.top >= 0 && r.top < window.innerHeight * 0.5;
+    if (!inView) target.scrollIntoView({ behavior: "auto", block });
+  };
+  setTimeout(ensure, 900);
+  setTimeout(ensure, 2200);
 }
 
 async function tourGo(index, { forward = true } = {}) {
