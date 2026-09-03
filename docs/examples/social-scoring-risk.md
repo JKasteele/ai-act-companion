@@ -137,6 +137,21 @@ The 38 ISO/IEC 42001 Annex A reference controls, each tagged with its most-relev
 
 _Analytical alignment, not an official ISO <-> EU AI Act crosswalk. ISO/IEC 42001 is an organisational AI management-system standard; the AI Act imposes product/high-risk obligations. Clauses (4-10), category headers (A.2-A.10) and the 38 Annex A control titles are publicly published (titles only, no paid standard text); each control's EU AI Act anchor is the Companion's most-relevant alignment, not an equivalence._
 
+### 5.3 ALTAI (EU HLEG Assessment List for Trustworthy AI)
+The seven ALTAI requirements, each with its most-relevant EU AI Act and ISO/IEC 42001 anchors and the intake fields that already carry evidence for it. Use the *missing* column to plan the ALTAI self-assessment.
+
+| # | Requirement | Asks | EU AI Act | ISO/IEC 42001 | Evidence in intake | Missing |
+|---|---|---|---|---|---|---|
+| 1 | Human agency and oversight | Fundamental rights, human agency (no undue reliance or manipulation), human oversight (human-in/on/in-command). | Art. 14, Art. 26(2), Art. 5(1)(a–b) | A.6.2.5, A.9.2 | `autonomy_level`, `can_override` | `human_oversight` |
+| 2 | Technical robustness and safety | Resilience to attack, fallback plans, accuracy, reliability and reproducibility. | Art. 15, Art. 9 | A.6.2.4, A.6.2.6 | - | `sec_is_llm`, `sec_third_party_models`, `sec_external_data`, `sec_agentic`, `arch_auth_strength`, `arch_access_control_layer`, `arch_rate_limits` |
+| 3 | Privacy and data governance | Privacy, quality and integrity of data, access to data. | Art. 10, Art. 10(5); GDPR | A.7.2–A.7.6 | `data_personal`, `data_special_category` | `dg_data_owner`, `dg_data_steward`, `dg_datasets`, `dg_lineage`, `dg_q_representativeness` |
+| 4 | Transparency | Traceability, explainability, communication that one interacts with AI. | Art. 12, Art. 13, Art. 50 | A.6.2.8, A.8.2, A.8.5 | - | `t_interacts_humans`, `t_synthetic_content`, `arch_logging` |
+| 5 | Diversity, non-discrimination and fairness | Avoidance of unfair bias, accessibility and universal design, stakeholder participation. | Art. 10(2)(f–g), Art. 27 | A.5.4, A.7.4 | `affects_vulnerable` | `hr_does_profiling`, `dg_q_representativeness` |
+| 6 | Societal and environmental well-being | Sustainability, social impact, impact on society and democracy. | Art. 27, Art. 95, Recital 27 | A.5.5 | `affects_vulnerable`, `data_scale` | - |
+| 7 | Accountability | Auditability, minimisation and reporting of negative impacts, trade-offs, redress. | Art. 9, Art. 17, Art. 72, Art. 73, Art. 26 | A.2.2, A.3.2, A.5.2, A.8.3 | `sys_owner`, `provider_role`, `lifecycle_stage` | `dg_data_owner` |
+
+_ALTAI (EU HLEG, 2020), EIOPA AI governance principles (2021) and DNB SAFEST (2019) are reproduced as titles with one-line paraphrases; the EU AI Act and ISO/IEC 42001 anchors are a Companion-derived analytical alignment, not an official mapping. DORA references: Regulation (EU) 2022/2554._
+
 ## 6. Risk register (to be completed)
 | # | Risk | Source | Likelihood | Impact | Mitigation | Owner | Status |
 |---|---|---|---|---|---|---|---|
@@ -148,6 +163,7 @@ _Analytical alignment, not an official ISO <-> EU AI Act crosswalk. ISO/IEC 4200
 - AI risk assessment report
 - AI literacy measures / staff training record (AI Act Art. 4)
 - DPIA (data protection impact assessment, GDPR Art. 35)
+- Data governance & quality record (AI Act Art. 10)
 - Bias/fairness audit report (AI Act Art. 10)
 - Technical documentation (AI Act Art. 11 + Annex IV)
 - Fundamental rights impact assessment - FRIA (AI Act Art. 27)

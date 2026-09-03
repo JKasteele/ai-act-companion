@@ -250,6 +250,16 @@ input[type=text], textarea, select {
   transition: border-color .15s, box-shadow .15s;
 }
 textarea { min-height: 66px; resize: vertical; }
+
+/* table question type (dataset inventory) */
+.dg-table-scroll { overflow-x: auto; }
+.dg-table table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.dg-table th { text-align: left; font-weight: 500; color: var(--muted); padding: 4px 6px; white-space: nowrap; }
+.dg-table td { padding: 3px 4px; vertical-align: top; }
+.dg-table td input[type=text], .dg-table td select { min-width: 9.5em; font-size: .82rem; padding: 5px 7px; }
+.dg-table .row-del { background: none; border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--muted); cursor: pointer; padding: 2px 8px; }
+.dg-table .row-del:hover { color: var(--danger, #e5484d); }
+.dg-table .row-add { margin-top: 8px; font-size: .82rem; padding: 6px 12px; }
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent);

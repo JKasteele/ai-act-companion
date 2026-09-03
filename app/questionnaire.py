@@ -4,8 +4,23 @@ This structure is:
   1. sent as JSON to the frontend to render the form dynamically;
   2. read by the classifier based on the question ids.
 
-Question types: text | textarea | radio | select | boolean | multiselect
+Question types: text | textarea | radio | select | boolean | multiselect | table
+
+A `table` question carries `columns` (each: id, label, type text|select,
+optional options) and is answered with a list of row objects keyed by
+column id. The three front-ends render it; the engine reads it through
+`knowledge.data_governance.dataset_rows()`.
 """
+
+from .knowledge.forensics import LOG_SCOPE_OPTIONS as _LOG_SCOPE_OPTIONS
+
+# Shared option list for the seven data-quality dimensions (section 11).
+_QUALITY_STATUS_OPTIONS = [
+    {"value": "unknown", "label": "Unknown — not assessed"},
+    {"value": "assessed", "label": "Assessed qualitatively (reviewed, no metric)"},
+    {"value": "measured", "label": "Measured (metric, threshold and evidence exist)"},
+    {"value": "na", "label": "Not applicable"},
+]
 
 QUESTIONNAIRE = {
     "title": "AI system intake",
@@ -28,6 +43,19 @@ QUESTIONNAIRE = {
                 {"id": "sys_owner", "type": "text", "required": False,
                  "label": "Owner / organisation (synthetic)",
                  "placeholder": "e.g. Example Ltd."},
+                {"id": "org_sector", "type": "select", "required": False,
+                 "label": "Sector of the organisation",
+                 "help": "Drives the sector crosswalks (EIOPA / DNB SAFEST for insurers "
+                         "and banks) and the DORA third-party hook for financial entities.",
+                 "options": [
+                     {"value": "general", "label": "General / not sector-specific"},
+                     {"value": "insurance", "label": "Insurance (incl. health insurer)"},
+                     {"value": "banking_credit", "label": "Banking / credit / payments"},
+                     {"value": "other_financial", "label": "Other financial entity (DORA scope)"},
+                     {"value": "healthcare", "label": "Healthcare provider"},
+                     {"value": "public_sector", "label": "Public sector"},
+                     {"value": "other", "label": "Other"},
+                 ]},
                 {"id": "sys_description", "type": "textarea", "required": True,
                  "label": "Short description",
                  "help": "What does the system do, technically and functionally?"},
@@ -129,9 +157,36 @@ QUESTIONNAIRE = {
                      {"value": "justice_democracy", "label": "Administration of justice & democracy (III-8)"},
                      {"value": "none", "label": "None of the above"},
                  ]},
+                {"id": "hr_essential_subarea", "type": "select", "required": False,
+                 "label": "If Annex III-5: which sub-point?",
+                 "help": "Point 5 has four distinct cases. For 5(b) and 5(c) the FRIA "
+                         "(Art. 27) is mandatory for every deployer, private ones included.",
+                 "options": [
+                     {"value": "public_benefits",
+                      "label": "5(a) Eligibility for public benefits / services"},
+                     {"value": "creditworthiness",
+                      "label": "5(b) Creditworthiness / credit scoring"},
+                     {"value": "insurance_life_health",
+                      "label": "5(c) Risk assessment & pricing in life / health insurance"},
+                     {"value": "emergency_triage",
+                      "label": "5(d) Emergency calls / emergency healthcare triage"},
+                 ]},
+                {"id": "hr_insurance_scope", "type": "select", "required": False,
+                 "label": "If 5(c): which insurance product?",
+                 "help": "Sector rules decide where the risk sits (e.g. the Dutch basic "
+                         "package has an acceptance duty and no premium differentiation).",
+                 "options": [
+                     {"value": "health_basic_nl", "label": "Health — Dutch basic insurance (Zvw)"},
+                     {"value": "health_supplementary", "label": "Health — supplementary insurance"},
+                     {"value": "life", "label": "Life insurance"},
+                     {"value": "other", "label": "Other product / other jurisdiction"},
+                 ]},
                 {"id": "hr_does_profiling", "type": "boolean", "required": False,
                  "label": "Does the system perform profiling of natural persons?",
-                 "help": "Relevant for the Art. 6(3) derogation."},
+                 "help": "Relevant for the Art. 6(3) derogation: once a system profiles, "
+                         "the derogation is off the table (also per the Commission's draft "
+                         "Art. 6(5) guidelines of May 2026; e.g. claims-fraud scoring of "
+                         "persons)."},
                 {"id": "hr_art6_3_minor", "type": "boolean", "required": False,
                  "label": "Within Annex III, does it only perform a narrow, "
                           "preparatory or procedural task without materially "
@@ -332,6 +387,186 @@ QUESTIONNAIRE = {
                  "label": "Is the infringement widespread (affecting many persons "
                           "or several Member States)?",
                  "help": "Shortens the Art. 73 reporting deadline."},
+            ],
+        },
+        {
+            "id": "datagov",
+            "title": "11. Data governance & quality (Art. 10)",
+            "description": (
+                "AI governance is built on data governance. Per dataset: where it "
+                "comes from, who owns and stewards it, how it is classified and how "
+                "good it is. Feeds the data-governance report, the DPIA and the "
+                "Annex IV data description. None of these fields affect the risk tier."
+            ),
+            "questions": [
+                {"id": "dg_data_owner", "type": "text", "required": False,
+                 "label": "Data owner (business role accountable for the data domain)",
+                 "help": "Distinct from the AI system owner; the two carry different "
+                         "accountabilities.",
+                 "placeholder": "e.g. Head of Claims (data domain: claims)"},
+                {"id": "dg_data_steward", "type": "text", "required": False,
+                 "label": "Data steward (day-to-day definitions, metadata, quality)",
+                 "placeholder": "e.g. Claims data steward"},
+                {"id": "dg_catalog_registered", "type": "boolean", "required": False,
+                 "label": "Are the datasets registered in a data catalogue / metadata "
+                          "store with lineage?"},
+                {"id": "dg_datasets", "type": "table", "required": False,
+                 "label": "Dataset inventory (training, validation, test and "
+                          "inference-time input)",
+                 "help": "One row per dataset. Use synthetic names.",
+                 "columns": [
+                     {"id": "name", "label": "Dataset", "type": "text"},
+                     {"id": "origin", "label": "Origin", "type": "select", "options": [
+                         {"value": "internal", "label": "Internal"},
+                         {"value": "external_vendor", "label": "Vendor / licensed"},
+                         {"value": "external_public", "label": "Public / open"},
+                         {"value": "partner", "label": "Partner / shared"},
+                         {"value": "user_generated", "label": "User-generated / runtime"},
+                         {"value": "synthetic", "label": "Synthetic"},
+                     ]},
+                     {"id": "owner", "label": "Data owner", "type": "text"},
+                     {"id": "steward", "label": "Steward", "type": "text"},
+                     {"id": "classification", "label": "Classification", "type": "select",
+                      "options": [
+                          {"value": "public", "label": "Public"},
+                          {"value": "internal", "label": "Internal"},
+                          {"value": "confidential", "label": "Confidential"},
+                          {"value": "personal", "label": "Personal data"},
+                          {"value": "special_category", "label": "Special category (Art. 9)"},
+                      ]},
+                     {"id": "purpose", "label": "Purpose (limitation)", "type": "text"},
+                     {"id": "retention", "label": "Retention", "type": "text"},
+                     {"id": "legal_basis", "label": "Lawful basis", "type": "select",
+                      "options": [
+                          {"value": "na", "label": "n/a (no personal data)"},
+                          {"value": "consent", "label": "Consent"},
+                          {"value": "contract", "label": "Contract"},
+                          {"value": "legal_obligation", "label": "Legal obligation"},
+                          {"value": "vital_interest", "label": "Vital interests"},
+                          {"value": "public_task", "label": "Public task"},
+                          {"value": "legitimate_interest", "label": "Legitimate interest"},
+                          {"value": "unknown", "label": "Unknown"},
+                      ]},
+                 ]},
+                {"id": "dg_lineage", "type": "textarea", "required": False,
+                 "label": "Lineage (source → preparation → training/input set → model → output)",
+                 "help": "One line per hop is enough; name the systems, not the vendors.",
+                 "placeholder": "e.g. Claims DWH → dedupe + label (steward) → train_v3 → "
+                                "model v3 → risk score → underwriting queue"},
+                {"id": "dg_q_accuracy", "type": "select", "required": False,
+                 "label": "Data quality — accuracy",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_completeness", "type": "select", "required": False,
+                 "label": "Data quality — completeness",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_consistency", "type": "select", "required": False,
+                 "label": "Data quality — consistency",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_timeliness", "type": "select", "required": False,
+                 "label": "Data quality — timeliness",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_validity", "type": "select", "required": False,
+                 "label": "Data quality — validity",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_uniqueness", "type": "select", "required": False,
+                 "label": "Data quality — uniqueness",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_representativeness", "type": "select", "required": False,
+                 "label": "Data quality — representativeness & bias screening",
+                 "help": "The AI Act-specific dimension (Art. 10(3), Art. 10(2)(f–g)).",
+                 "options": _QUALITY_STATUS_OPTIONS},
+                {"id": "dg_q_evidence", "type": "textarea", "required": False,
+                 "label": "Quality evidence (metrics, thresholds, dates, where recorded)",
+                 "placeholder": "e.g. completeness 98.7% on mandatory fields (DQ dashboard, "
+                                "2026-08); representativeness: coverage per age band vs. "
+                                "portfolio, report DQ-2026-14"},
+            ],
+        },
+        {
+            "id": "forensics",
+            "title": "12. Forensic readiness & evidence",
+            "description": (
+                "Can you reconstruct and evidence what the system did, why, with which "
+                "data and model version — after an incident, a complaint, a regulator "
+                "request or a dispute? Feeds the forensic-readiness report and the "
+                "parallel reporting clocks in the incident report. Model output is "
+                "non-deterministic, so evidence comes from recording, not re-running. "
+                "None of these fields affect the risk tier."
+            ),
+            "questions": [
+                {"id": "fr_log_scope", "type": "multiselect", "required": False,
+                 "label": "What is recorded? (multiple allowed)",
+                 "options": [{"value": v, "label": lab} for v, lab in _LOG_SCOPE_OPTIONS]},
+                {"id": "fr_retention_months", "type": "select", "required": False,
+                 "label": "Retention of the logs",
+                 "help": "Art. 19 / Art. 26(6): at least six months unless Union or national "
+                         "law (in particular data-protection law) provides otherwise.",
+                 "options": [
+                     {"value": "lt6", "label": "Less than 6 months"},
+                     {"value": "6", "label": "6 months (the AI Act floor)"},
+                     {"value": "7_24", "label": "7–24 months"},
+                     {"value": "gt24", "label": "More than 24 months"},
+                 ]},
+                {"id": "fr_retention_basis", "type": "select", "required": False,
+                 "label": "Basis for that retention period",
+                 "options": [
+                     {"value": "ai_act_floor", "label": "AI Act floor (Art. 19 / 26(6))"},
+                     {"value": "financial_services",
+                      "label": "Financial-services documentation term (Art. 19(2) / 26(6))"},
+                     {"value": "gdpr_limited", "label": "Shorter term required by data-protection law"},
+                     {"value": "other", "label": "Other / not yet decided"},
+                 ]},
+                {"id": "fr_integrity", "type": "select", "required": False,
+                 "label": "Integrity of the logs",
+                 "options": [
+                     {"value": "none", "label": "None"},
+                     {"value": "access_only", "label": "Access control only"},
+                     {"value": "hashing", "label": "Hashing of records"},
+                     {"value": "hash_chain_worm", "label": "Hash chain + WORM / append-only storage"},
+                     {"value": "signed", "label": "Signed records with an independent time anchor"},
+                 ]},
+                {"id": "fr_time_sync", "type": "boolean", "required": False,
+                 "label": "Is there one synchronised time source across all evidence sources "
+                          "(application, gateway, workflow, data access)?"},
+                {"id": "fr_model_pinned", "type": "boolean", "required": False,
+                 "label": "Is the exact model version / revision recorded per inference?"},
+                {"id": "fr_prompt_versioned", "type": "boolean", "required": False,
+                 "label": "Is the system instruction under version control, with the version "
+                          "in each record?"},
+                {"id": "fr_rag_snapshot", "type": "boolean", "required": False,
+                 "label": "Is it recorded which documents were in the context (retrieval snapshot)?"},
+                {"id": "fr_override_logged", "type": "boolean", "required": False,
+                 "label": "Are human reviews and deviations from the model advice logged, with reason?"},
+                {"id": "fr_log_pii", "type": "select", "required": False,
+                 "label": "Personal data in the logs",
+                 "help": "A hash of the input proves what the input was without keeping it.",
+                 "options": [
+                     {"value": "none", "label": "None"},
+                     {"value": "case_id", "label": "Only a reference / case id"},
+                     {"value": "hash", "label": "Hash of the input"},
+                     {"value": "pseudonymised", "label": "Pseudonymised content"},
+                     {"value": "full", "label": "Full content, incl. special categories"},
+                 ]},
+                {"id": "fr_vendor_log_access", "type": "select", "required": False,
+                 "label": "Evidence held by the model / platform supplier",
+                 "options": [
+                     {"value": "own_logs_sufficient", "label": "Own logs suffice (no external model)"},
+                     {"value": "contractual_access",
+                      "label": "Contractual right of access (Art. 25(4) / DORA Art. 30(3))"},
+                     {"value": "portal_only", "label": "Only via the supplier's portal"},
+                     {"value": "none", "label": "No access"},
+                 ]},
+                {"id": "fr_legal_hold", "type": "boolean", "required": False,
+                 "label": "Is there a documented legal-hold / evidence-freeze procedure (stop log "
+                          "rotation, pin the model version)?",
+                 "help": "Art. 73: the system must not be altered before the authorities are "
+                         "informed."},
+                {"id": "fr_evidence_owner", "type": "text", "required": False,
+                 "label": "Owner of the evidence file (role)",
+                 "placeholder": "e.g. AI governance lead, with SecOps as custodian"},
+                {"id": "fr_drill", "type": "boolean", "required": False,
+                 "label": "Has evidence retrieval been exercised in the last 12 months "
+                          "(reconstruct one past decision end-to-end)?"},
             ],
         },
     ],

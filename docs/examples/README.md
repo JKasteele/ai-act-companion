@@ -37,3 +37,14 @@ Public RAG helpbot — the offense↔defense loop (red-team test ↔ control).
 A prohibited practice (Art. 5) — what a banned system looks like.
 
 - [Risk assessment](social-scoring-risk.md)
+
+## PolisPrijs supplementary health pricing — High risk
+Health-insurance pricing (Annex III-5(c)) — the data-governance layer: dataset inventory, owners/stewards, lineage, quality dimensions, derived gaps.
+
+- [Risk assessment](health-insurance-pricing-risk.md)
+- [Data governance & quality (Art. 10)](health-insurance-pricing-datagov.md)
+- [FRIA (Art. 27)](health-insurance-pricing-fria.md)
+- [DPIA skeleton](health-insurance-pricing-dpia.md)
+- [Compliance tracker](health-insurance-pricing-compliance.md)
+- [Forensic readiness & evidence plan](health-insurance-pricing-forensics.md)
+- [Serious incident (Art. 73)](health-insurance-pricing-incident.md)

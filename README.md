@@ -172,7 +172,7 @@ is a read-only showcase; a local install unlocks the full tool:
 
 | | Public demo (Spaces) | Local install |
 |---|---|---|
-| Deterministic engine + all 18 reports | ✅ | ✅ |
+| Deterministic engine + all 20 reports | ✅ | ✅ |
 | AI assist (Ollama / paste-prompt) | ❌ (off) | ✅ (optional) |
 | Persistent storage & inventory | ❌ (ephemeral, shared) | ✅ (`data/`, private) |
 | Delete assessments | ❌ (read-only sandbox) | ✅ |
@@ -545,6 +545,10 @@ deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 - [x] **Regulatory-logic pass (0.8.0)** — Art. 2 scope exemptions, provider vs. deployer obligation split, GPAI open-source carve-out (Art. 53(2)), Art. 4 AI literacy as a baseline obligation
 - [x] **Conformity artifacts (0.8.0)** — EU Declaration of Conformity (Art. 47), EU-database registration sheet (Art. 49), GPAI obligations report (Art. 53–55) — 18 report types total
 - [x] **PyPI release** — `pip install ai-act-companion` (since v0.8.0, via the tag-triggered trusted-publishing workflow)
+- [x] **Data-governance layer** — section 11 of the intake (data owner / steward, dataset inventory with provenance, classification and lawful basis, lineage, seven quality dimensions) and the `datagov` report (Art. 10 / Art. 26(4), DAMA-style dimensions, derived gap list, ISO 42001 A.7 / NIST / EIOPA crosswalk); the DPIA and FRIA draw on the same inventory — 19 report types total
+- [x] **Forensic readiness & evidence plan** — section 12 of the intake (`fr_*`: log scope, retention + basis, integrity, time sync, model/prompt pinning, retrieval snapshot, override logging, PII in logs, supplier log access, legal hold, evidence owner, drill) and the `forensics` report: an **evidence register** (16 artefacts → obligation → location → retention → owner → integrity, with gap rows), an 8-dimension readiness score, a **retention-vs-minimisation** check, the **parallel reporting clocks** (AI Act Art. 73 / GDPR Art. 33 / DORA Art. 19 / NIS2) — also added to the incident report — and a crosswalk to ISO 27001 5.28/8.15/8.17, ISO 42001 A.6.2.8, CIS Control 8, MITRE ATLAS AML.M0024, OWASP AI Exchange #MONITORUSE and Rowlingson's ten steps; 20 report types total
+- [x] **Sector crosswalks + DORA hook** — ALTAI (the seven HLEG requirements, with the intake fields that evidence each) in every risk report; for insurers/banks (`org_sector`) the EIOPA AI governance principles, DNB SAFEST and the AI Act's own financial-institution carve-ins (Art. 9(10), 17(4), 18(3), 26(5)–(6), 74(6)); a DORA Art. 28–30 ICT third-party checklist in the compliance tracker when a financial entity relies on external models or vendor datasets
+- [x] **Annex III(5) split** — 5(a)–(d) as distinct sub-points with the Art. 27(1) rule (FRIA for *every* deployer of a 5(b)/5(c) system) and an insurance path with sector notes (Dutch Zvw basic package, supplementary, life)
 - [ ] **Demo video** — shot list ready in `docs/DEMO-SCRIPT.md`
 - [ ] **MCP SDK v2 migration** — currently pinned `mcp<2` (the 2.x SDK renamed FastMCP)
 - [x] **Knowledge-base freshness process** — the EU AI Act module carries `KNOWLEDGE_VERSION` / `LAST_REVIEWED` / `AMENDMENTS`, shown in every report header, on the landing page and in `/api/timeline`; tests pin the amended dates. First review (2026-09-03) applied the Digital Omnibus timeline. Ongoing: re-review as AI Office guidance and harmonised standards land

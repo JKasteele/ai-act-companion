@@ -6,6 +6,65 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Forensic readiness & evidence plan** (report 20, `forensics`). New intake
+  section 12 (`fr_*`) and a pure assessment function (`app/forensics.py`) that
+  derives an **evidence register** (16 artefacts — model identity, prompt version,
+  inference record, parameters/seed, retrieval snapshot, tool-call trace,
+  human-override events, lineage, training snapshot, evaluation/bias reports,
+  drift, change records, guardrail config, data-access logs, incident file,
+  integrity evidence — each mapped to the obligation it proves and its typical
+  location; relevance depends on architecture and role), an 8-dimension
+  **readiness score** (log scope, retention, integrity, time sync, model/prompt
+  pinning, oversight evidence, supplier evidence, legal hold), a
+  **retention-versus-minimisation** check (Art. 19/26(6) six-month floor vs. GDPR;
+  special-category data in logs), the **parallel reporting clocks** (AI Act Art.
+  73 from `ART_73_TIMELINE`, GDPR Art. 33/34, DORA Art. 19 for financial entities,
+  NIS2/Cyberbeveiligingswet where in scope) and a crosswalk (ISO 27001 5.28 /
+  8.15 / 8.17, ISO 42001 A.6.2.8, CIS Control 8, ATLAS AML.M0024, OWASP AI
+  Exchange #MONITORUSE, Rowlingson 2004). The serious-incident report gains the
+  same clocks table and a "preserve evidence first" note (Art. 73(6)). Free text
+  cannot move the score (test).
+- **Sector crosswalks and the DORA hook.** New knowledge module
+  `app/knowledge/sector_frameworks.py`: ALTAI (EU HLEG, seven requirements)
+  rendered in every risk report with EU AI Act / ISO 42001 anchors and the
+  intake fields that evidence each requirement (answered vs. missing); for
+  financial entities (`org_sector` = insurance / banking / other financial)
+  the EIOPA AI governance principles (2021), DNB SAFEST (2019) and the AI
+  Act's financial-institution carve-ins (Art. 9(10), 17(4), 18(3), 26(5)–(6),
+  74(6)). The compliance tracker gains an "ICT third-party risk (DORA Art.
+  28–30)" checklist when a financial entity relies on third-party models or
+  vendor-origin datasets. New intake field `org_sector` (section 1).
+- **Data-governance layer.** AI governance is built on data governance, so the
+  intake gains section 11 (`dg_*`): data owner and data steward (distinct from the
+  system owner), catalogue registration, a repeatable **dataset inventory**
+  (origin, owner, steward, classification, purpose, retention, lawful basis),
+  lineage, and seven data-quality dimensions (accuracy, completeness,
+  consistency, timeliness, validity, uniqueness, representativeness & bias
+  screening) each with an unknown / assessed / measured status. A new
+  **`datagov` report** (19 report types) renders roles, inventory,
+  classification & lawful basis, lineage, the quality table, an Art. 10(2)–(5)
+  / Art. 26(4) requirement checklist, a **derived gap list** with severities
+  and an ISO/IEC 42001 A.7 / NIST AI RMF / EIOPA / DAMA-DMBOK crosswalk. The
+  DPIA pulls the personal-data datasets from the same inventory. New knowledge
+  module `app/knowledge/data_governance.py`; new `table` question type in the
+  questionnaire, rendered by the web form (add/remove rows) and accepted as a
+  list of row objects by the CLI and MCP.
+- **Annex III(5) split.** `hr_essential_subarea` narrows "essential services"
+  to 5(a) public benefits, 5(b) creditworthiness, 5(c) life/health insurance
+  risk assessment & pricing, or 5(d) emergency triage; findings cite the
+  sub-point. For 5(b)/5(c) the classifier and the FRIA state the Art. 27(1)
+  rule that the FRIA applies to *every* deployer, private ones included.
+  `hr_insurance_scope` adds sector context for 5(c) (Dutch basic insurance
+  under the Zvw, supplementary, life, other). New synthetic example
+  `health_insurance_pricing.json` (also in the golden set and the gallery).
+- "Data governance & quality record" added to the recommended artifacts for
+  high-risk systems (and, as good practice, when personal data is processed).
+
+### Changed
+- The `hr_does_profiling` help text now states that profiling rules out the
+  Art. 6(3) derogation (per the Commission's draft Art. 6(5) guidelines).
+
 ## [0.8.1] - 2026-09-03
 
 Knowledge-base review: the **Digital Omnibus on AI** (Regulation (EU)

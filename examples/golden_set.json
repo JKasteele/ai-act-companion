@@ -150,7 +150,9 @@
       "intended_purpose": "Evaluate learning outcomes and assign grades.",
       "provider_role": "provider",
       "eu_market": true,
-      "hr_usecases": ["education"],
+      "hr_usecases": [
+        "education"
+      ],
       "hr_does_profiling": false,
       "data_personal": true,
       "affects_vulnerable": true,
@@ -167,7 +169,9 @@
       "intended_purpose": "Score applicants for consumer credit decisions.",
       "provider_role": "provider",
       "eu_market": true,
-      "hr_usecases": ["essential_services"],
+      "hr_usecases": [
+        "essential_services"
+      ],
       "hr_does_profiling": true,
       "data_personal": true,
       "automated_decision": true,
@@ -184,7 +188,9 @@
       "intended_purpose": "Triage migration applications by estimated risk.",
       "provider_role": "deployer",
       "eu_market": true,
-      "hr_usecases": ["migration_border"],
+      "hr_usecases": [
+        "migration_border"
+      ],
       "hr_does_profiling": true,
       "data_personal": true,
       "data_special_category": true
@@ -200,7 +206,9 @@
       "intended_purpose": "Control traffic flow safely at city intersections.",
       "provider_role": "provider",
       "eu_market": true,
-      "hr_usecases": ["critical_infra"],
+      "hr_usecases": [
+        "critical_infra"
+      ],
       "hr_does_profiling": false,
       "autonomy_level": "human_on_the_loop"
     }
@@ -215,7 +223,9 @@
       "intended_purpose": "Pre-format vacancy data for human review only.",
       "provider_role": "provider",
       "eu_market": true,
-      "hr_usecases": ["employment"],
+      "hr_usecases": [
+        "employment"
+      ],
       "hr_art6_3_minor": true,
       "hr_does_profiling": false,
       "autonomy_level": "advisory",
@@ -232,7 +242,9 @@
       "intended_purpose": "Recommend promotion candidates from staff profiles.",
       "provider_role": "deployer",
       "eu_market": true,
-      "hr_usecases": ["employment"],
+      "hr_usecases": [
+        "employment"
+      ],
       "hr_art6_3_minor": true,
       "hr_does_profiling": true,
       "data_personal": true,
@@ -249,7 +261,9 @@
       "intended_purpose": "Support judicial decision-making with legal analysis.",
       "provider_role": "provider",
       "eu_market": true,
-      "hr_usecases": ["justice_democracy"],
+      "hr_usecases": [
+        "justice_democracy"
+      ],
       "hr_does_profiling": false,
       "data_personal": true
     }
@@ -340,7 +354,9 @@
       "intended_purpose": "Score loan applicants outside the EU.",
       "provider_role": "provider",
       "eu_market": false,
-      "hr_usecases": ["essential_services"],
+      "hr_usecases": [
+        "essential_services"
+      ],
       "hr_does_profiling": true,
       "data_personal": true
     }
@@ -389,7 +405,10 @@
       "intended_purpose": "Verify candidate identity and assist recruitment selection.",
       "provider_role": "provider",
       "eu_market": true,
-      "hr_usecases": ["biometrics", "employment"],
+      "hr_usecases": [
+        "biometrics",
+        "employment"
+      ],
       "hr_does_profiling": true,
       "t_interacts_humans": true,
       "data_personal": true,
@@ -408,7 +427,9 @@
       "provider_role": "provider",
       "eu_market": true,
       "exempt_research": true,
-      "hr_usecases": ["essential_services"],
+      "hr_usecases": [
+        "essential_services"
+      ],
       "hr_does_profiling": false,
       "data_personal": true
     }
@@ -438,7 +459,9 @@
       "intended_purpose": "Decide loan eligibility using a bought-in model.",
       "provider_role": "deployer",
       "eu_market": true,
-      "hr_usecases": ["essential_services"],
+      "hr_usecases": [
+        "essential_services"
+      ],
       "hr_does_profiling": true,
       "data_personal": true,
       "automated_decision": true
@@ -474,6 +497,27 @@
       "gpai_open_source": true,
       "gpai_systemic": true,
       "sec_is_llm": true
+    }
+  },
+  {
+    "name": "PolisPrijs supplementary health pricing",
+    "expected_tier": "high",
+    "rationale": "Risk assessment and pricing in health insurance is Annex III-5(c) -> Art. 6(2) high-risk; profiling rules out the Art. 6(3) derogation.",
+    "answers": {
+      "sys_name": "PolisPrijs supplementary health pricing",
+      "sys_description": "Scores applicants of a supplementary health package and proposes a premium band.",
+      "intended_purpose": "Acceptance and pricing support for underwriters.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "hr_usecases": [
+        "essential_services"
+      ],
+      "hr_essential_subarea": "insurance_life_health",
+      "hr_insurance_scope": "health_supplementary",
+      "hr_does_profiling": true,
+      "hr_art6_3_minor": true,
+      "data_personal": true,
+      "data_special_category": true
     }
   }
 ]

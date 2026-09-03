@@ -14,6 +14,7 @@ GPAI obligations (Chapter V) are independent of the tier and listed separately.
 """
 
 from ._normalize import as_list as _as_list
+from ._normalize import select_field as _select
 from ._normalize import truthy as _truthy
 from .knowledge import eu_ai_act as eu
 from .knowledge import nist_rmf as nist
@@ -68,10 +69,31 @@ def _check_high_risk(answers):
         info = eu.HIGH_RISK_USECASES.get(uc)
         if not info:
             continue
+        sources = ["hr_usecases", f"hr_usecases={uc}"]
+        extra_refs = []
+        # Annex III(5) is four different cases; narrow to the sub-point when
+        # given, because 5(b)/(c) carry a FRIA duty for every deployer.
+        sub = eu.ANNEX_III_5_SUBAREAS.get(_select(answers, "hr_essential_subarea")) \
+            if uc == "essential_services" else None
+        if sub:
+            info = sub
+            sources.append("hr_essential_subarea")
         rationale = (
             f"Use in {info['ref']} ({info['title']}): {info['summary']} "
             f"Therefore high-risk in principle on the basis of Art. 6(2)."
         )
+        if sub and sub.get("fria_all_deployers"):
+            rationale += (
+                f" A deployer of a {info['ref']} system must carry out a "
+                "fundamental rights impact assessment before first use, whether "
+                "public or private (Art. 27(1))."
+            )
+            extra_refs.append("Art. 27(1)")
+        scope_note = eu.INSURANCE_SCOPE_NOTES.get(_select(answers, "hr_insurance_scope")) \
+            if sub and sub["ref"] == "Annex III(5)(c)" else None
+        if scope_note:
+            rationale += " Sector context: " + scope_note
+            sources.append("hr_insurance_scope")
         # Art. 6(3) nuance: only possible if there is NO profiling.
         if minor_task and not does_profiling:
             rationale += (
@@ -93,8 +115,8 @@ def _check_high_risk(answers):
         else:
             refs = [info["ref"], "Art. 6(2)"]
         findings.append(_finding(
-            eu.TIER_HIGH, refs, f"High-risk: {info['title']}", rationale,
-            ["hr_usecases", f"hr_usecases={uc}"],
+            eu.TIER_HIGH, refs + extra_refs, f"High-risk: {info['title']}", rationale,
+            sources,
         ))
     return findings
 
@@ -145,10 +167,13 @@ def _recommended_artifacts(tier, answers, in_scope=True):
     if _truthy(answers.get("data_personal")):
         arts.append("DPIA (data protection impact assessment, GDPR Art. 35)")
     if tier in (eu.TIER_HIGH, eu.TIER_PROHIBITED):
+        arts.append("Data governance & quality record (AI Act Art. 10)")
         arts.append("Bias/fairness audit report (AI Act Art. 10)")
         arts.append("Technical documentation (AI Act Art. 11 + Annex IV)")
         arts.append("Fundamental rights impact assessment - FRIA (AI Act Art. 27)")
     else:
+        if _truthy(answers.get("data_personal")):
+            arts.append("Data governance & quality record (good practice; GDPR Art. 5(1)(d))")
         arts.append("Bias audit checklist (good practice)")
     sec_signals = ("sec_is_llm", "sec_agentic", "sec_third_party_models",
                    "sec_public", "gpai_model")
