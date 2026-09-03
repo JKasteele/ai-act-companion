@@ -19,7 +19,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -117,6 +117,16 @@ def _require_ai():
     return ai_service
 
 
+def _client_ip(request):
+    """Best-effort client IP for the Anthropic spend guard's per-IP cap.
+
+    Trusts X-Forwarded-For (set by the reverse proxy in front of the Space);
+    falls back to the direct connection when there is no proxy.
+    """
+    fwd = request.headers.get("x-forwarded-for") or ""
+    return fwd.split(",")[0].strip() or (request.client.host if request.client else "")
+
+
 @app.get("/api/ai/status")
 def ai_status():
     if ai_service is None:
@@ -125,12 +135,12 @@ def ai_status():
 
 
 @app.post("/api/ai/prefill")
-def ai_prefill(req: PrefillRequest):
+def ai_prefill(req: PrefillRequest, request: Request):
     svc = _require_ai()
     if not req.description.strip():
         raise HTTPException(status_code=400, detail="Provide a description.")
     try:
-        return svc.prefill_from_text(req.description)
+        return svc.prefill_from_text(req.description, ip=_client_ip(request))
     except Exception as e:  # noqa: BLE001
         logger.warning("AI prefill failed: %s", e)
         raise HTTPException(
@@ -147,10 +157,10 @@ def ai_parse(req: ParseRequest):
 
 
 @app.post("/api/ai/narrative")
-def ai_narrative(req: NarrativeRequest):
+def ai_narrative(req: NarrativeRequest, request: Request):
     svc = _require_ai()
     try:
-        return svc.draft_narrative(req.field, req.answers)
+        return svc.draft_narrative(req.field, req.answers, ip=_client_ip(request))
     except Exception as e:  # noqa: BLE001
         logger.warning("AI narrative failed: %s", e)
         raise HTTPException(

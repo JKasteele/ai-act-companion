@@ -336,16 +336,22 @@ via `.env` (see `.env.example`):
 | `ollama` *(default)* | Local model via Ollama. Private, free. |
 | `manual` | The app generates a prompt you paste into your **own** LLM session (e.g. Claude); you paste the JSON answer back. No API key needed. |
 | `replay` | **Sandbox mode**: no model, no egress. Drafts are replayed from the shipped synthetic examples (closest keyword match) and labelled as such, so the AI-assist flow is visible in the public demo. `DEMO_MODE=1` with `LLM_PROVIDER=none` selects it automatically. |
+| `anthropic` | Hosted Claude (default `claude-sonnet-5`) with a spend guard: lifetime budget `AI_BUDGET_USD` (default 5.00), `AI_DAILY_CALLS` (40), `AI_CALLS_PER_IP_DAY` (8); when a cap is hit the app degrades to `replay`. Set a spend limit on the API key in the Anthropic Console as the hard guarantee. |
 | `none` | AI layer off (rule-based only). |
 
 Full configuration (copy `.env.example` to `.env`):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LLM_PROVIDER` | `ollama` | `ollama` \| `manual` \| `replay` \| `none` (see table above). |
+| `LLM_PROVIDER` | `ollama` | `ollama` \| `manual` \| `replay` \| `anthropic` \| `none` (see table above). |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama endpoint (non-interactive provider). |
 | `OLLAMA_MODEL` | `qwen3:32b` | Local model name; use `qwen3:1.7b` for low VRAM. |
 | `LLM_TIMEOUT` | `180` | Seconds before a slow local model is abandoned. |
+| `ANTHROPIC_API_KEY` | *(unset)* | API key for the `anthropic` provider. Read by the SDK directly; never logged. |
+| `ANTHROPIC_MODEL` | `claude-sonnet-5` | Model id for the `anthropic` provider. |
+| `AI_BUDGET_USD` | `5.00` | Lifetime USD spend cap for the `anthropic` provider (estimated from reported token usage). |
+| `AI_DAILY_CALLS` | `40` | Daily call cap for the `anthropic` provider, independent of the budget. |
+| `AI_CALLS_PER_IP_DAY` | `8` | Per-client daily call cap for the `anthropic` provider. |
 | `DEMO_MODE` | *(unset)* | `1` enables the public-sandbox banner and **server-side read-only** (deletion returns 403). |
 | `AIACT_DATA_DIR` | `./data` | Where assessments are stored; point at ephemeral storage for a demo. |
 

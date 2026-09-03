@@ -7,6 +7,8 @@ uvicorn[standard]>=0.29
 # Only needed for the Ollama provider (local HTTP calls). The rule-based core
 # and the 'manual' provider do not depend on it.
 httpx>=0.27
+# Only needed for the hosted Anthropic provider (LLM_PROVIDER=anthropic).
+anthropic>=1
 
 # --- Dev / tests (or: pip install -e ".[dev]") ---
 # pytest>=8.0
