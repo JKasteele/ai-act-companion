@@ -6,6 +6,40 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-03
+
+### Added
+- **Governance register** (report 21, `governance`) and intake section 13
+  (`gov_*`): policy owner, approval body, status, approval and review dates,
+  exceptions with end dates (expired / open-ended flagged), the Art. 4
+  AI-literacy record, register contact, public-register flag and DPIA reference.
+  `app/governance.py` derives the next review from the approval date and a
+  tier cadence (high 6 · limited 12 · minimal 24 months), an overdue flag,
+  intake completeness per section and a gap list. Unparseable dates count as
+  unknown, never as a pass.
+- **Compliance-monitoring portfolio.** `/api/portfolio`, the inventory table and
+  `/api/export.csv` now carry per system: forensic-readiness score and band,
+  high data-governance gaps, governance status, next review (with overdue
+  flag) and documentation completeness, plus roll-up counters. New
+  `/api/register.csv`: an AI-register export with Algoritmeregister-style
+  fields (name, purpose, legal basis, risk tier, Annex III area, human
+  oversight, owners, contact, status, review dates).
+- **Monitoring KPIs.** The post-market monitoring plan seeds KPI rows —
+  primary metric vs. release baseline, drift, override rate (when a human is in
+  or on the loop), complaints/objections, incidents and near-misses — with a
+  review cadence derived from the risk tier.
+- **MCP tools** `assess_data_governance`, `assess_forensic_readiness` and
+  `governance_status` expose the structured forms of the three governance
+  lenses (the `generate_report` Literal gains `governance`).
+- Flagship examples (`grid_ops_agent`, `support_chatbot`,
+  `hiring_cv_screening`, `health_insurance_pricing`) now carry sections 11–13,
+  so the gallery shows data-governance, forensic-readiness and governance
+  views for an agentic, a RAG, a provider and an insurer system.
+
+### Changed
+- Docs: golden set is 31 cases; DESIGN.md and the Claude Code plugin manifest
+  list all report types; plugin manifest version follows the package.
+
 ## [0.9.0] - 2026-09-03
 
 The governance-depth release: AI governance built on data governance, the

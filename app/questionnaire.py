@@ -569,6 +569,65 @@ QUESTIONNAIRE = {
                           "(reconstruct one past decision end-to-end)?"},
             ],
         },
+        {
+            "id": "governance",
+            "title": "13. Governance register & policy metadata",
+            "description": (
+                "Who owns this record, who approved it, when it is reviewed, which "
+                "exceptions run, and who has been trained (Art. 4). Feeds the governance "
+                "register report, the portfolio status columns and the AI-register CSV. "
+                "Dates as YYYY-MM-DD. None of these fields affect the risk tier."
+            ),
+            "questions": [
+                {"id": "gov_policy_owner", "type": "text", "required": False,
+                 "label": "Policy owner (role accountable for this governance record)",
+                 "placeholder": "e.g. AI governance lead"},
+                {"id": "gov_approval_body", "type": "text", "required": False,
+                 "label": "Approval body (committee / board that decided)",
+                 "placeholder": "e.g. AI & Data Governance Board"},
+                {"id": "gov_status", "type": "select", "required": False,
+                 "label": "Governance status",
+                 "options": [
+                     {"value": "proposed", "label": "Proposed (not yet decided)"},
+                     {"value": "approved", "label": "Approved"},
+                     {"value": "in_review", "label": "In review"},
+                     {"value": "exception", "label": "Running under an exception"},
+                     {"value": "retired", "label": "Retired"},
+                 ]},
+                {"id": "gov_approved_on", "type": "text", "required": False,
+                 "label": "Approval date (YYYY-MM-DD)", "placeholder": "2026-09-01"},
+                {"id": "gov_next_review", "type": "text", "required": False,
+                 "label": "Next review date (YYYY-MM-DD)",
+                 "help": "Leave empty to derive it from the approval date and the tier "
+                         "cadence (high 6 · limited 12 · minimal 24 months).",
+                 "placeholder": "2027-03-01"},
+                {"id": "gov_exceptions", "type": "table", "required": False,
+                 "label": "Exceptions / deviations from policy",
+                 "help": "Every exception needs a decision, a decider and an end date.",
+                 "columns": [
+                     {"id": "exception", "label": "Exception", "type": "text"},
+                     {"id": "decision", "label": "Decision / condition", "type": "text"},
+                     {"id": "decided_by", "label": "Decided by", "type": "text"},
+                     {"id": "expires", "label": "Expires (YYYY-MM-DD)", "type": "text"},
+                 ]},
+                {"id": "gov_literacy", "type": "table", "required": False,
+                 "label": "AI-literacy record (Art. 4): who was trained on this system",
+                 "columns": [
+                     {"id": "role", "label": "Role / group", "type": "text"},
+                     {"id": "training", "label": "Training / briefing", "type": "text"},
+                     {"id": "date", "label": "Date (YYYY-MM-DD)", "type": "text"},
+                 ]},
+                {"id": "gov_register_contact", "type": "text", "required": False,
+                 "label": "Contact for questions about this system (register entry)",
+                 "placeholder": "e.g. ai-governance@example.org (synthetic)"},
+                {"id": "gov_public_register", "type": "boolean", "required": False,
+                 "label": "Listed in a public algorithm register (e.g. the Dutch "
+                          "Algoritmeregister) or an internal AI register?"},
+                {"id": "gov_dpia_ref", "type": "text", "required": False,
+                 "label": "DPIA / FRIA reference (document id)",
+                 "placeholder": "e.g. DPIA-2026-014"},
+            ],
+        },
     ],
 }
 

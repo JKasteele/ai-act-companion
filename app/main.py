@@ -25,6 +25,9 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__, reports, storage
 from .classifier import classify
+from .forensics import assess_forensic_readiness
+from .governance import REGISTER_COLUMNS, governance_status, register_row
+from .knowledge import data_governance as dg
 from .knowledge import eu_ai_act as eu
 from .models import (
     AssessmentSummary,
@@ -218,13 +221,27 @@ def _portfolio_rows():
     rows = []
     for full in storage.load_all():
         cls = full.get("classification", {})
+        answers = full.get("answers", {}) or {}
         appl = cls.get("applicability", {}) or {}
+        fr = assess_forensic_readiness(answers, cls)
+        dgs = dg.summary(answers, cls.get("tier", "minimal"))
+        gov = governance_status(answers, cls)
         rows.append({
             **storage.summarise(full),
             "obligations_date": appl.get("date", "-"),
             "obligations_what": appl.get("what", ""),
             "art50_disclosure": bool(cls.get("transparency_obligations")),
             "has_high_risk_obligations": bool(cls.get("high_risk_obligations")),
+            # compliance-monitoring columns (all derived, nothing new persisted)
+            "forensic_score": fr["total"],
+            "forensic_max": fr["max"],
+            "forensic_band": fr["band"],
+            "datagov_gaps_high": dgs["gap_counts"]["high"],
+            "gov_status": gov["status_label"],
+            "next_review": gov["next_review"],
+            "review_overdue": gov["review_overdue"],
+            "completeness": gov["completeness"]["overall"],
+            "documentation_complete": gov["completeness"]["complete"],
         })
     return rows
 
@@ -247,6 +264,9 @@ def portfolio():
         "tier_distribution": distribution,
         "art50_count": sum(1 for r in rows if r["art50_disclosure"]),
         "high_risk_count": sum(1 for r in rows if r["has_high_risk_obligations"]),
+        "overdue_review_count": sum(1 for r in rows if r["review_overdue"]),
+        "incomplete_count": sum(1 for r in rows if not r["documentation_complete"]),
+        "forensic_not_ready_count": sum(1 for r in rows if r["forensic_band"] == "Not ready"),
         "due": due,
         "systems": rows,
     }
@@ -259,16 +279,38 @@ def export_csv():
     writer = csv.writer(buf)
     writer.writerow(["id", "sys_name", "tier", "tier_label", "security_risks",
                      "obligations_date", "art50_disclosure",
-                     "has_high_risk_obligations", "created_at"])
+                     "has_high_risk_obligations", "forensic_readiness", "forensic_score",
+                     "datagov_gaps_high", "governance_status", "next_review",
+                     "review_overdue", "documentation_complete", "created_at"])
     for r in _portfolio_rows():
         writer.writerow([r["id"], r["sys_name"], r["tier"], r["tier_label"],
                          r.get("security_risks", 0), r["obligations_date"],
                          "yes" if r["art50_disclosure"] else "no",
                          "yes" if r["has_high_risk_obligations"] else "no",
+                         r["forensic_band"], f'{r["forensic_score"]}/{r["forensic_max"]}',
+                         r["datagov_gaps_high"], r["gov_status"], r["next_review"],
+                         "yes" if r["review_overdue"] else "no",
+                         "yes" if r["documentation_complete"] else "no",
                          r["created_at"]])
     return PlainTextResponse(
         buf.getvalue(), media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=ai-act-inventory.csv"})
+
+
+@app.get("/api/register.csv")
+def export_register_csv():
+    """AI-register export: one row per system with the fields a public or internal
+    algorithm register asks for (modelled on the Dutch Algoritmeregister)."""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([header for _key, header in REGISTER_COLUMNS])
+    for full in storage.load_all():
+        fr = assess_forensic_readiness(full.get("answers", {}), full.get("classification", {}))
+        row = register_row(full, forensic_band=fr["band"])
+        writer.writerow([row.get(key, "") for key, _header in REGISTER_COLUMNS])
+    return PlainTextResponse(
+        buf.getvalue(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=ai-register.csv"})
 
 
 @app.get("/api/assessments/{assessment_id}")

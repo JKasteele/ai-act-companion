@@ -8,7 +8,9 @@
   "provider_role": "both",
   "eu_market": true,
   "lifecycle_stage": "testing",
-  "hr_usecases": ["critical_infra"],
+  "hr_usecases": [
+    "critical_infra"
+  ],
   "hr_safety_component": false,
   "hr_does_profiling": false,
   "data_personal": false,
@@ -31,5 +33,84 @@
   "arch_rag_modifiable": true,
   "arch_identity_model": "shared-service-account",
   "arch_logging": true,
-  "arch_rate_limits": false
+  "arch_rate_limits": false,
+  "org_sector": "other",
+  "dg_data_owner": "Head of Grid Operations (data domain: telemetry)",
+  "dg_data_steward": "SCADA data steward",
+  "dg_catalog_registered": true,
+  "dg_datasets": [
+    {
+      "name": "SCADA telemetry 2021-2025",
+      "origin": "internal",
+      "owner": "Head of Grid Operations",
+      "steward": "SCADA data steward",
+      "classification": "confidential",
+      "purpose": "State estimation and switching recommendations",
+      "retention": "10 years",
+      "legal_basis": "na"
+    },
+    {
+      "name": "Weather feed (licensed)",
+      "origin": "external_vendor",
+      "owner": "Head of Grid Operations",
+      "steward": "SCADA data steward",
+      "classification": "internal",
+      "purpose": "Load forecasting features",
+      "retention": "Licence term",
+      "legal_basis": "na"
+    }
+  ],
+  "dg_lineage": "SCADA historian + weather feed -> feature store (steward) -> train_v7 / val_v7 -> GridSentinel v7 -> switching plan -> operator console / breaker API",
+  "dg_q_accuracy": "measured",
+  "dg_q_completeness": "measured",
+  "dg_q_consistency": "assessed",
+  "dg_q_timeliness": "measured",
+  "dg_q_validity": "measured",
+  "dg_q_uniqueness": "na",
+  "dg_q_representativeness": "assessed",
+  "dg_q_evidence": "Telemetry completeness 99.6% (historian QA, 2026-07); timeliness p99 < 2 s.",
+  "fr_log_scope": [
+    "inference_io",
+    "model_version",
+    "parameters_seed",
+    "tool_calls",
+    "data_access",
+    "config_changes",
+    "drift_metrics",
+    "incident_file"
+  ],
+  "fr_retention_months": "gt24",
+  "fr_retention_basis": "other",
+  "fr_integrity": "hash_chain_worm",
+  "fr_time_sync": true,
+  "fr_model_pinned": true,
+  "fr_prompt_versioned": true,
+  "fr_rag_snapshot": false,
+  "fr_override_logged": false,
+  "fr_log_pii": "none",
+  "fr_vendor_log_access": "contractual_access",
+  "fr_legal_hold": true,
+  "fr_evidence_owner": "OT security lead",
+  "fr_drill": true,
+  "gov_policy_owner": "Head of Grid Operations",
+  "gov_approval_body": "OT Risk Board",
+  "gov_status": "exception",
+  "gov_approved_on": "2026-03-15",
+  "gov_exceptions": [
+    {
+      "exception": "Autonomous switching below 10 kV without operator approval",
+      "decision": "Allowed during storm mode only, with post-hoc review",
+      "decided_by": "OT Risk Board",
+      "expires": "2026-12-31"
+    }
+  ],
+  "gov_literacy": [
+    {
+      "role": "Control-room operators",
+      "training": "GridSentinel override and escalation briefing",
+      "date": "2026-04-02"
+    }
+  ],
+  "gov_register_contact": "ot-governance@example.org (synthetic)",
+  "gov_public_register": false
 }

@@ -31,7 +31,7 @@ def test_examples_endpoint_ok_and_well_formed():
 def test_questionnaire_endpoint():
     r = client.get("/api/questionnaire")
     assert r.status_code == 200
-    assert len(r.json()["sections"]) == 12
+    assert len(r.json()["sections"]) == 13
 
 
 def test_timeline_endpoint_for_countdown():
@@ -100,9 +100,23 @@ def test_portfolio_rollup_and_csv_columns():
     assert "obligations_date" in row
     assert row["art50_disclosure"] is True   # Art. 50(1) interaction duty
 
+    for col in ("forensic_score", "forensic_band", "datagov_gaps_high", "gov_status",
+                "next_review", "review_overdue", "documentation_complete"):
+        assert col in row, col
+    assert "overdue_review_count" in body and "incomplete_count" in body
+
     csv_text = client.get("/api/export.csv").text
     header = csv_text.splitlines()[0]
-    for col in ("obligations_date", "art50_disclosure", "has_high_risk_obligations"):
+    for col in ("obligations_date", "art50_disclosure", "has_high_risk_obligations",
+                "forensic_readiness", "governance_status", "review_overdue"):
         assert col in header
+
+    reg = client.get("/api/register.csv")
+    assert reg.status_code == 200
+    reg_header = reg.text.splitlines()[0]
+    for col in ("name", "purpose", "risk_tier", "human_oversight", "contact",
+                "governance_status", "next_review", "in_public_register"):
+        assert col in reg_header
+    assert "Rollup Demo" in reg.text
 
     client.delete(f"/api/assessments/{aid}")

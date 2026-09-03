@@ -27,7 +27,10 @@ from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
 from app.controls import generate_control_catalog as _generate_control_catalog  # noqa: E402
 from app.data_security import assess_data_security as _assess_data_security  # noqa: E402
+from app.forensics import assess_forensic_readiness as _assess_forensic_readiness  # noqa: E402
+from app.governance import governance_status as _governance_status  # noqa: E402
 from app.incident import assess_incident as _assess_incident  # noqa: E402
+from app.knowledge import data_governance as _dg  # noqa: E402
 from app.modelcard import generate_model_card as _generate_model_card  # noqa: E402
 from app.questionnaire import QUESTIONNAIRE  # noqa: E402
 from app.redteam import generate_test_plan as _generate_test_plan  # noqa: E402
@@ -110,13 +113,43 @@ def assess_data_security(answers: dict) -> dict:
 
 
 @mcp.tool()
+def assess_data_governance(answers: dict) -> dict:
+    """Structured **data-governance** view (EU AI Act Art. 10 / Art. 26(4)): the
+    dataset inventory from `dg_datasets` (origin, owner, steward, classification,
+    purpose, retention, lawful basis), the seven data-quality dimensions with their
+    status, and a deterministic gap list with severities. Severities are one notch
+    lower outside the high-risk tier. Documentation only — never affects the tier."""
+    tier = _classify(answers).get("tier", "minimal")
+    return _dg.summary(answers, tier)
+
+
+@mcp.tool()
+def assess_forensic_readiness(answers: dict) -> dict:
+    """**Forensic readiness** (Art. 12 / 19 / 26(6) / 73): the evidence register
+    (16 artefacts, each in place / gap / n-a for this architecture and role), an
+    8-dimension readiness score (0-16) with band, retention-vs-minimisation
+    conflicts, the parallel reporting clocks (AI Act / GDPR / DORA / NIS2) and
+    gaps with actions. Pure function of the `fr_*` and structural fields."""
+    return _assess_forensic_readiness(answers, _classify(answers))
+
+
+@mcp.tool()
+def governance_status(answers: dict) -> dict:
+    """**Governance register** status: policy owner, approval body, status, review
+    cadence for the tier, next review (recorded or derived) and the overdue flag,
+    exceptions (expired / open-ended), the Art. 4 AI-literacy record, intake
+    completeness per section and a gap list. Reads the `gov_*` fields."""
+    return _governance_status(answers, _classify(answers))
+
+
+@mcp.tool()
 def generate_report(
     answers: dict | None = None,
     report_type: Literal[
         "risk", "dpia", "bias", "security", "fria",
         "techdoc", "compliance", "monitoring", "framework-matrix", "redteam",
         "controls", "datasec", "stride", "incident", "modelcard",
-        "doc", "registration", "gpai", "datagov", "forensics",
+        "doc", "registration", "gpai", "datagov", "forensics", "governance",
     ] = "risk",
     assessment_id: str = "",
 ) -> str:
@@ -158,7 +191,10 @@ def generate_report(
         evidence register (artefact -> obligation -> location -> retention ->
         owner -> integrity), readiness score over eight dimensions, parallel
         reporting clocks (AI Act / GDPR / DORA / NIS2) and a crosswalk to ISO
-        27001, ISO 42001, CIS Control 8, ATLAS AML.M0024.
+        27001, ISO 42001, CIS Control 8, ATLAS AML.M0024;
+      'governance' - governance register: policy owner / approval body /
+        status / review cadence and overdue flag, exceptions with end dates,
+        Art. 4 AI-literacy record, intake completeness and the AI-register entry.
     Provide either `answers` (classified on the fly) or `assessment_id` (render
     from a previously saved assessment). The system is classified
     deterministically first, then the report is rendered. Present the draft to

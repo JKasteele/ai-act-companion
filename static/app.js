@@ -80,6 +80,8 @@ async function init() {
   $("#btn-ai-parse").addEventListener("click", aiParse);
 
   $("#btn-export-csv").addEventListener("click", exportCsv);
+  const regBtn = $("#btn-export-register");
+  if (regBtn) regBtn.addEventListener("click", exportRegisterCsv);
   $("#import-file").addEventListener("change", (e) => {
     if (e.target.files[0]) importJson(e.target.files[0]);
     e.target.value = "";
@@ -639,7 +641,10 @@ async function loadSaved() {
   summary.append(dist);
   summary.append(el("p", { class: "section-desc" },
     `${roll.high_risk_count || 0} with high-risk obligations · ` +
-    `${roll.art50_count || 0} with an Art. 50 disclosure duty`));
+    `${roll.art50_count || 0} with an Art. 50 disclosure duty · ` +
+    `${roll.overdue_review_count || 0} review(s) overdue · ` +
+    `${roll.incomplete_count || 0} with incomplete documentation · ` +
+    `${roll.forensic_not_ready_count || 0} not forensic-ready`));
   const next = (roll.due || [])[0];
   if (next) {
     summary.append(el("p", { class: "section-desc" },
@@ -650,7 +655,8 @@ async function loadSaved() {
   const table = el("table", { class: "inv-table" });
   table.append(el("thead", {}, el("tr", {},
     el("th", {}, "System"), el("th", {}, "Risk tier"), el("th", {}, "Due from"),
-    el("th", {}, "Art. 50"), el("th", {}, "Security"),
+    el("th", {}, "Art. 50"), el("th", {}, "Security"), el("th", {}, "Evidence"),
+    el("th", {}, "Governance"), el("th", {}, "Next review"),
     el("th", {}, "Created"), el("th", {}, "Actions"))));
   const tbody = el("tbody", {});
   items.forEach((it) => {
@@ -671,6 +677,12 @@ async function loadSaved() {
       el("td", { class: "inv-date" }, it.obligations_date || "—"),
       el("td", {}, it.art50_disclosure ? "Yes" : "—"),
       el("td", {}, String(it.security_risks ?? 0)),
+      el("td", { title: it.forensic_band || "" },
+        it.forensic_score === undefined ? "—" : `${it.forensic_score}/${it.forensic_max}`),
+      el("td", {}, `${it.gov_status || "—"}${it.documentation_complete === false ? " · incomplete" : ""}`),
+      el("td", { class: it.review_overdue ? "inv-date overdue" : "inv-date",
+                 title: it.review_overdue ? "Review overdue" : "" },
+        (it.next_review || "—") + (it.review_overdue ? " !" : "")),
       el("td", { class: "inv-date" },
         (it.created_at || "").replace("T", " ").replace("+00:00", "")),
       actions));
@@ -707,6 +719,11 @@ async function exportJson(id) {
 
 function exportCsv() {
   const a = el("a", { href: "/api/export.csv", download: "ai-act-inventory.csv" });
+  document.body.append(a); a.click(); a.remove();
+}
+
+function exportRegisterCsv() {
+  const a = el("a", { href: "/api/register.csv", download: "ai-register.csv" });
   document.body.append(a); a.click(); a.remove();
 }
 
