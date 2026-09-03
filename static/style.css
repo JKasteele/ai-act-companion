@@ -425,3 +425,6 @@ footer { color: var(--muted); margin-top: 44px; text-align: center; font-size: .
 }
 
 .inv-date.overdue { color: var(--danger, #e5484d); font-weight: 500; }
+
+.report-lang { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); margin-left: 8px; }
+.report-lang select { width: auto; font-size: .82rem; padding: 5px 8px; }

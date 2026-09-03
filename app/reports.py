@@ -12,6 +12,7 @@ from .controls import generate_control_catalog
 from .data_security import assess_data_security
 from .forensics import assess_forensic_readiness, reporting_clocks
 from .governance import REGISTER_COLUMNS, governance_status, register_row
+from .i18n import localise
 from .incident import assess_incident
 from .knowledge import ai_security as sec
 from .knowledge import data_governance as dg
@@ -2070,7 +2071,22 @@ def render_governance_register(assessment):
     return "".join(md)
 
 
-def render(report_type, assessment):
+def render(report_type, assessment, lang="en"):
+    """Render one report. `lang="nl"` prepends a Dutch summary block built from
+    the structured results (the citable body stays English)."""
+    rtype, filename, markdown = _render(report_type, assessment)
+    if lang != "en":
+        full = dict(assessment)
+        answers = full.get("answers", {}) or {}
+        cls = full.get("classification") or {}
+        full.setdefault("forensics", assess_forensic_readiness(answers, cls))
+        full.setdefault("governance", governance_status(answers, cls))
+        full.setdefault("datagov", dg.summary(answers, cls.get("tier", "minimal")))
+        markdown = localise(markdown, full, lang)
+    return rtype, filename, markdown
+
+
+def _render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
     slug = "".join(c if c.isalnum() else "-" for c in sys_name.lower()).strip("-") or "ai-system"
     if report_type == "risk":
