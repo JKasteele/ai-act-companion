@@ -545,6 +545,7 @@ function applyDraft(data) {
   const REASONS = {
     budget: "Live-AI budget for this demo is used up", daily_cap: "Daily live-AI cap reached",
     per_ip_cap: "Your daily live-AI allowance is used up", credits: "Live AI is unavailable right now",
+    cooldown: "Please wait a moment between live-AI requests",
     error: "Live AI is unavailable right now", unavailable: "Live AI is not configured",
   };
   const prefix = data.fallback_from
