@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app.llm import budget  # noqa: E402
+from app.llm.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
 
 client = TestClient(app)
@@ -26,6 +28,23 @@ def test_examples_endpoint_ok_and_well_formed():
     for ex in data:
         assert ex["answers"].get("sys_name")
         assert ex["tier_label"]
+
+
+def test_ai_status_endpoint_reports_anthropic_fallback_without_key(tmp_path, monkeypatch):
+    monkeypatch.setenv("AIACT_DATA_DIR", str(tmp_path))
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(settings, "provider", "anthropic")
+    budget.reset_for_tests()
+    try:
+        r = client.get("/api/ai/status")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["provider"] == "replay"
+        assert body["fallback_from"] == "anthropic"
+        assert body["fallback_reason"] == "unavailable"
+        assert "budget" in body
+    finally:
+        budget.reset_for_tests()
 
 
 def test_questionnaire_endpoint():

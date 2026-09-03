@@ -44,12 +44,15 @@ def _normalize_host(host):
 
 
 class Settings:
-    # ollama | manual | replay | none
+    # ollama | manual | replay | anthropic | none
     provider = os.environ.get("LLM_PROVIDER", "ollama").strip().lower()
     ollama_host = _normalize_host(os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"))
     ollama_model = os.environ.get("OLLAMA_MODEL", "qwen3:32b")
     # Generous timeout: a local 32B model can need tens of seconds.
     request_timeout = float(os.environ.get("LLM_TIMEOUT", "180"))
+    # Hosted Anthropic provider. The API key itself is read by the SDK from
+    # ANTHROPIC_API_KEY directly (never stored on this object, never logged).
+    anthropic_model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 
 
 settings = Settings()
