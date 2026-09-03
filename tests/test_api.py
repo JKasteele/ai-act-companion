@@ -31,7 +31,7 @@ def test_examples_endpoint_ok_and_well_formed():
 def test_questionnaire_endpoint():
     r = client.get("/api/questionnaire")
     assert r.status_code == 200
-    assert len(r.json()["sections"]) == 10
+    assert len(r.json()["sections"]) == 11
 
 
 def test_timeline_endpoint_for_countdown():

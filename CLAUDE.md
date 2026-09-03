@@ -71,10 +71,10 @@ The engine is pure functions, no I/O, fully testable:
   `stride.py`, and `data_security.py` reuse this same severity so the offense
   (red-team), defense (controls), and threat-model views agree by construction.
 - `reports.render(report_type, assessment) -> (type, filename, markdown)` —
-  renders one of eighteen Markdown artifacts: `risk`, `dpia`, `bias`, `security`,
+  renders one of nineteen Markdown artifacts: `risk`, `dpia`, `bias`, `security`,
   `fria`, `techdoc`, `compliance`, `monitoring`, `framework-matrix`, `redteam`,
   `controls`, `datasec`, `stride`, `incident`, `modelcard`, `doc`,
-  `registration`, `gpai`. The catalogue is defined once in
+  `registration`, `gpai`, `datagov`. The catalogue is defined once in
   `reports.REPORT_CATALOG` (type + label) and consumed by the API `/api/config`,
   the frontend tabs and the MCP tool. Markdown is the canonical export; PDF is
   browser print-to-PDF (no dependency).

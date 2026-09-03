@@ -338,6 +338,8 @@ function renderField(q) {
     input = el("div", { class: "choice", ...groupProps("group") });
     q.options.forEach((o) => input.append(el("label", {},
       el("input", { type: "checkbox", name: q.id, value: o.value }), o.label)));
+  } else if (q.type === "table") {
+    input = renderTableField(q);
   }
   wrap.append(input);
   if (q.help) wrap.append(el("span", { class: "help" }, q.help));
@@ -351,6 +353,75 @@ function renderField(q) {
     }, "✨ AI draft"));
   }
   return wrap;
+}
+
+// --- table question type (repeatable rows, e.g. the dataset inventory) ------
+function tableRow(q, values = {}) {
+  const tr = el("tr", {});
+  q.columns.forEach((c) => {
+    let cell;
+    if (c.type === "select") {
+      cell = el("select", { "data-col": c.id, "aria-label": c.label });
+      cell.append(el("option", { value: "" }, "—"));
+      (c.options || []).forEach((o) => cell.append(el("option", { value: o.value }, o.label)));
+    } else {
+      cell = el("input", { type: "text", "data-col": c.id, "aria-label": c.label });
+    }
+    if (values[c.id] !== undefined && values[c.id] !== null) cell.value = String(values[c.id]);
+    tr.append(el("td", {}, cell));
+  });
+  tr.append(el("td", {}, el("button", {
+    type: "button", class: "row-del", title: "Remove row",
+    onclick: () => tr.remove(),
+  }, "×")));
+  return tr;
+}
+
+function renderTableField(q) {
+  const box = el("div", { class: "dg-table", id: q.id, "data-table": "1" });
+  const table = el("table", {},
+    el("thead", {}, el("tr", {}, ...q.columns.map((c) => el("th", {}, c.label)), el("th", {}, ""))),
+    el("tbody", {}));
+  box.append(el("div", { class: "dg-table-scroll" }, table));
+  box.append(el("button", {
+    type: "button", class: "row-add",
+    onclick: () => table.querySelector("tbody").append(tableRow(q)),
+  }, "+ Add row"));
+  return box;
+}
+
+function collectTable(q) {
+  const box = document.getElementById(q.id);
+  if (!box) return [];
+  const rows = [];
+  box.querySelectorAll("tbody tr").forEach((tr) => {
+    const row = {};
+    let any = false;
+    tr.querySelectorAll("[data-col]").forEach((cell) => {
+      const v = (cell.value || "").trim();
+      if (v) { row[cell.dataset.col] = v; any = true; }
+    });
+    if (any) rows.push(row);
+  });
+  return rows;
+}
+
+function fillTable(q, rows) {
+  const box = document.getElementById(q.id);
+  if (!box) return;
+  const tbody = box.querySelector("tbody");
+  tbody.innerHTML = "";
+  (Array.isArray(rows) ? rows : []).forEach((r) => {
+    if (r && typeof r === "object") tbody.append(tableRow(q, r));
+  });
+}
+
+function questionById(id) {
+  if (!QUESTIONNAIRE) return null;
+  for (const s of QUESTIONNAIRE.sections) {
+    for (const q of s.questions) if (q.id === id) return q;
+  }
+  return null;
 }
 
 // --- collect answers --------------------------------------------------------
@@ -368,6 +439,9 @@ function collectAnswers() {
       } else if (q.type === "multiselect") {
         const vals = [...document.querySelectorAll(`input[name="${q.id}"]:checked`)].map((c) => c.value);
         if (vals.length) a[q.id] = vals;
+      } else if (q.type === "table") {
+        const rows = collectTable(q);
+        if (rows.length) a[q.id] = rows;
       } else {
         const node = document.getElementById(q.id);
         if (node && node.value) a[q.id] = node.value;
@@ -383,7 +457,10 @@ function fillFields(a) {
   // which would otherwise make querySelector throw mid-import.
   for (const [k, v] of Object.entries(a)) {
     const name = CSS.escape(k);
-    if (Array.isArray(v)) {
+    const qdef = questionById(k);
+    if (qdef && qdef.type === "table") {
+      fillTable(qdef, v);
+    } else if (Array.isArray(v)) {
       // first clear existing selections of this multiselect
       document.querySelectorAll(`input[name="${name}"]`).forEach((c) => (c.checked = false));
       v.forEach((val) => {

@@ -270,6 +270,114 @@ HIGH_RISK_USECASES = {
     },
 }
 
+# Annex III point 5 has four distinct sub-points with different deployers and
+# a different FRIA rule: Art. 27(1) makes the FRIA mandatory for EVERY deployer
+# of a 5(b) or 5(c) system, private insurers and lenders included, not only for
+# public bodies. Key = value of the `hr_essential_subarea` intake field.
+ANNEX_III_5_SUBAREAS = {
+    "public_benefits": {
+        "ref": "Annex III(5)(a)",
+        "title": "Eligibility for essential public benefits and services",
+        "summary": (
+            "Used by or on behalf of public authorities to evaluate eligibility "
+            "for essential public assistance benefits and services (incl. "
+            "healthcare services), or to grant, reduce, revoke or reclaim them."
+        ),
+        "fria_all_deployers": False,
+    },
+    "creditworthiness": {
+        "ref": "Annex III(5)(b)",
+        "title": "Creditworthiness / credit scoring of natural persons",
+        "summary": (
+            "Evaluates the creditworthiness of natural persons or establishes "
+            "their credit score. Systems used solely to detect financial fraud "
+            "are excluded from this point."
+        ),
+        "fria_all_deployers": True,
+    },
+    "insurance_life_health": {
+        "ref": "Annex III(5)(c)",
+        "title": "Risk assessment and pricing in life and health insurance",
+        "summary": (
+            "Risk assessment and pricing in relation to natural persons in the "
+            "case of life and health insurance (underwriting, acceptance, "
+            "premium setting, risk selection)."
+        ),
+        "fria_all_deployers": True,
+    },
+    "emergency_triage": {
+        "ref": "Annex III(5)(d)",
+        "title": "Emergency-call evaluation and emergency healthcare triage",
+        "summary": (
+            "Evaluates and classifies emergency calls, dispatches or prioritises "
+            "emergency first-response services, or triages patients in "
+            "emergency healthcare."
+        ),
+        "fria_all_deployers": False,
+    },
+}
+
+# Context notes for Annex III(5)(c), keyed by the `hr_insurance_scope` field.
+# Sector rules shape WHERE the risk actually sits; the classification itself
+# does not change. NL notes reference the Zorgverzekeringswet (Zvw) and the
+# Zorgverzekeraars Nederland code of conduct for processing personal data.
+INSURANCE_SCOPE_NOTES = {
+    "health_basic_nl": (
+        "Dutch basic health insurance (Zvw): statutory acceptance duty and ban "
+        "on premium differentiation. Risk assessment therefore cannot lawfully "
+        "drive acceptance or premium for the basic package; the residual risk is "
+        "indirect selection via proxies (marketing, steering towards or away "
+        "from supplementary packages) and the ZN code-of-conduct rule that "
+        "medical data from the basic package may not be used for accepting "
+        "supplementary insurance. Document those boundaries in the FRIA."
+    ),
+    "health_supplementary": (
+        "Supplementary health insurance: acceptance and pricing may be risk-based, "
+        "so this is the Annex III(5)(c) core case. Special-category (health) data "
+        "needs a GDPR Art. 9(2) condition; the Art. 10(5) allowance to process "
+        "special categories for bias detection is narrow and comes with strict "
+        "safeguards."
+    ),
+    "life": (
+        "Life insurance: risk-based underwriting is the Annex III(5)(c) core case. "
+        "Watch for proxies for health, age and ethnicity in the feature set and "
+        "for the medical-examination boundaries in national insurance law."
+    ),
+    "other": (
+        "Outside NL or a different product line: check the national insurance "
+        "and anti-discrimination rules that constrain risk-based pricing."
+    ),
+}
+
+# Art. 10 broken into the elements a provider must evidence (and the deployer
+# input-data duty in Art. 26(4)). (ref, requirement) — for the datagov report.
+ART_10_REQUIREMENTS = [
+    ("Art. 10(2)(a)", "Relevant design choices are documented."),
+    ("Art. 10(2)(b)", "Data collection processes and the origin of data are documented; "
+                      "for personal data, the original purpose of collection."),
+    ("Art. 10(2)(c)", "Data-preparation operations (annotation, labelling, cleaning, "
+                      "updating, enrichment, aggregation) are documented."),
+    ("Art. 10(2)(d)", "Assumptions about what the data measures and represents are "
+                      "formulated."),
+    ("Art. 10(2)(e)", "Availability, quantity and suitability of the datasets are "
+                      "assessed."),
+    ("Art. 10(2)(f)", "Datasets are examined for possible biases that could affect "
+                      "health, safety or fundamental rights or lead to discrimination."),
+    ("Art. 10(2)(g)", "Measures to detect, prevent and mitigate those biases are in place."),
+    ("Art. 10(2)(h)", "Data gaps or shortcomings that prevent compliance are identified "
+                      "and addressed."),
+    ("Art. 10(3)", "Datasets are relevant, sufficiently representative and, to the best "
+                   "extent possible, free of errors and complete; statistical properties "
+                   "fit the persons and groups the system is used on."),
+    ("Art. 10(4)", "Datasets reflect the geographical, contextual, behavioural or "
+                   "functional setting in which the system will be used."),
+    ("Art. 10(5)", "Special categories of personal data are processed for bias "
+                   "detection/correction only when strictly necessary and under the "
+                   "listed safeguards (pseudonymisation, access controls, deletion)."),
+    ("Art. 26(4)", "Deployer: input data under its control is relevant and sufficiently "
+                   "representative in view of the intended purpose."),
+]
+
 # Core obligations for high-risk (summarised), for the report.
 # Each row is (ref, description, role) where role is which actor the duty falls
 # on: "provider", "deployer", or "both". A pure deployer must not be shown the

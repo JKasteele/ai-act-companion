@@ -169,6 +169,7 @@ _Analytical alignment, not an official ISO <-> EU AI Act crosswalk. ISO/IEC 4200
 ## 7. Recommended documentation
 - AI risk assessment report
 - AI literacy measures / staff training record (AI Act Art. 4)
+- Data governance & quality record (AI Act Art. 10)
 - Bias/fairness audit report (AI Act Art. 10)
 - Technical documentation (AI Act Art. 11 + Annex IV)
 - Fundamental rights impact assessment - FRIA (AI Act Art. 27)

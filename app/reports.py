@@ -6,11 +6,13 @@ Python strings, fed by the classifier output.
 """
 
 from . import __version__
+from ._normalize import select_field as _select
 from ._normalize import truthy as _truthy
 from .controls import generate_control_catalog
 from .data_security import assess_data_security
 from .incident import assess_incident
 from .knowledge import ai_security as sec
+from .knowledge import data_governance as dg
 from .knowledge import data_security as ds
 from .knowledge import eu_ai_act as eu
 from .knowledge import iso_42001 as iso
@@ -44,6 +46,7 @@ REPORT_CATALOG = (
     ("doc", "Declaration of conformity"),
     ("registration", "EU-database registration"),
     ("gpai", "GPAI obligations"),
+    ("datagov", "Data governance"),
 )
 REPORT_TYPES = tuple(rtype for rtype, _label in REPORT_CATALOG)
 
@@ -293,9 +296,24 @@ def render_dpia(assessment):
     md.append(f"- Description: {_a(answers,'sys_description')}\n")
     md.append(f"- Data origin: {_a(answers,'data_sources')}\n")
     md.append("- Categories of data subjects: _to be completed_\n")
-    md.append("- Recipients / processors: _to be completed_\n")
-    md.append("- Retention periods: _to be completed_\n")
-    md.append("- Legal basis (Art. 6 GDPR): _to be completed_\n")
+    dg_rows = [r for r in dg.dataset_rows(answers)
+               if r["classification"] in ("personal", "special_category")]
+    if dg_rows:
+        md.append("- Datasets with personal data (from the data-governance inventory):\n")
+        for r in dg_rows:
+            md.append(
+                f"  - {_safe(r['name']) or '(unnamed)'} — {dg.label('classification', r['classification'])}; "
+                f"origin {dg.label('origin', r['origin'])}; owner {_safe(r['owner']) or '-'}; "
+                f"retention {_safe(r['retention']) or '_to be completed_'}; "
+                f"legal basis {dg.label('legal_basis', r['legal_basis'])}\n"
+            )
+        md.append("- Recipients / processors: _to be completed_ (vendor-origin datasets "
+                  "imply a processor or joint controller — check the DPA)\n")
+    else:
+        md.append("- Recipients / processors: _to be completed_\n")
+        md.append("- Retention periods: _to be completed_ (or fill section 11 of the "
+                  "intake; the data-governance report carries them per dataset)\n")
+        md.append("- Legal basis (Art. 6 GDPR): _to be completed_\n")
 
     md.append("\n## 2. Assessment of necessity and proportionality\n")
     md.append(
@@ -487,6 +505,17 @@ def render_fria(assessment):
         "Complements any GDPR DPIA (Art. 27(4)); the result must be notified to "
         "the market surveillance authority (Art. 27(3)).\n"
     )
+
+    sub = eu.ANNEX_III_5_SUBAREAS.get(_select(answers, "hr_essential_subarea"))
+    if sub and sub.get("fria_all_deployers"):
+        md.append(
+            f"\n> **{sub['ref']} — {sub['title']}.** The FRIA duty applies to *every* "
+            "deployer of this system, private entities included (Art. 27(1)).\n"
+        )
+    scope_note = eu.INSURANCE_SCOPE_NOTES.get(_select(answers, "hr_insurance_scope")) \
+        if sub and sub["ref"] == "Annex III(5)(c)" else None
+    if scope_note:
+        md.append(f"\n> **Sector context.** {scope_note}\n")
 
     md.append("\n## (a) Deployer's processes using the system\n")
     md.append(f"Intended purpose: {_a(answers,'intended_purpose')}\n\n")
@@ -1570,6 +1599,158 @@ def render_gpai_obligations(assessment):
 
 
 # --- dispatcher ------------------------------------------------------------
+
+# --- 19. Data governance & quality (Art. 10) --------------------------------
+def _dg_table(rows):
+    head = ("| Dataset | Origin | Data owner | Steward | Classification | Purpose | "
+            "Retention | Lawful basis |\n|---|---|---|---|---|---|---|---|\n")
+    body = ""
+    for r in rows:
+        body += ("| " + " | ".join([
+            _safe(r["name"]) or "-", dg.label("origin", r["origin"]),
+            _safe(r["owner"]) or "-", _safe(r["steward"]) or "-",
+            dg.label("classification", r["classification"]),
+            _safe(r["purpose"]) or "-", _safe(r["retention"]) or "-",
+            dg.label("legal_basis", r["legal_basis"]),
+        ]) + " |\n")
+    if not rows:
+        body = "| _no datasets recorded_ | | | | | | | |\n"
+    return head + body
+
+
+def render_data_governance(assessment):
+    answers = assessment.get("answers", {})
+    cls = assessment.get("classification") or {}
+    tier = cls.get("tier", "minimal")
+    sys_name = _a(answers, "sys_name", "AI system")
+    role = (answers.get("provider_role") or "").strip().lower()
+    rows = dg.dataset_rows(answers)
+    quality = dg.quality_rows(answers)
+    gaps = dg.gaps(answers, tier)
+
+    md = [f"# Data Governance & Quality — {sys_name}\n", _header(assessment)]
+    if tier == "high":
+        md.append(
+            f"Data-governance record for a **high-risk** system. {_ref_link('Art. 10')} "
+            "requires providers to evidence data governance and quality for training, "
+            f"validation and test data; {_ref_link('Art. 26')}(4) requires deployers to "
+            "keep input data relevant and sufficiently representative. This report is "
+            "the evidence layer under the bias checklist, the DPIA and the Annex IV data "
+            "description.\n"
+        )
+    else:
+        md.append(
+            f"Data-governance record. {_ref_link('Art. 10')} binds providers of high-risk "
+            "systems; for this system it is good practice, and where personal data is "
+            "processed the GDPR accuracy principle (Art. 5(1)(d)) and the record of "
+            "processing (Art. 30) still apply. Gap severities are one notch lower than "
+            "for a high-risk system.\n"
+        )
+    if role == "deployer":
+        md.append(
+            f"\n> **Role note.** As a deployer you do not own the training data, but "
+            f"you do own the input data ({_ref_link('Art. 26')}(4)) and you need the "
+            f"provider's data description ({_ref_link('Art. 13')}(3)(b)) to complete "
+            "sections 2 and 5.\n"
+        )
+
+    md.append("\n## 1. Roles and accountability\n")
+    md.append(
+        "| Role | Named | Notes |\n|---|---|---|\n"
+        f"| AI system owner | {_a(answers, 'sys_owner')} | Accountable for the system "
+        "as a product (purpose, classification, conformity, monitoring). |\n"
+        f"| Data owner | {_a(answers, 'dg_data_owner')} | Accountable for the data "
+        "domain(s): access, quality targets, retention, lawful use. |\n"
+        f"| Data steward | {_a(answers, 'dg_data_steward')} | Definitions, metadata, "
+        "quality monitoring, issue resolution. |\n"
+        f"| Registered in data catalogue | {_a(answers, 'dg_catalog_registered')} | "
+        "Lineage, definitions and owners discoverable. |\n"
+    )
+    md.append("\nOperating-model reference (who does what):\n\n")
+    md.append("| Role | Accountability | Anchor |\n|---|---|---|\n")
+    for r, acc, anchor in dg.ROLES:
+        md.append(f"| {r} | {acc} | {anchor} |\n")
+
+    md.append("\n## 2. Dataset inventory (provenance, ownership, classification)\n")
+    md.append(_dg_table(rows))
+    md.append(
+        f"\n_{len(rows)} dataset(s) recorded. Origin and collection process per dataset "
+        f"map to {_ref_link('Art. 10')}(2)(b) and Annex IV(2)(d)._\n"
+    )
+
+    md.append("\n## 3. Classification, purpose limitation and lawful basis\n")
+    personal_rows = [r for r in rows if r["classification"] in ("personal", "special_category")]
+    special_rows = [r for r in rows if r["classification"] == "special_category"]
+    md.append(
+        f"- Datasets with personal data: {len(personal_rows)} "
+        f"(special-category: {len(special_rows)})\n"
+        f"- Intake: personal data = {_a(answers, 'data_personal')}, special categories = "
+        f"{_a(answers, 'data_special_category')}, automated decision-making = "
+        f"{_a(answers, 'automated_decision')}\n"
+        f"- Special categories may be processed for bias detection/correction only under "
+        f"{_ref_link('Art. 10')}(5) safeguards; that allowance does not create a lawful "
+        "basis for using them as model features.\n"
+    )
+    for r in personal_rows:
+        md.append(
+            f"- **{_safe(r['name']) or '(unnamed)'}**: purpose _{_safe(r['purpose']) or 'not recorded'}_, "
+            f"lawful basis {dg.label('legal_basis', r['legal_basis'])}, retention "
+            f"{_safe(r['retention']) or 'not recorded'}.\n"
+        )
+
+    md.append("\n## 4. Lineage\n")
+    lineage = str(answers.get("dg_lineage") or "").strip()
+    if lineage:
+        md.append("```text\n" + lineage.replace("```", "` ` `") + "\n```\n")
+    else:
+        md.append(
+            "```text\nsource system(s) → preparation (cleaning / labelling / enrichment) "
+            "→ training / validation / test sets → model version → output → "
+            "downstream decision\n```\n_Template — replace with the real chain "
+            f"({_ref_link('Art. 10')}(2)(c), Annex IV(2)(d))._\n"
+        )
+    md.append(f"\nPrepared-data sources noted in the intake: {_a(answers, 'data_sources')}\n")
+
+    md.append("\n## 5. Data quality — dimensions and status\n")
+    md.append("| Dimension | Definition | AI Act hook | Status | Suggested metric |\n"
+              "|---|---|---|---|---|\n")
+    for q in quality:
+        md.append(f"| {q['name']} | {q['definition']} | {q['hook']} | "
+                  f"**{dg.label('status', q['status'])}** | {q['metric']} |\n")
+    md.append(f"\nEvidence recorded: {_a(answers, 'dg_q_evidence')}\n")
+
+    md.append(f"\n## 6. {_ref_link('Art. 10')} requirement checklist\n")
+    md.append("| ✓ | Ref | Requirement | Evidence / where |\n|---|---|---|---|\n")
+    for ref, req in eu.ART_10_REQUIREMENTS:
+        if ref.startswith("Art. 26") and role == "provider":
+            continue
+        md.append(f"| ☐ | {_ref_link(ref)} | {req} | |\n")
+
+    md.append("\n## 7. Gaps and actions (derived from the intake)\n")
+    if gaps:
+        md.append("| Severity | Gap | Action | Ref |\n|---|---|---|---|\n")
+        for sev, gap, action, ref in gaps:
+            md.append(f"| {sev.capitalize()} | {_safe(gap)} | {_safe(action)} | {ref} |\n")
+    else:
+        md.append("_No gaps derived from the intake. Verify the evidence behind each "
+                  "'measured' status._\n")
+
+    md.append("\n## 8. Crosswalk\n")
+    md.append("| Topic | EU AI Act | ISO/IEC 42001 | NIST AI RMF | EIOPA principle | "
+              "DAMA-DMBOK area |\n|---|---|---|---|---|---|\n")
+    for topic, act, iso_ref, nist_ref, eiopa, dama in dg.CROSSWALK:
+        md.append(f"| {topic} | {act} | {iso_ref} | {nist_ref} | {eiopa} | {dama} |\n")
+    md.append(f"\n> _{dg.PROVENANCE}_\n")
+
+    md.append("\n## Sign-off\n")
+    md.append(
+        "| Item | Content |\n|---|---|\n"
+        "| Data owner | |\n| Data steward | |\n| AI system owner | |\n"
+        "| Next review date | |\n| Date / signature | |\n"
+    )
+    return "".join(md)
+
+
 def render(report_type, assessment):
     sys_name = assessment.get("answers", {}).get("sys_name", "ai-system")
     slug = "".join(c if c.isalnum() else "-" for c in sys_name.lower()).strip("-") or "ai-system"
@@ -1609,4 +1790,6 @@ def render(report_type, assessment):
         return "registration", f"eu-database-registration-{slug}.md", render_registration(assessment)
     if report_type == "gpai":
         return "gpai", f"gpai-obligations-{slug}.md", render_gpai_obligations(assessment)
+    if report_type == "datagov":
+        return "datagov", f"data-governance-{slug}.md", render_data_governance(assessment)
     raise ValueError(f"Unknown report type: {report_type}")

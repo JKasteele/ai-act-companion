@@ -141,6 +141,7 @@ _Analytical alignment, not an official ISO <-> EU AI Act crosswalk. ISO/IEC 4200
 - AI risk assessment report
 - AI literacy measures / staff training record (AI Act Art. 4)
 - DPIA (data protection impact assessment, GDPR Art. 35)
+- Data governance & quality record (good practice; GDPR Art. 5(1)(d))
 - Bias audit checklist (good practice)
 - AI security assessment (OWASP LLM Top 10 + MITRE ATLAS)
 
