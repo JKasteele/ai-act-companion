@@ -143,6 +143,11 @@ async function loadTimeline() {
     el("span", { class: "cd-label" }, `until ${next.label}`),
     el("span", { class: "cd-date" }, dateStr),
   );
+  if (data.last_reviewed) {
+    const amend = (data.amendments || []).map((a) => a.name).join(", ");
+    box.append(el("span", { class: "cd-meta" },
+      `Knowledge base reviewed ${data.last_reviewed}${amend ? " · incl. " + amend : ""}`));
+  }
   box.classList.remove("hidden");
 }
 

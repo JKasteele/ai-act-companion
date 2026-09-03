@@ -522,7 +522,7 @@ deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 - [x] **Claude Code plugin** — MCP server + skill + CLI (Claude as interface, engine as ground truth)
 - [x] **AI security lens** — findings mapped to OWASP LLM Top 10 (2025) + MITRE ATLAS
 - [x] Threat model of the tool itself (`THREAT_MODEL.md`) + `bandit`/`pip-audit` in CI
-- [x] EUR-Lex / AI Act Explorer deep links + phased applicability timeline (Art. 113)
+- [x] EUR-Lex / AI Act Explorer deep links + phased applicability timeline (Art. 113, as amended by the Digital Omnibus on AI, Reg. (EU) 2026/1744 — Annex III high-risk: 2 Dec 2027)
 - [x] Fundamental Rights Impact Assessment (FRIA, Art. 27) generator
 - [x] AI system inventory (dashboard) + CSV register and JSON export/import
 - [x] ISO/IEC 42001 crosswalk (in the risk assessment report)
@@ -547,7 +547,7 @@ deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 - [x] **PyPI release** — `pip install ai-act-companion` (since v0.8.0, via the tag-triggered trusted-publishing workflow)
 - [ ] **Demo video** — shot list ready in `docs/DEMO-SCRIPT.md`
 - [ ] **MCP SDK v2 migration** — currently pinned `mcp<2` (the 2.x SDK renamed FastMCP)
-- [ ] **Knowledge-base freshness process** — date-stamped knowledge modules, reviewed against new AI Office guidance and harmonised standards as they land
+- [x] **Knowledge-base freshness process** — the EU AI Act module carries `KNOWLEDGE_VERSION` / `LAST_REVIEWED` / `AMENDMENTS`, shown in every report header, on the landing page and in `/api/timeline`; tests pin the amended dates. First review (2026-09-03) applied the Digital Omnibus timeline. Ongoing: re-review as AI Office guidance and harmonised standards land
 
 ## Data & privacy
 

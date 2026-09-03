@@ -14,6 +14,25 @@ from .._normalize import truthy
 REGULATION = "Regulation (EU) 2024/1689 (EU AI Act)"
 CELEX = "32024R1689"
 EURLEX_URL = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"
+
+# --- Knowledge-base metadata -------------------------------------------
+# The law moves; a report must say WHICH state of the law it reflects.
+# Bump LAST_REVIEWED whenever the rules or dates in this module are checked
+# against new guidance, and record every amending act in AMENDMENTS.
+KNOWLEDGE_VERSION = "2026-09"
+LAST_REVIEWED = "2026-09-03"
+# (short name, what it changed, source URL)
+AMENDMENTS = [
+    ("Regulation (EU) 2026/1744 (Digital Omnibus on AI)",
+     "In force 27 Jul 2026. Postpones the Annex III high-risk obligations "
+     "(Ch. III s. 2, incl. FRIA Art. 27 and registration Art. 49) from "
+     "2 Aug 2026 to 2 Dec 2027, and the Annex I (regulated products) "
+     "obligations from 2 Aug 2027 to 2 Aug 2028. Art. 50 transparency, the "
+     "penalty and enforcement provisions and supervision of Art. 4 AI literacy "
+     "apply from 2 Aug 2026 as originally planned; generative systems already "
+     "on the market get until 2 Dec 2026 for machine-readable marking.",
+     "https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng"),
+]
 _EXPLORER = "https://artificialintelligenceact.eu"
 _ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5,
           "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10, "XI": 11}
@@ -510,6 +529,8 @@ DISCLAIMER = (
 )
 
 # --- Phased applicability (Art. 113 + transitional provisions) -------------
+# As amended by the Digital Omnibus on AI (Reg. (EU) 2026/1744, in force
+# 27 Jul 2026), which postponed the stand-alone high-risk dates. See AMENDMENTS.
 # (date, what applies, legal basis)
 TIMELINE = [
     ("1 Aug 2024", "Entry into force.", "Art. 113"),
@@ -519,12 +540,23 @@ TIMELINE = [
      "Art. 56(9)"),
     ("2 Aug 2025", "GPAI obligations (Ch. V), governance, notifying authorities "
      "and penalties apply (except the Art. 101 GPAI fines).", "Art. 113(b)"),
-    ("2 Feb 2026", "Commission guidance on high-risk classification due.", "Art. 6(5)"),
-    ("2 Aug 2026", "General application: most obligations, incl. Annex III "
-     "high-risk systems and Art. 50 transparency.", "Art. 113"),
-    ("2 Aug 2027", "High-risk systems under Art. 6(1)/Annex I (regulated "
-     "products); GPAI models already on the market must comply.",
-     "Art. 113(c), Art. 111(3)"),
+    ("2 Feb 2026", "Commission guidance on high-risk classification due "
+     "(draft guidelines published 19 May 2026).", "Art. 6(5)"),
+    ("27 Jul 2026", "Digital Omnibus on AI (Reg. (EU) 2026/1744) enters into "
+     "force: Annex III high-risk obligations postponed to 2 Dec 2027, "
+     "Annex I to 2 Aug 2028.", "Art. 113"),
+    ("2 Aug 2026", "Art. 50 transparency obligations, the penalty and enforcement "
+     "provisions and supervision of Art. 4 AI literacy apply.", "Art. 113"),
+    ("2 Dec 2026", "End of the grace period for machine-readable marking "
+     "(Art. 50(2)) for generative systems already on the market before "
+     "2 Aug 2026.", "Art. 50"),
+    ("2 Aug 2027", "GPAI models already on the market before 2 Aug 2025 must "
+     "comply.", "Art. 111(3)"),
+    ("2 Dec 2027", "High-risk obligations for Annex III systems (Ch. III s. 2, "
+     "incl. FRIA Art. 27 and registration Art. 49) apply.",
+     "Art. 113"),
+    ("2 Aug 2028", "High-risk obligations for Art. 6(1)/Annex I systems "
+     "(regulated products) apply.", "Art. 113(c)"),
 ]
 
 
@@ -534,8 +566,11 @@ TIMELINE = [
 MILESTONES = [
     ("2025-02-02", "Prohibited practices (Art. 5) & AI literacy (Art. 4)", "Art. 113(a)"),
     ("2025-08-02", "GPAI obligations, governance & penalties", "Art. 113(b)"),
-    ("2026-08-02", "High-risk (Annex III) & Art. 50 transparency obligations", "Art. 113"),
-    ("2027-08-02", "High-risk under Art. 6(1)/Annex I (regulated products)", "Art. 113(c)"),
+    ("2026-08-02", "Art. 50 transparency obligations, penalties & Art. 4 supervision",
+     "Art. 113"),
+    ("2027-12-02", "High-risk (Annex III) obligations apply (Digital Omnibus date)",
+     "Art. 113"),
+    ("2028-08-02", "High-risk under Art. 6(1)/Annex I (regulated products)", "Art. 113(c)"),
 ]
 
 
@@ -558,17 +593,19 @@ def applies_from(tier, answers):
                 "basis": "Art. 113(a)"}
     elif tier == TIER_HIGH:
         if truthy(answers.get("hr_safety_component")):
-            base = {"date": "2 Aug 2027",
+            base = {"date": "2 Aug 2028",
                     "what": "High-risk obligations for Art. 6(1)/Annex I "
-                            "(regulated products).",
+                            "(regulated products); postponed from 2 Aug 2027 "
+                            "by Reg. (EU) 2026/1744.",
                     "basis": "Art. 113(c)"}
         else:
-            base = {"date": "2 Aug 2026",
-                    "what": "High-risk obligations for Annex III systems.",
+            base = {"date": "2 Dec 2027",
+                    "what": "High-risk obligations for Annex III systems; "
+                            "postponed from 2 Aug 2026 by Reg. (EU) 2026/1744.",
                     "basis": "Art. 113"}
     elif tier == TIER_LIMITED:
         base = {"date": "2 Aug 2026",
-                "what": "Transparency obligations (Art. 50) apply.",
+                "what": "Transparency obligations (Art. 50) apply (in force).",
                 "basis": "Art. 113"}
     else:
         base = {"date": "-",

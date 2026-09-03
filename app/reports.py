@@ -84,7 +84,9 @@ def _header(assessment):
     return (
         f"_Assessment id: `{assessment.get('id', '-')}` · "
         f"Generated: {assessment.get('created_at', '-')} · "
-        f"AI Act Companion v{__version__}_\n\n"
+        f"AI Act Companion v{__version__} · "
+        f"Knowledge base {eu.KNOWLEDGE_VERSION} (reviewed {eu.LAST_REVIEWED}, "
+        f"incl. Reg. (EU) 2026/1744)_\n\n"
         f"> {eu.DISCLAIMER}\n"
     )
 
@@ -112,7 +114,9 @@ def _timeline_table():
     rows = ["| Date | What applies | Basis |", "|---|---|---|"]
     for date, what, basis in eu.TIMELINE:
         rows.append(f"| {date} | {what} | {_ref_link(basis)} |")
-    return "\n".join(rows) + "\n"
+    notes = [f"_As amended by [{name}]({url}): {what}_"
+             for name, what, url in eu.AMENDMENTS]
+    return "\n".join(rows) + "\n\n" + "\n".join(notes) + "\n"
 
 
 def _iso_table():

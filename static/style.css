@@ -91,6 +91,7 @@ body::before {
 /* --- AI Act countdown ---------------------------------------------------- */
 .countdown {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 9px;
   margin-top: 20px;
@@ -117,6 +118,14 @@ body::before {
   color: var(--muted);
   padding-left: 9px;
   border-left: 1px solid rgba(244, 183, 64, .3);
+}
+
+.countdown .cd-meta {
+  flex-basis: 100%;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  opacity: .72;
+  margin-top: 4px;
 }
 
 main { padding: 26px 22px 72px; }
