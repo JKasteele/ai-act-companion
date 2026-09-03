@@ -43,6 +43,12 @@ def test_timeline_endpoint_for_countdown():
         assert m["date"] and m["label"] and m["basis"]
         # ISO date the frontend can parse: YYYY-MM-DD
         assert len(m["date"]) == 10 and m["date"][4] == "-"
+    # Digital Omnibus (Reg. (EU) 2026/1744): Annex III high-risk is 2 Dec 2027,
+    # and no milestone may still advertise Annex III for 2 Aug 2026.
+    by_date = {m["date"]: m["label"] for m in milestones}
+    assert "Annex III" in by_date["2027-12-02"]
+    assert "Annex III" not in by_date.get("2026-08-02", "")
+    assert r.json()["last_reviewed"] and r.json()["amendments"]
 
 
 def test_assess_report_delete_roundtrip():

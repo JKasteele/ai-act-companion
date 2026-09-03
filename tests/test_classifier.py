@@ -139,6 +139,42 @@ def test_open_source_gpai_carveout_present_without_systemic():
     assert r["applicability"]["date"] == "2 Aug 2025"
 
 
+def test_omnibus_postponed_high_risk_dates():
+    """Reg. (EU) 2026/1744 (Digital Omnibus on AI, in force 27 Jul 2026) moved
+    Annex III high-risk to 2 Dec 2027 and Annex I to 2 Aug 2028. The old
+    2 Aug 2026 date must not resurface for high-risk systems."""
+    annex_iii = classify(_load("hiring_cv_screening.json"))
+    assert annex_iii["tier"] == eu.TIER_HIGH
+    assert annex_iii["applicability"]["date"] == "2 Dec 2027"
+    assert "2026/1744" in annex_iii["applicability"]["what"]
+
+    annex_i = classify({"eu_market": True, "hr_safety_component": True})
+    assert annex_i["tier"] == eu.TIER_HIGH
+    assert annex_i["applicability"]["date"] == "2 Aug 2028"
+
+    # Art. 50 was NOT postponed: limited-risk systems are already in scope.
+    limited = classify({"eu_market": True, "t_interacts_humans": True})
+    assert limited["tier"] == eu.TIER_LIMITED
+    assert limited["applicability"]["date"] == "2 Aug 2026"
+
+    # The timeline itself records the amending act and the new dates.
+    dates = {d for d, _w, _b in eu.TIMELINE}
+    assert {"27 Jul 2026", "2 Dec 2027", "2 Aug 2028"} <= dates
+    assert not any("Annex III" in w for d, w, _b in eu.TIMELINE if d == "2 Aug 2026")
+    assert eu.AMENDMENTS and "2026/1744" in eu.AMENDMENTS[0][0]
+
+
+def test_knowledge_base_metadata_in_report_header():
+    """Every report says which state of the law it reflects."""
+    assert eu.KNOWLEDGE_VERSION and len(eu.LAST_REVIEWED) == 10
+    cls = classify(_load("hiring_cv_screening.json"))
+    _t, _f, md = reports.render("risk", {"id": "x", "created_at": "now",
+                                          "answers": _load("hiring_cv_screening.json"),
+                                          "classification": cls})
+    assert f"reviewed {eu.LAST_REVIEWED}" in md
+    assert "2026/1744" in md
+
+
 def test_open_source_carveout_suppressed_by_systemic_risk():
     answers = {"eu_market": True, "gpai_model": True, "gpai_open_source": True,
                "gpai_systemic": True}

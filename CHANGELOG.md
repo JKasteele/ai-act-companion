@@ -6,10 +6,35 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-03
+
+Knowledge-base review: the **Digital Omnibus on AI** (Regulation (EU)
+2026/1744, in force 27 July 2026) changed the EU AI Act application dates.
+
+### Fixed
+- **Application timeline (Art. 113) updated for the Digital Omnibus.** Annex III
+  high-risk obligations now apply from **2 Dec 2027** (was 2 Aug 2026) and
+  Annex I / regulated-product systems from **2 Aug 2028** (was 2 Aug 2027).
+  Affects the "Applies from" headline in the risk report, the per-row dates in
+  the obligations & conformity tracker, the portfolio due-date sort, the
+  landing-page countdown and the timeline table. Art. 50 transparency, the
+  penalty provisions and Art. 4 supervision keep their 2 Aug 2026 date; the
+  timeline also records the 2 Dec 2026 grace period for machine-readable
+  marking of pre-existing generative systems and the 19 May 2026 draft Art.
+  6(5) guidelines.
+
+### Added
+- **Knowledge-base freshness stamp.** `eu_ai_act.py` now carries
+  `KNOWLEDGE_VERSION`, `LAST_REVIEWED` and an `AMENDMENTS` list (name, effect,
+  source URL). Every report header states which state of the law it reflects;
+  `/api/timeline` exposes the stamp and the landing page shows it under the
+  countdown. Tests pin the amended dates so a stale timeline fails CI.
+
 ### Changed
 - The GitHub Action installs from PyPI now that the package is published: a new
   `version` input pins the PyPI release (default: latest); `ref` still installs
   from a git ref when set.
+- Example gallery (`docs/examples/`) regenerated with the amended dates.
 
 ## [0.8.0] - 2026-08-26
 

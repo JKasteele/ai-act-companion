@@ -85,7 +85,10 @@ def timeline():
     """EU AI Act application milestones (ISO dates) for the UI countdown.
     Static facts from the knowledge base — the frontend computes days remaining."""
     return {"milestones": [{"date": d, "label": label, "basis": basis}
-                           for d, label, basis in eu.MILESTONES]}
+                           for d, label, basis in eu.MILESTONES],
+            "knowledge_version": eu.KNOWLEDGE_VERSION,
+            "last_reviewed": eu.LAST_REVIEWED,
+            "amendments": [{"name": n, "url": u} for n, _w, u in eu.AMENDMENTS]}
 
 
 # --- AI layer (phase 4) ----------------------------------------------------
