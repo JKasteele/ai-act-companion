@@ -139,4 +139,7 @@ def get_provider():
     if name == "replay":
         from .replay import ReplayProvider
         return ReplayProvider()
+    if name == "anthropic":
+        from .anthropic_provider import AnthropicProvider
+        return AnthropicProvider()
     return None  # 'none' or unknown -> AI layer off

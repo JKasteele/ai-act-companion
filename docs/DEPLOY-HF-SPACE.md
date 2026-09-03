@@ -19,6 +19,24 @@ repo's existing `Dockerfile` — no code changes per deploy.
 | `AIACT_DATA_DIR` | `/tmp/data` | Ephemeral storage; reset on rebuild/restart. |
 | `PORT` | `7860` | HF Spaces injects this; the Dockerfile honours `$PORT`. |
 
+### Optional: live AI drafts (`LLM_PROVIDER=anthropic`)
+
+Instead of `replay`, set `LLM_PROVIDER=anthropic` to let the demo call the
+real Claude API for prefill/narrative drafts, capped by a small spend guard
+(see `README.md` → *AI layer (optional)*). This needs one **secret** and,
+optionally, three **variables**:
+
+| Name | Type | Value | Why |
+|---|---|---|---|
+| `ANTHROPIC_API_KEY` | **secret** | your API key | Never set this as a plain variable — Space *variables* are visible to anyone who can view the Space; *secrets* are not. Also set a spend limit on this key in the Anthropic Console as the hard guarantee. |
+| `AI_BUDGET_USD` | variable | `5.00` (default) | Lifetime USD spend cap; the app degrades to `replay` once it's hit. |
+| `AI_DAILY_CALLS` | variable | `40` (default) | Daily call cap, independent of the budget. |
+| `AI_CALLS_PER_IP_DAY` | variable | `8` (default) | Per-visitor daily call cap. |
+
+`ANTHROPIC_MODEL` (default `claude-sonnet-5`) can also be set as a variable
+to change the model. All four cap/model variables are optional — omit them to
+keep the defaults above.
+
 Locally, you can preview the exact demo experience with:
 
 ```bash

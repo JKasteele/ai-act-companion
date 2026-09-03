@@ -108,8 +108,9 @@ async function loadConfig() {
     el("strong", {}, "Public sandbox. "),
     "Synthetic / example data only — do not enter real or personal data. " +
     "Assessments are not persisted and are visible to other visitors during " +
-    "the demo. The AI assist runs in replay mode (pre-recorded drafts, no live " +
-    "model); the classification is the real deterministic engine.");
+    "the demo. The AI assist may run live (Claude, capped budget) or in replay " +
+    "mode (pre-recorded drafts) — the label on the AI panel says which; the " +
+    "classification is always the real deterministic engine.");
   main.prepend(banner);
   return cfg;
 }
@@ -175,8 +176,20 @@ async function loadAiStatus() {
     label = `Ollama · ${AI_STATUS.model}` + (AI_STATUS.available ? "" : " (unreachable)");
   } else if (AI_STATUS.provider === "manual") {
     dot = "ok"; label = "Manual — paste into your own LLM session";
+  } else if (AI_STATUS.fallback_from === "anthropic" && AI_STATUS.provider === "replay") {
+    dot = "replay";
+    label = "Sandbox replay — the live-AI budget for this demo is used up (drafts are pre-recorded)";
   } else if (AI_STATUS.provider === "replay") {
     dot = "replay"; label = "Sandbox replay — drafts are pre-recorded (no live model)";
+  } else if (AI_STATUS.provider === "anthropic") {
+    if (AI_STATUS.available) {
+      const b = AI_STATUS.budget || {};
+      dot = "ok";
+      label = `Live AI · ${AI_STATUS.model} · budget left $${(b.remaining_usd ?? 0).toFixed(2)} · ` +
+        `${b.calls_today ?? 0}/${b.daily_cap ?? 0} calls today`;
+    } else {
+      dot = "warn"; label = "Anthropic provider configured but no API key";
+    }
   }
   const provEl = $("#ai-provider");
   provEl.innerHTML = "";
@@ -345,8 +358,9 @@ async function aiParse() {
 function applyDraft(data) {
   fillFields(data.answers || {});
   const n = Object.keys(data.answers || {}).length;
+  const prefix = data.fallback_from ? "Live-AI budget reached — this draft was replayed. " : "";
   showAiNotice(
-    `<strong>${escapeHtml(data.hitl_notice || "AI draft — review every field.")}</strong> ` +
+    `<strong>${escapeHtml(prefix + (data.hitl_notice || "AI draft — review every field."))}</strong> ` +
     `${n} field(s) pre-filled.`,
     data.assumptions || [], data.warnings || []);
   $("#form-intro").scrollIntoView({ behavior: "smooth", block: "start" });

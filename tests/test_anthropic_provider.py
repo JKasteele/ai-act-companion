@@ -1,0 +1,237 @@
+"""Tests for the hosted Anthropic provider and its spend guard (app/llm/budget.py,
+app/llm/anthropic_provider.py, and the provider_for() fallback logic in service.py).
+
+No network: `anthropic.Anthropic` is monkeypatched with a fake client that records
+the kwargs passed to `messages.create` and returns a canned response object shaped
+like the real SDK's (`.stop_reason`, `.content`, `.usage`).
+"""
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from app.llm import budget, service  # noqa: E402
+from app.llm.config import settings  # noqa: E402
+
+
+# --- fakes -------------------------------------------------------------------
+class FakeUsage:
+    def __init__(self, input_tokens=0, output_tokens=0,
+                 cache_read_input_tokens=0, cache_creation_input_tokens=0):
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
+        self.cache_read_input_tokens = cache_read_input_tokens
+        self.cache_creation_input_tokens = cache_creation_input_tokens
+
+
+class FakeTextBlock:
+    def __init__(self, text):
+        self.type = "text"
+        self.text = text
+
+
+class FakeResponse:
+    def __init__(self, text="OK", stop_reason="end_turn", usage=None):
+        self.stop_reason = stop_reason
+        self.content = [FakeTextBlock(text)] if text is not None else []
+        self.usage = usage or FakeUsage()
+
+
+class FakeMessages:
+    def __init__(self, response_factory):
+        self.response_factory = response_factory
+        self.calls = []
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        return self.response_factory(kwargs)
+
+
+class FakeClient:
+    def __init__(self, response_factory):
+        self.messages = FakeMessages(response_factory)
+
+
+def install_fake_anthropic(monkeypatch, response_factory):
+    """Patch anthropic.Anthropic so AnthropicProvider.generate() never hits the
+    network. Returns a dict that will hold the constructed fake client under
+    "client" once generate() has run (the provider builds the client lazily)."""
+    import anthropic
+    holder = {}
+
+    def _make_client(*args, **kwargs):
+        client = FakeClient(response_factory)
+        holder["client"] = client
+        return client
+
+    monkeypatch.setattr(anthropic, "Anthropic", _make_client)
+    return holder
+
+
+def _canned(answers=None, assumptions=None):
+    return json.dumps({"answers": answers or {}, "assumptions": assumptions or []})
+
+
+# --- isolation -----------------------------------------------------------
+@pytest.fixture(autouse=True)
+def _isolated_budget(tmp_path, monkeypatch):
+    """Every test in this file gets its own spend file and a clean per-IP
+    counter, so nothing here can touch (or race with) the real data/ dir."""
+    monkeypatch.setenv("AIACT_DATA_DIR", str(tmp_path))
+    budget.reset_for_tests()
+    yield
+    budget.reset_for_tests()
+
+
+@pytest.fixture
+def with_key(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-fake-not-real")
+
+
+@pytest.fixture
+def as_anthropic(monkeypatch):
+    monkeypatch.setattr(settings, "provider", "anthropic")
+
+
+# --- (a) request shape + prefill happy path ---------------------------------
+def test_prefill_via_anthropic_uses_expected_request_shape(monkeypatch, with_key, as_anthropic):
+    canned = _canned({"eu_market": True, "hr_usecases": ["employment"]}, ["assumed EU deployment"])
+    holder = install_fake_anthropic(
+        monkeypatch,
+        lambda kwargs: FakeResponse(text=canned, usage=FakeUsage(input_tokens=100, output_tokens=50)),
+    )
+
+    out = service.prefill_from_text("A CV screening model for hiring.")
+
+    assert out["mode"] == "auto"
+    assert out["provider"] == "anthropic"
+    assert out["answers"]["hr_usecases"] == ["employment"]
+    assert out["assumptions"] == ["assumed EU deployment"]
+
+    call = holder["client"].messages.calls[0]
+    assert call["model"] == "claude-sonnet-5"
+    assert call["output_config"] == {"effort": "low"}
+    system = call["system"]
+    assert len(system) == 2
+    assert "cache_control" in system[1]
+    assert system[1]["cache_control"] == {"type": "ephemeral"}
+    assert system[1]["text"].startswith("FIELDS")
+    assert "cache_control" not in system[0]
+    user_msg = call["messages"][0]["content"]
+    assert user_msg.startswith("DESCRIPTION OF THE AI SYSTEM")
+
+
+# --- (b) budget accounting ---------------------------------------------------
+def test_estimate_cost_matches_the_documented_rate():
+    assert budget.estimate_cost({"input_tokens": 1_000_000}, "claude-sonnet-5") == 2.0
+
+
+def test_record_grows_spent_and_shrinks_remaining():
+    st0 = budget.state()
+    budget.record(FakeUsage(input_tokens=100_000, output_tokens=100_000), "claude-sonnet-5")
+    st1 = budget.state()
+    assert st1["spent_usd"] > st0["spent_usd"]
+    assert st1["remaining_usd"] < st0["remaining_usd"]
+
+
+# --- (c) lifetime budget exhaustion -----------------------------------------
+def test_prefill_falls_back_when_budget_exhausted(monkeypatch, with_key, as_anthropic):
+    monkeypatch.setenv("AI_BUDGET_USD", "0.001")
+    install_fake_anthropic(
+        monkeypatch,
+        lambda kwargs: FakeResponse(
+            text=_canned(), usage=FakeUsage(input_tokens=10_000, output_tokens=10_000)),
+    )
+
+    out1 = service.prefill_from_text("desc one")
+    assert out1["provider"] == "anthropic"
+
+    out2 = service.prefill_from_text("desc two")
+    assert out2["provider"] == "replay"
+    assert out2["fallback_from"] == "anthropic"
+    assert out2["fallback_reason"] == "budget"
+
+    st = service.status()
+    assert st["provider"] == "replay"
+    assert st["fallback_from"] == "anthropic"
+    assert st["fallback_reason"] == "budget"
+    assert "budget" in st
+
+
+# --- (d) daily call cap ------------------------------------------------------
+def test_prefill_falls_back_when_daily_cap_hit(monkeypatch, with_key, as_anthropic):
+    monkeypatch.setenv("AI_DAILY_CALLS", "1")
+    install_fake_anthropic(
+        monkeypatch,
+        lambda kwargs: FakeResponse(text=_canned(), usage=FakeUsage(input_tokens=1, output_tokens=1)),
+    )
+
+    out1 = service.prefill_from_text("d1")
+    assert out1["provider"] == "anthropic"
+
+    out2 = service.prefill_from_text("d2")
+    assert out2["provider"] == "replay"
+    assert out2["fallback_reason"] == "daily_cap"
+
+
+# --- (e) per-IP cap -----------------------------------------------------------
+def test_prefill_per_ip_cap_other_ip_unaffected(monkeypatch, with_key, as_anthropic):
+    monkeypatch.setenv("AI_CALLS_PER_IP_DAY", "1")
+    install_fake_anthropic(
+        monkeypatch,
+        lambda kwargs: FakeResponse(text=_canned(), usage=FakeUsage(input_tokens=1, output_tokens=1)),
+    )
+
+    out1 = service.prefill_from_text("d1", ip="1.2.3.4")
+    assert out1["provider"] == "anthropic"
+
+    out2 = service.prefill_from_text("d2", ip="1.2.3.4")
+    assert out2["provider"] == "replay"
+    assert out2["fallback_reason"] == "per_ip_cap"
+
+    out3 = service.prefill_from_text("d3", ip="5.6.7.8")
+    assert out3["provider"] == "anthropic"
+
+
+# --- (f) no API key -----------------------------------------------------------
+def test_no_api_key_reports_unavailable_and_falls_back(monkeypatch, as_anthropic):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    st = service.status()
+    assert st["provider"] == "replay"
+    assert st["fallback_from"] == "anthropic"
+    assert st["fallback_reason"] == "unavailable"
+    assert "budget" in st
+
+    out = service.prefill_from_text("desc")
+    assert out["provider"] == "replay"
+    assert out["fallback_from"] == "anthropic"
+    assert out["fallback_reason"] == "unavailable"
+
+
+# --- (g) refusal --------------------------------------------------------------
+def test_refusal_returns_draft_with_warning_not_raise(monkeypatch, with_key, as_anthropic):
+    install_fake_anthropic(
+        monkeypatch,
+        lambda kwargs: FakeResponse(
+            text=None, stop_reason="refusal", usage=FakeUsage(input_tokens=5, output_tokens=0)),
+    )
+
+    out = service.prefill_from_text("desc")
+    assert out["provider"] == "anthropic"
+    assert out["answers"] == {}
+    assert out["warnings"]
+
+
+# --- (h) persistence -----------------------------------------------------------
+def test_spend_persists_on_disk_across_state_reads(tmp_path):
+    budget.record(FakeUsage(input_tokens=100_000, output_tokens=100_000), "claude-sonnet-5")
+    st1 = budget.state()
+    assert (tmp_path / "ai_spend.json").exists()
+    st2 = budget.state()  # a fresh read; state() always reloads from disk
+    assert st2["spent_usd"] == st1["spent_usd"] > 0

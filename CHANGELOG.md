@@ -7,6 +7,14 @@ All notable changes are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- Hosted Anthropic provider (Claude Sonnet 5) with a spend guard: a lifetime
+  USD budget, a daily call cap and a per-IP daily cap (`AI_BUDGET_USD`,
+  `AI_DAILY_CALLS`, `AI_CALLS_PER_IP_DAY`), all persisted next to the
+  assessments. When any cap is hit — or no `ANTHROPIC_API_KEY` is set — the
+  service degrades to the existing `replay` provider and labels the draft as
+  such, so the public demo can offer real AI-assist drafts without risking an
+  open-ended bill. Uses prompt caching (`cache_control: ephemeral`) on the
+  stable FIELDS digest of the prefill prompt to cut repeat-request cost.
 - **Sandbox showcase.** The public demo now shows the AI workflow instead of a
   bare form: a *replay* LLM provider (`LLM_PROVIDER=replay`, auto-selected in
   `DEMO_MODE`) replays drafts from the shipped synthetic examples — labelled as
