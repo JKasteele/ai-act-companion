@@ -235,3 +235,51 @@ def test_spend_persists_on_disk_across_state_reads(tmp_path):
     assert (tmp_path / "ai_spend.json").exists()
     st2 = budget.state()  # a fresh read; state() always reloads from disk
     assert st2["spent_usd"] == st1["spent_usd"] > 0
+
+
+def test_workspace_id_is_sent_as_default_header(monkeypatch, tmp_path):
+    """Identity-linked keys need the anthropic-workspace-id header on every call."""
+    import anthropic as sdk
+
+    from app.llm import budget
+    from app.llm.anthropic_provider import AnthropicProvider
+    from app.llm.config import settings
+
+    monkeypatch.setenv("AIACT_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    budget.reset_for_tests()
+    monkeypatch.setattr(settings, "anthropic_workspace_id", "wrkspc_test123")
+    seen = {}
+
+    class _Usage:
+        input_tokens = 10
+        output_tokens = 5
+        cache_read_input_tokens = 0
+        cache_creation_input_tokens = 0
+
+    class _Block:
+        type = "text"
+        text = "{\"answers\": {}, \"assumptions\": []}"
+
+    class _Resp:
+        stop_reason = "end_turn"
+        content = [_Block()]
+        usage = _Usage()
+
+    class _Messages:
+        def create(self, **kw):
+            return _Resp()
+
+    class _Client:
+        def __init__(self, **kw):
+            seen.update(kw)
+            self.messages = _Messages()
+
+    monkeypatch.setattr(sdk, "Anthropic", _Client)
+    prov = AnthropicProvider()
+    assert prov.status()["workspace_id"] == "wrkspc_test123"
+    prov.generate("sys", "user text", as_json=True)
+    assert seen["default_headers"] == {"anthropic-workspace-id": "wrkspc_test123"}
+    monkeypatch.setattr(settings, "anthropic_workspace_id", "")
+    AnthropicProvider().generate("sys", "user text", as_json=True)
+    assert seen["default_headers"] is None

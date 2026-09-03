@@ -29,6 +29,7 @@ class AnthropicProvider(LLMProvider):
 
     def __init__(self):
         self.model = settings.anthropic_model
+        self.workspace_id = settings.anthropic_workspace_id
 
     def status(self):
         """No network call here - status is a local availability check only."""
@@ -43,6 +44,8 @@ class AnthropicProvider(LLMProvider):
             info["error"] = "ANTHROPIC_API_KEY is not set."
             return info
         info["available"] = True
+        if self.workspace_id:
+            info["workspace_id"] = self.workspace_id
         return info
 
     def generate(self, system, user, as_json=True):
@@ -50,7 +53,10 @@ class AnthropicProvider(LLMProvider):
 
         # Lazy client construction: importing this module (or building the
         # provider for a status() check) must never require a key.
-        client = anthropic.Anthropic()
+        # Identity-linked keys require the workspace id on every request.
+        headers = ({"anthropic-workspace-id": self.workspace_id}
+                   if self.workspace_id else None)
+        client = anthropic.Anthropic(default_headers=headers)
 
         if _FIELDS_MARKER in user:
             idx = user.index(_FIELDS_MARKER)
@@ -74,6 +80,12 @@ class AnthropicProvider(LLMProvider):
             )
         except anthropic.AuthenticationError as e:
             raise RuntimeError("Anthropic API key rejected") from e
+        except anthropic.BadRequestError as e:
+            if "anthropic-workspace-id" in str(e):
+                raise RuntimeError(
+                    "This API key is identity-linked: set ANTHROPIC_WORKSPACE_ID to the "
+                    "id of the workspace it belongs to (wrkspc_...)") from e
+            raise
 
         budget.record(response.usage, self.model)
 
