@@ -80,9 +80,9 @@ def _add_months(d, months):
 def completeness(answers, questionnaire=None):
     """Share of answered questions per section and an overall flag.
 
-    A question counts as answered when it has a non-empty value; booleans count
-    as answered only when present in the answers (the form always submits them,
-    the CLI/MCP may not)."""
+    A question counts as answered when it has a non-empty value; boolean
+    questions are left out of the count (see below), so the share reflects the
+    text, select, multiselect and table fields that carry documentation."""
     from .questionnaire import QUESTIONNAIRE  # local import: avoid cycles at import time
     q = questionnaire or QUESTIONNAIRE
     answers = answers or {}

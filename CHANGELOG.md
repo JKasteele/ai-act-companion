@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-03
+
 ### Added
 - **Governance register** (report 21, `governance`) and intake section 13
   (`gov_*`): policy owner, approval body, status, approval and review dates,
