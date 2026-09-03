@@ -348,6 +348,7 @@ Full configuration (copy `.env.example` to `.env`):
 | `OLLAMA_MODEL` | `qwen3:32b` | Local model name; use `qwen3:1.7b` for low VRAM. |
 | `LLM_TIMEOUT` | `180` | Seconds before a slow local model is abandoned. |
 | `ANTHROPIC_API_KEY` | *(unset)* | API key for the `anthropic` provider. Read by the SDK directly; never logged. |
+| `ANTHROPIC_WORKSPACE_ID` | _(empty)_ | Required for **identity-linked** API keys: the id (`wrkspc_…`) of the workspace the key belongs to, sent as the `anthropic-workspace-id` header. Classic keys leave it empty. |
 | `ANTHROPIC_MODEL` | `claude-sonnet-5` | Model id for the `anthropic` provider. |
 | `AI_BUDGET_USD` | `5.00` | Lifetime USD spend cap for the `anthropic` provider (estimated from reported token usage). |
 | `AI_DAILY_CALLS` | `40` | Daily call cap for the `anthropic` provider, independent of the budget. |
