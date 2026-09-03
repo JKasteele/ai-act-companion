@@ -17,6 +17,7 @@ from .knowledge import data_security as ds
 from .knowledge import eu_ai_act as eu
 from .knowledge import iso_42001 as iso
 from .knowledge import monitoring as mon
+from .knowledge import sector_frameworks as sfx
 from .knowledge import security_frameworks as sfw
 from .modelcard import generate_model_card
 from .redteam import generate_test_plan
@@ -237,6 +238,35 @@ def render_risk_assessment(assessment):
     )
     md.append(_iso_annex_a_table())
     md.append(f"\n_{iso.PROVENANCE}_\n")
+
+    md.append("\n### 5.3 ALTAI (EU HLEG Assessment List for Trustworthy AI)\n")
+    md.append(
+        "The seven ALTAI requirements, each with its most-relevant EU AI Act and "
+        "ISO/IEC 42001 anchors and the intake fields that already carry evidence "
+        "for it. Use the *missing* column to plan the ALTAI self-assessment.\n\n"
+        "| # | Requirement | Asks | EU AI Act | ISO/IEC 42001 | Evidence in intake | Missing |\n"
+        "|---|---|---|---|---|---|---|\n"
+    )
+    for rid, title, asks, act, iso_ref, answered, missing in sfx.altai_evidence(answers):
+        md.append(f"| {rid} | {title} | {asks} | {act} | {iso_ref} | "
+                  f"{', '.join(f'`{a}`' for a in answered) or '-'} | "
+                  f"{', '.join(f'`{m}`' for m in missing) or '-'} |\n")
+
+    if sfx.is_financial_entity(answers):
+        md.append("\n### 5.4 Insurance & financial sector (EU/NL)\n")
+        md.append("EIOPA AI governance principles (2021):\n\n"
+                  "| Principle | What it asks | EU AI Act anchors |\n|---|---|---|\n")
+        for name, gist, act in sfx.EIOPA_PRINCIPLES:
+            md.append(f"| {name} | {gist} | {act} |\n")
+        md.append("\nDNB SAFEST principles (2019):\n\n"
+                  "| | Principle | What it asks | EU AI Act anchors |\n|---|---|---|---|\n")
+        for letter, name, gist, act in sfx.DNB_SAFEST:
+            md.append(f"| {letter} | {name} | {gist} | {act} |\n")
+        md.append("\nWhere the AI Act lets a financial institution reuse its existing "
+                  "governance:\n\n| Ref | Allows |\n|---|---|\n")
+        for ref, what in sfx.FINANCIAL_ENTITY_HOOKS:
+            md.append(f"| {_ref_link(ref)} | {what} |\n")
+    md.append(f"\n_{sfx.PROVENANCE}_\n")
 
     md.append("\n## 6. Risk register (to be completed)\n")
     md.append(
@@ -783,6 +813,24 @@ def render_compliance_tracker(assessment):
             p = eu.PENALTIES[k]
             md.append(f"| {p['what']} | {_ref_link(p['ref'])} | {p['max']} |\n")
         md.append(f"\n> {eu.PENALTIES_SME_NOTE}\n")
+
+    reasons = sfx.dora_reasons(answers)
+    if reasons:
+        md.append("\n## ICT third-party risk (DORA Art. 28–30)\n")
+        md.append(
+            "The organisation is a financial entity under DORA (Regulation (EU) "
+            "2022/2554) and this system " + "; ".join(_safe(r) for r in reasons) + ". "
+            "The AI supplier is therefore an ICT third-party service provider. "
+            f"{_ref_link('Art. 9')}(10) lets the AI Act risk-management steps be combined "
+            "with the DORA ICT risk-management framework — track both here.\n\n"
+            "| Ref | Check | Why it matters for AI | Status | Evidence | Owner |\n"
+            "|---|---|---|---|---|---|\n"
+        )
+        for ref, check, why in sfx.DORA_VENDOR_CHECKLIST:
+            md.append(f"| {ref} | {check} | {why} | Not started | | |\n")
+        md.append("\nFinancial-institution carve-ins in the AI Act itself:\n\n")
+        for ref, what in sfx.FINANCIAL_ENTITY_HOOKS:
+            md.append(f"- **{_ref_link(ref)}** — {what}\n")
 
     md.append("\n## Sign-off\n")
     md.append(

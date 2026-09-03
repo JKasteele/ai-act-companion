@@ -42,7 +42,7 @@ GALLERY = [
     ("health_insurance_pricing.json",
      "Health-insurance pricing (Annex III-5(c)) — the data-governance layer: "
      "dataset inventory, owners/stewards, lineage, quality dimensions, derived gaps.",
-     ["risk", "datagov", "fria", "dpia"]),
+     ["risk", "datagov", "fria", "dpia", "compliance"]),
 ]
 
 TYPE_LABEL = {

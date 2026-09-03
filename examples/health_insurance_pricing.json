@@ -3,6 +3,7 @@
   "sys_name": "PolisPrijs supplementary health pricing",
   "sys_version": "3.1",
   "sys_owner": "Example Health Insurer N.V. — Product & Pricing team",
+  "org_sector": "insurance",
   "sys_description": "A gradient-boosting model that produces a risk score and a premium band for applicants of a supplementary health insurance package, using application data, historical claims and public area statistics.",
   "intended_purpose": "Support underwriters in accepting applicants and setting the premium band for the supplementary package. The basic package is out of scope.",
   "provider_role": "deployer",

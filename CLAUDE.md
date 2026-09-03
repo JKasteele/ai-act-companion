@@ -60,6 +60,11 @@ those ids. Change a field id and you must update the rules and reports that key
 off it.
 
 The engine is pure functions, no I/O, fully testable:
+- Knowledge lives in `app/knowledge/`: `eu_ai_act.py` (articles, timeline,
+  `KNOWLEDGE_VERSION`/`LAST_REVIEWED`/`AMENDMENTS`), `data_governance.py`
+  (DAMA-style vocabulary, dataset rows, quality dimensions, gap rules),
+  `sector_frameworks.py` (ALTAI, EIOPA, DNB SAFEST, DORA hook), plus the
+  security/ISO/NIST modules. Every crosswalk ships a PROVENANCE line.
 - `classifier.classify(answers) -> dict` — EU AI Act decision. Highest severity
   wins: Art. 5 (prohibited) → Art. 6 (high) → Art. 50 (limited) → minimal; GPAI
   (Chapter V) tracked independently. Does an Art. 2 applicability check first.

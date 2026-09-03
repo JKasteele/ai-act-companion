@@ -7,6 +7,16 @@ All notable changes are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Sector crosswalks and the DORA hook.** New knowledge module
+  `app/knowledge/sector_frameworks.py`: ALTAI (EU HLEG, seven requirements)
+  rendered in every risk report with EU AI Act / ISO 42001 anchors and the
+  intake fields that evidence each requirement (answered vs. missing); for
+  financial entities (`org_sector` = insurance / banking / other financial)
+  the EIOPA AI governance principles (2021), DNB SAFEST (2019) and the AI
+  Act's financial-institution carve-ins (Art. 9(10), 17(4), 18(3), 26(5)–(6),
+  74(6)). The compliance tracker gains an "ICT third-party risk (DORA Art.
+  28–30)" checklist when a financial entity relies on third-party models or
+  vendor-origin datasets. New intake field `org_sector` (section 1).
 - **Data-governance layer.** AI governance is built on data governance, so the
   intake gains section 11 (`dg_*`): data owner and data steward (distinct from the
   system owner), catalogue registration, a repeatable **dataset inventory**

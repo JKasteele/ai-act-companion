@@ -45,3 +45,4 @@ Health-insurance pricing (Annex III-5(c)) — the data-governance layer: dataset
 - [Data governance & quality (Art. 10)](health-insurance-pricing-datagov.md)
 - [FRIA (Art. 27)](health-insurance-pricing-fria.md)
 - [DPIA skeleton](health-insurance-pricing-dpia.md)
+- [Compliance tracker](health-insurance-pricing-compliance.md)
