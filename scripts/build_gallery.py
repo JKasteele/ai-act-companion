@@ -33,8 +33,9 @@ GALLERY = [
      "the governance register (approval, Art. 4 literacy record, AI-register entry).",
      ["risk", "fria", "compliance", "techdoc", "datagov", "governance"]),
     ("foundation_model.json",
-     "A general-purpose AI model (GPAI, Chapter V) — the data-security lens.",
-     ["risk", "datasec", "modelcard"]),
+     "A general-purpose AI model (GPAI, Chapter V) — the data-security lens and "
+     "training-data governance (provenance, TDM opt-out, Art. 53 training-content summary).",
+     ["risk", "datasec", "modelcard", "gpai", "datagov"]),
     ("support_chatbot.json",
      "Public RAG helpbot — the offense↔defense loop (red-team test ↔ control), and "
      "what 'not ready' looks like in the forensic-readiness and governance views.",
@@ -42,6 +43,17 @@ GALLERY = [
     ("social_scoring.json",
      "A prohibited practice (Art. 5) — what a banned system looks like.",
      ["risk"]),
+    ("health_insurer_claims_fraud.json",
+     "Claims anomaly & fraud scoring at a health insurer — *minimal* risk under the AI "
+     "Act, yet profiling of insured persons: the 'not high-risk but heavily governed' "
+     "case (GDPR Art. 22, EIOPA Opinion via DNB, ZN separation of basic/supplementary "
+     "data, DORA via a vendor dataset).",
+     ["risk", "datagov", "governance", "monitoring", "dpia"]),
+    ("health_insurer_service_assistant.json",
+     "GenAI customer-service assistant on a hosted model with claim-status tools — "
+     "*limited* risk (Art. 50), but health data in prompts, an external model provider "
+     "(DORA), agentic tool calls and a governance status that is still 'in review'.",
+     ["risk", "security", "controls", "redteam", "forensics", "compliance", "governance"]),
     ("health_insurance_pricing.json",
      "Health-insurance pricing (Annex III-5(c)) — the data-governance layer: "
      "dataset inventory, owners/stewards, lineage, quality dimensions, derived gaps.",
@@ -57,6 +69,7 @@ TYPE_LABEL = {
     "datagov": "Data governance & quality (Art. 10)", "dpia": "DPIA skeleton",
     "forensics": "Forensic readiness & evidence plan", "incident": "Serious incident (Art. 73)",
     "governance": "Governance register", "monitoring": "Post-market monitoring plan",
+    "gpai": "GPAI obligations (Art. 53–55)",
 }
 
 

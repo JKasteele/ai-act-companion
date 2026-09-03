@@ -31,5 +31,85 @@
   "arch_rag_modifiable": false,
   "arch_identity_model": "per-user-delegated",
   "arch_logging": true,
-  "arch_rate_limits": true
+  "arch_rate_limits": true,
+  "org_sector": "general",
+  "dg_data_owner": "Head of Data (data domain: training corpora)",
+  "dg_data_steward": "Corpus steward",
+  "dg_catalog_registered": true,
+  "dg_datasets": [
+    {
+      "name": "Web crawl 2024-Q4 (filtered)",
+      "origin": "external_public",
+      "owner": "Head of Data",
+      "steward": "Corpus steward",
+      "classification": "personal",
+      "purpose": "Pre-training; opt-out (robots/TDM reservation) honoured",
+      "retention": "Snapshot kept for the model's lifetime",
+      "legal_basis": "legitimate_interest"
+    },
+    {
+      "name": "Licensed text corpora",
+      "origin": "external_vendor",
+      "owner": "Head of Data",
+      "steward": "Corpus steward",
+      "classification": "confidential",
+      "purpose": "Pre-training",
+      "retention": "Licence term",
+      "legal_basis": "na"
+    },
+    {
+      "name": "Instruction-tuning set (synthetic + annotated)",
+      "origin": "synthetic",
+      "owner": "Head of Data",
+      "steward": "Corpus steward",
+      "classification": "internal",
+      "purpose": "Fine-tuning",
+      "retention": "Model lifetime",
+      "legal_basis": "na"
+    }
+  ],
+  "dg_lineage": "Crawl + licensed corpora -> dedupe, filter (PII, toxicity), TDM opt-out check (steward) -> pretrain mix v3 (hash recorded) -> OpenScribe-7B base -> instruction tuning -> OpenScribe-7B-instruct -> hosted API",
+  "dg_q_accuracy": "na",
+  "dg_q_completeness": "assessed",
+  "dg_q_consistency": "assessed",
+  "dg_q_timeliness": "assessed",
+  "dg_q_validity": "measured",
+  "dg_q_uniqueness": "measured",
+  "dg_q_representativeness": "assessed",
+  "dg_q_evidence": "Near-duplicate rate 1.8% after dedupe (measured); language and domain mix documented in the training-content summary (Art. 53(1)(d)).",
+  "fr_log_scope": [
+    "inference_io",
+    "model_version",
+    "parameters_seed",
+    "training_snapshot",
+    "eval_reports",
+    "config_changes",
+    "incident_file"
+  ],
+  "fr_retention_months": "7_24",
+  "fr_retention_basis": "ai_act_floor",
+  "fr_integrity": "hashing",
+  "fr_time_sync": true,
+  "fr_model_pinned": true,
+  "fr_prompt_versioned": false,
+  "fr_rag_snapshot": false,
+  "fr_override_logged": false,
+  "fr_log_pii": "pseudonymised",
+  "fr_vendor_log_access": "own_logs_sufficient",
+  "fr_legal_hold": true,
+  "fr_evidence_owner": "Model release manager",
+  "fr_drill": false,
+  "gov_policy_owner": "Head of Responsible AI",
+  "gov_approval_body": "Model Release Board",
+  "gov_status": "approved",
+  "gov_approved_on": "2026-07-01",
+  "gov_literacy": [
+    {
+      "role": "API customers (downstream providers)",
+      "training": "Model card and acceptable-use briefing at onboarding",
+      "date": "2026-07-01"
+    }
+  ],
+  "gov_register_contact": "responsible-ai@example-ai-labs.example (synthetic)",
+  "gov_public_register": false
 }

@@ -154,7 +154,19 @@ uvicorn app.main:app --reload
 ```
 
 Click **"Load example"** for a synthetic high-risk example, or load one of the
-files in `examples/`.
+files in `examples/`:
+
+| Example | Tier | What it shows |
+|---|---|---|
+| `hiring_cv_screening` | High (Annex III-4) | The high-risk governance pack: FRIA, Annex IV, conformity tracker, approved governance record with Art. 4 literacy |
+| `health_insurance_pricing` | High (Annex III-5(c)) | Health-insurer pricing: the insurance path (FRIA for every deployer, Zvw note), data-governance inventory, EIOPA/DNB block, DORA checklist, forensic readiness |
+| `health_insurer_claims_fraud` | Minimal | Claims anomaly & fraud scoring: not Annex III, yet profiling — GDPR Art. 22, EIOPA Opinion, ZN data separation; the "minimal but heavily governed" case |
+| `health_insurer_service_assistant` | Limited (Art. 50) | GenAI service assistant with claim-status tools: health data in prompts, external model (DORA), agentic controls, governance still in review |
+| `grid_ops_agent` | High (Annex III-2) | Agentic critical-infrastructure system: Critical AI-security profile, tool-call trace, exception running under a board decision |
+| `support_chatbot` | Limited (Art. 50) | Public RAG helpbot: offense ↔ defense loop; what "not ready" looks like in the forensic and governance views |
+| `foundation_model` | Minimal + GPAI | General-purpose model provider: Chapter V duties, data-security lens, training-data provenance and TDM opt-out |
+| `social_scoring` | Prohibited | What an Art. 5 system looks like |
+| `spam_filter` | Minimal | The trivial case — a baseline for the tier logic |
 
 > **Install note.** Not yet on PyPI — install from source (editable, as above),
 > via [Docker](#docker), or use the
@@ -251,7 +263,7 @@ pytest                              # or: python tests/test_classifier.py
 ruff check .                        # lint
 ```
 
-The suite includes a **31-case golden-set accuracy evaluation**
+The suite includes a **33-case golden-set accuracy evaluation**
 (`tests/test_accuracy.py` against `examples/golden_set.json`, 100% — expected
 tiers labelled by independent regulatory reasoning) and an **adversarial
 red-team suite** (`tests/test_red_team.py`) that proves prompt-injection /
