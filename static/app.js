@@ -71,7 +71,7 @@ async function init() {
   await loadExamples();
   await loadHowto();
   const tourBtn = $("#btn-tour");
-  if (tourBtn) tourBtn.addEventListener("click", guidedTour);
+  if (tourBtn) tourBtn.addEventListener("click", startTour);
   $("#btn-back").addEventListener("click", showIntake);
   $("#btn-download").addEventListener("click", downloadMarkdown);
   $("#btn-print").addEventListener("click", () => window.print());
@@ -257,31 +257,215 @@ function renderTranscript(t) {
   });
 }
 
-async function guidedTour() {
+// --- guided tour: step-by-step, self-paced coach marks ----------------------
+//
+// A fixed panel (#tour-panel) walks a first-time visitor through the app one
+// step at a time. Each step only highlights an element and/or performs its
+// action when the visitor presses Next — there are no autoplay timers beyond
+// short waits for rendering (fillFields / fetch round-trips).
+const tourWait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function tourFieldTarget(id) {
+  // Resolve an input's enclosing .field wrapper (label + help text included)
+  // so the highlight reads naturally, falling back to the bare element.
+  return () => {
+    const n = document.getElementById(id);
+    if (!n) return null;
+    return n.closest(".field") || n;
+  };
+}
+
+const TOUR_STEPS = [
+  {
+    title: "Welcome",
+    body: "This is a rule-based EU AI Act companion: the risk tier and every citation come from a deterministic engine, never from a language model. An LLM only <em>drafts</em> free text for you to review. We'll walk through one synthetic health-insurer system, from intake to reports.",
+    target: ".howto-steps",
+  },
+  {
+    title: "Load an example",
+    body: "This loads a synthetic supplementary health-insurance pricing model into the intake form &mdash; a deployer running a model licensed from a vendor. All data below is fictional.",
+    target: "#example-select",
+    action: async () => {
+      const sel = $("#example-select");
+      if (!sel) return;
+      sel.value = "health_insurance_pricing";
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      await tourWait(600);
+    },
+  },
+  {
+    title: "Where the tier comes from",
+    body: "This system falls under Annex III-5, &ldquo;essential services&rdquo;, specifically sub-point 5(c): risk assessment and pricing in life or health insurance. Because it profiles applicants, the narrow Art. 6(3) derogation for non-profiling tasks does not apply, so it stays high-risk.",
+    target: tourFieldTarget("hr_usecases"),
+  },
+  {
+    title: "AI assist",
+    body: "Free text goes in, a draft questionnaire answer comes out &mdash; you review every field before anything is used. In this sandbox the panel either replays pre-recorded drafts or runs a capped live model; its label says which.",
+    target: "#ai-panel",
+    skip: () => { const p = $("#ai-panel"); return !p || p.classList.contains("hidden"); },
+  },
+  {
+    title: "Data governance (section 11)",
+    body: "Section 11 records the dataset inventory: origin, owner, steward, classification and lawful basis for every dataset feeding the model. AI governance is built on top of this data governance.",
+    target: "#dg_datasets",
+  },
+  {
+    title: "Forensic readiness (section 12)",
+    body: "Can you evidence afterwards what the model did, with which version and which data? This section covers log scope, retention, integrity and legal hold.",
+    target: tourFieldTarget("fr_log_scope"),
+  },
+  {
+    title: "Governance register (section 13)",
+    body: "Section 13 tracks who approved this system, the review cadence, any exceptions with an end date, and the Art. 4 AI-literacy record.",
+    target: "#gov_exceptions",
+  },
+  {
+    title: "Classify",
+    body: "The deterministic engine now classifies the system. Look for the High-risk badge, &ldquo;Applies from 2 Dec 2027&rdquo; (the Digital Omnibus delay), and the finding citing Annex III(5)(c) &mdash; with the note that a FRIA is mandatory for every deployer under 5(c).",
+    target: "#result-content",
+    action: async () => {
+      const already = CURRENT && CURRENT.answers &&
+        CURRENT.answers.sys_name === "PolisPrijs supplementary health pricing";
+      if (!already) await assess();
+      const content = $("#result-content");
+      const start = Date.now();
+      while (content && !content.children.length && Date.now() - start < 3000) {
+        await tourWait(100);
+      }
+      // showResult() smooth-scrolls to the top; let that finish before the
+      // tour scrolls the result block into view, or the two scrolls race.
+      await tourWait(1000);
+    },
+  },
+  {
+    title: "Reports",
+    body: "This is the forensic-readiness report: an evidence register, a readiness score and the parallel reporting clocks. Twenty other tabs cover the remaining reports, the language selector adds a Dutch summary, and the inventory below can export as CSV or an AI register.",
+    target: "#report-preview",
+    action: async () => { if (CURRENT) await selectReport("forensics"); },
+  },
+];
+
+const TOUR_STATE = { active: false, index: -1, prevTarget: null };
+
+function tourResolveTarget(step) {
+  if (!step || !step.target) return null;
+  try {
+    return typeof step.target === "function" ? step.target() : $(step.target);
+  } catch { return null; }
+}
+
+function tourEnsurePanel() {
+  let panel = $("#tour-panel");
+  if (panel) return panel;
+  const title = el("h3", { class: "tour-title", id: "tour-title" });
+  const body = el("div", { class: "tour-body", id: "tour-body" });
+  const count = el("span", { class: "tour-count", id: "tour-count" });
+  const backBtn = el("button", { type: "button", class: "secondary", id: "tour-back", onclick: tourBack }, "Back");
+  const nextBtn = el("button", { type: "button", class: "primary", id: "tour-next" }, "Next");
+  const closeBtn = el("button", {
+    type: "button", class: "tour-close", "aria-label": "Close tour", onclick: () => endTour(),
+  }, "×");
+  panel = el("div", {
+    class: "tour-panel", id: "tour-panel", role: "dialog",
+    "aria-live": "polite", "aria-label": "Guided tour", tabindex: "-1",
+  }, closeBtn, title, body, el("div", { class: "tour-actions" }, count, backBtn, nextBtn));
+  document.body.append(panel);
+  return panel;
+}
+
+function tourRenderPanel() {
+  const step = TOUR_STEPS[TOUR_STATE.index];
+  if (!step) return;
+  const panel = tourEnsurePanel();
+  $("#tour-title").innerHTML = step.title;
+  $("#tour-body").innerHTML = step.body;
+  $("#tour-count").textContent = `Step ${TOUR_STATE.index + 1} of ${TOUR_STEPS.length}`;
+  $("#tour-back").disabled = TOUR_STATE.index === 0;
+  const isLast = TOUR_STATE.index === TOUR_STEPS.length - 1;
+  const nextBtn = $("#tour-next");
+  nextBtn.textContent = isLast ? "Finish" : "Next";
+  nextBtn.onclick = isLast
+    ? () => endTour({ toastMsg: "Tour finished — try the AI assist or load another example." })
+    : tourNext;
+  panel.focus();
+}
+
+function tourHighlight(step) {
+  if (TOUR_STATE.prevTarget) TOUR_STATE.prevTarget.classList.remove("tour-highlight");
+  TOUR_STATE.prevTarget = null;
+  const target = tourResolveTarget(step);
+  if (!target) return;
+  target.classList.add("tour-highlight");
+  TOUR_STATE.prevTarget = target;
+  // Tall targets (a whole report, the result block) start at the top; small
+  // ones are centred. Re-scroll once more after render/other scroll effects
+  // (assess() and report loading move the page) so the target stays in view.
+  const block = target.getBoundingClientRect().height > window.innerHeight * 0.6
+    ? "start" : "center";
+  target.scrollIntoView({ behavior: "smooth", block });
+  // A smooth scroll started elsewhere (showResult() scrolls to the top) can
+  // swallow ours; check twice more and jump instantly if the target left view.
+  const ensure = () => {
+    if (!TOUR_STATE.active || TOUR_STATE.prevTarget !== target) return;
+    const r = target.getBoundingClientRect();
+    const inView = r.top >= 0 && r.top < window.innerHeight * 0.5;
+    if (!inView) target.scrollIntoView({ behavior: "auto", block });
+  };
+  setTimeout(ensure, 900);
+  setTimeout(ensure, 2200);
+}
+
+async function tourGo(index, { forward = true } = {}) {
+  if (index < 0) return;
+  if (index >= TOUR_STEPS.length) {
+    endTour({ toastMsg: "Tour finished — try the AI assist or load another example." });
+    return;
+  }
+  const step = TOUR_STEPS[index];
+  if (step.skip && step.skip()) {
+    tourGo(forward ? index + 1 : index - 1, { forward });
+    return;
+  }
+  TOUR_STATE.index = index;
+  if (forward && step.action) {
+    try { await step.action(); }
+    catch (e) { toast(`Step failed: ${e && e.message ? e.message : e}`); }
+  }
+  tourRenderPanel();
+  tourHighlight(step);
+}
+
+function tourNext() { tourGo(TOUR_STATE.index + 1, { forward: true }); }
+function tourBack() { tourGo(TOUR_STATE.index - 1, { forward: false }); }
+
+function tourKeyHandler(e) {
+  if (!TOUR_STATE.active) return;
+  if (e.key === "Escape") { e.preventDefault(); endTour(); return; }
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+  if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); tourNext(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); if (TOUR_STATE.index > 0) tourBack(); }
+}
+
+function startTour() {
   const btn = $("#btn-tour");
   if (btn) btn.disabled = true;
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  try {
-    toast("1/4 — Loading the health-insurer example into the intake…");
-    const sel = $("#example-select");
-    sel.value = "health_insurance_pricing";
-    sel.dispatchEvent(new Event("change", { bubbles: true }));
-    await wait(1400);
-    const dg = document.getElementById("dg_datasets");
-    if (dg) { dg.scrollIntoView({ behavior: "smooth", block: "center" }); }
-    toast("2/4 — Sections 11–13 carry the data-governance, evidence and governance record…");
-    await wait(2600);
-    toast("3/4 — The deterministic engine classifies it and cites Annex III(5)(c)…");
-    await assess();
-    await wait(1800);
-    toast("4/4 — Forensic readiness: can you evidence a decision afterwards?");
-    await selectReport("forensics");
-    await wait(600);
-    const h = [...document.querySelectorAll("#report-preview h2")].find((x) => /Evidence register/.test(x.textContent));
-    if (h) h.scrollIntoView({ behavior: "smooth", block: "start" });
-  } finally {
-    if (btn) btn.disabled = false;
-  }
+  TOUR_STATE.active = true;
+  TOUR_STATE.index = -1;
+  TOUR_STATE.prevTarget = null;
+  document.addEventListener("keydown", tourKeyHandler);
+  tourGo(0, { forward: true });
+}
+
+function endTour(opts = {}) {
+  TOUR_STATE.active = false;
+  document.removeEventListener("keydown", tourKeyHandler);
+  if (TOUR_STATE.prevTarget) TOUR_STATE.prevTarget.classList.remove("tour-highlight");
+  TOUR_STATE.prevTarget = null;
+  const panel = $("#tour-panel");
+  if (panel) panel.remove();
+  const btn = $("#btn-tour");
+  if (btn) btn.disabled = false;
+  if (opts.toastMsg) toast(opts.toastMsg);
 }
 
 function aiSpinner(on) {
