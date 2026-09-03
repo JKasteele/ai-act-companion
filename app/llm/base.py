@@ -136,4 +136,7 @@ def get_provider():
     if name == "manual":
         from .manual import ManualProvider
         return ManualProvider()
+    if name == "replay":
+        from .replay import ReplayProvider
+        return ReplayProvider()
     return None  # 'none' or unknown -> AI layer off

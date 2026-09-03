@@ -7,6 +7,16 @@ All notable changes are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- **Sandbox showcase.** The public demo now shows the AI workflow instead of a
+  bare form: a *replay* LLM provider (`LLM_PROVIDER=replay`, auto-selected in
+  `DEMO_MODE`) replays drafts from the shipped synthetic examples — labelled as
+  such, validated like model output, governance sections left for the human —
+  so free text → draft → review → deterministic classification is visible with
+  no model and no egress; a **How it works** strip (describe → engine decides →
+  you review → evidence) with live counters; a **guided tour** button (loads the
+  insurer example, classifies, opens the forensic-readiness report); and a
+  collapsible **MCP transcript** reconstructed from the engine's real output
+  (`scripts/build_demo_assets.py` → `static/demo/mcp_transcript.json`).
 - **Two more health-insurer examples** so the three insurer cases cover three
   tiers: `health_insurer_claims_fraud` (claims anomaly & fraud scoring — minimal
   risk under the AI Act but profiling of insured persons: GDPR Art. 22, EIOPA
