@@ -115,7 +115,7 @@ def test_prefill_via_anthropic_uses_expected_request_shape(monkeypatch, with_key
 
     call = holder["client"].messages.calls[0]
     assert call["model"] == "claude-haiku-4-5"   # default hosted model
-    assert call["output_config"] == {"effort": "low"}
+    assert "output_config" not in call                  # Haiku rejects effort
     system = call["system"]
     assert len(system) == 2
     assert "cache_control" in system[1]
@@ -392,3 +392,21 @@ def test_client_ip_uses_the_proxy_appended_hop():
     assert _client_ip(_Req("1.2.3.4, 203.0.113.7")) == "203.0.113.7"   # spoofed first hop ignored
     assert _client_ip(_Req("203.0.113.7")) == "203.0.113.7"
     assert _client_ip(_Req("")) == "10.0.0.9"
+
+
+def test_effort_is_sent_only_for_models_that_support_it(monkeypatch, tmp_path):
+    from app.llm import budget
+    from app.llm.anthropic_provider import AnthropicProvider
+    from app.llm.config import settings
+
+    monkeypatch.setenv("AIACT_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    budget.reset_for_tests()
+    calls = []
+    _fake_sdk(monkeypatch, calls)
+    monkeypatch.setattr(settings, "anthropic_model", "claude-sonnet-5")
+    AnthropicProvider().generate("s", "u", as_json=True)
+    assert calls[-1]["output_config"] == {"effort": "low"}
+    monkeypatch.setattr(settings, "anthropic_model", "claude-haiku-4-5")
+    AnthropicProvider().generate("s", "u", as_json=True)
+    assert "output_config" not in calls[-1]
