@@ -285,11 +285,15 @@ def test_workspace_id_is_sent_as_default_header(monkeypatch, tmp_path):
 
     monkeypatch.setattr(sdk, "Anthropic", _Client)
     prov = AnthropicProvider()
-    assert prov.status()["workspace_id"] == "wrkspc_test123"
+    status = prov.status()
+    assert status["workspace_routing_configured"] is True
+    assert "workspace_id" not in status
     prov.generate("sys", "user text", as_json=True)
     assert seen["default_headers"] == {"anthropic-workspace-id": "wrkspc_test123"}
     monkeypatch.setattr(settings, "anthropic_workspace_id", "")
-    AnthropicProvider().generate("sys", "user text", as_json=True)
+    no_routing = AnthropicProvider()
+    assert no_routing.status()["workspace_routing_configured"] is False
+    no_routing.generate("sys", "user text", as_json=True)
     assert seen["default_headers"] is None
 
 

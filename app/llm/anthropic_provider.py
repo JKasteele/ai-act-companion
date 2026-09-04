@@ -44,8 +44,10 @@ class AnthropicProvider(LLMProvider):
             info["error"] = "ANTHROPIC_API_KEY is not set."
             return info
         info["available"] = True
-        if self.workspace_id:
-            info["workspace_id"] = self.workspace_id
+        # Expose only whether optional routing is configured. The identifier is
+        # not an API credential, but publishing internal account metadata adds
+        # no value to a public health/status endpoint.
+        info["workspace_routing_configured"] = bool(self.workspace_id)
         return info
 
     def generate(self, system, user, as_json=True):
