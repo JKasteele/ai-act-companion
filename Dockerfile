@@ -28,8 +28,8 @@ USER app
 # -e OLLAMA_HOST=http://host.docker.internal:11434 if desired.
 ENV LLM_PROVIDER=manual
 
-# Honour $PORT so the same image runs locally (8000) and on hosts that inject a
-# port, e.g. Hugging Face Spaces sets PORT=7860. The small shell wrapper expands
-# the variable and `exec` preserves container signal handling.
+# Honour an optional $PORT override while defaulting to 8000, which matches the
+# documented Hugging Face Space card. The small shell wrapper expands the
+# variable and `exec` preserves container signal handling.
 EXPOSE 8000
 CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8000}\""]
