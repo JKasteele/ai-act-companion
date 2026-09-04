@@ -91,18 +91,38 @@ def _bool(answers, key):
 
 
 def _header(assessment):
-    return (
+    header = (
         f"_Assessment id: `{assessment.get('id', '-')}` · "
         f"Generated: {assessment.get('created_at', '-')} · "
         f"AI Act Companion v{__version__} · "
-        f"Knowledge base {eu.KNOWLEDGE_VERSION} (reviewed {eu.LAST_REVIEWED}, "
-        f"incl. Reg. (EU) 2026/1744)_\n\n"
+        f"Knowledge base {eu.KNOWLEDGE_VERSION} (reviewed {eu.LAST_REVIEWED}; "
+        f"relevant changes from Reg. (EU) 2026/1744 modelled)_\n\n"
         f"> {eu.DISCLAIMER}\n"
     )
+    if eu.annex_i_section_b_only(assessment.get("answers", {})):
+        header += (
+            "\n> **Annex I Section B scope limitation (Art. 2(2)).** The system "
+            "remains classified under Art. 6(1), but the ordinary Chapter III "
+            "high-risk requirements described in this template do not apply through "
+            "this route. Only Art. 6(1), Art. 60a and Arts. 102–112 apply directly; "
+            "Arts. 57–59 apply only insofar as the product legislation integrates "
+            "them. Treat any broader material below as voluntary/sectoral guidance.\n"
+        )
+    elif (
+        eu.annex_i_high_risk_trigger(assessment.get("answers", {}))
+        and str(assessment.get("answers", {}).get("hr_annex_i_section") or "").upper() == "A"
+    ):
+        header += (
+            "\n> **Annex I Section A watchpoint (Art. 2(13)).** Future delegated "
+            "acts may limit specified Arts. 9–15 and 17–25 duties where product law "
+            "provides equivalent or higher protection. This report assumes no such "
+            "limitation unless the applicable delegated act is identified.\n"
+        )
+    return header
 
 
 def _ref_link(ref):
-    """Render a citation as a Markdown link to the AI Act Explorer when resolvable."""
+    """Render a citation as a link to the best available public legal source."""
     url = eu.ref_url(ref)
     return f"[{ref}]({url})" if url else ref
 
@@ -118,6 +138,73 @@ def _findings_block(findings):
     for f in findings:
         lines.append(f"- **{f.get('title','')}** ({_refs(f.get('refs', []))}) — {f.get('rationale','')}")
     return "\n".join(lines) + "\n"
+
+
+def _fria_scope(answers, cls):
+    """Return (required, explanation) for the Art. 27(1) duty.
+
+    The intake can identify public-sector deployers, but it cannot establish
+    whether a private organisation is providing a public service. In that case
+    the report deliberately leaves the legal-status question open.
+    """
+    role = _select(answers, "provider_role")
+    raw_usecases = answers.get("hr_usecases") or []
+    if isinstance(raw_usecases, str):
+        raw_usecases = [raw_usecases]
+    usecases = set(raw_usecases)
+    sub = eu.ANNEX_III_5_SUBAREAS.get(_select(answers, "hr_essential_subarea"))
+    is_deployer = role in ("deployer", "both")
+    annex_iii_high = cls.get("tier") == eu.TIER_HIGH and bool(usecases - {"none"})
+    every_deployer = bool(
+        "essential_services" in usecases and sub and sub.get("fria_all_deployers")
+    )
+
+    if not is_deployer:
+        return False, "Art. 27 is a deployer duty; the recorded role is not deployer/both."
+    if every_deployer and annex_iii_high:
+        return True, f"{sub['ref']} makes the FRIA mandatory for every deployer."
+    if not annex_iii_high:
+        return False, "Art. 27(1) applies to deployers of high-risk systems under Art. 6(2)."
+    if usecases == {"critical_infra"}:
+        return False, "Annex III point 2 systems are expressly excluded by Art. 27(1)."
+    public_status = _select(answers, "deployer_fria_status")
+    if public_status in ("body_public_law", "private_public_service"):
+        return True, (
+            "The recorded deployer status falls within Art. 27(1), and the Annex III "
+            "point 2 exception does not apply."
+        )
+    if public_status == "neither":
+        return False, (
+            "The recorded deployer status is outside the Art. 27(1) public-service "
+            "categories."
+        )
+    return False, (
+        "Not established from the intake. Outside Annex III(5)(b) and (c), the duty "
+        "depends on the deployer being a body governed by public law or a private "
+        "entity providing public services; confirm that status separately."
+    )
+
+
+def _applicable_recommended_artifacts(answers, cls):
+    """Correct classifier-era broad suggestions at the report boundary."""
+    artifacts = list(cls.get("recommended_artifacts") or [])
+    if cls.get("tier") == eu.TIER_PROHIBITED:
+        high_risk_pack = (
+            "Data governance & quality record (AI Act Art. 10)",
+            "Bias/fairness audit report (AI Act Art. 10)",
+            "Technical documentation (AI Act Art. 11",
+            "Fundamental rights impact assessment - FRIA",
+        )
+        return [a for a in artifacts if not a.startswith(high_risk_pack)]
+    fria_required, _reason = _fria_scope(answers, cls)
+    filtered = [a for a in artifacts if fria_required or "FRIA" not in a]
+    if fria_required:
+        filtered = [
+            "Fundamental rights impact assessment - FRIA (AI Act Art. 27)"
+            if "FRIA" in a else a
+            for a in filtered
+        ]
+    return filtered
 
 
 def _timeline_table():
@@ -284,7 +371,23 @@ def render_risk_assessment(assessment):
     )
 
     md.append("\n## 7. Recommended documentation\n")
-    for art in cls.get("recommended_artifacts", []):
+    if cls.get("tier") == eu.TIER_PROHIBITED:
+        if (cls.get("applicability") or {}).get("date") == eu.NEW_ART_5_APPLICATION_DATE:
+            md.append(
+                "Do not treat the normal high-risk conformity pack as a route to lawful "
+                "deployment. The matched Art. 5(1)(ba)/(bb) prohibition applies from "
+                "2 Dec 2026: preserve the evidence and plan withdrawal/remediation and "
+                "legal review before that date. Other applicable law remains separate.\n"
+            )
+        else:
+            md.append(
+                "Do not proceed with the normal high-risk conformity pack as a route to "
+                "deployment: conformity documentation cannot make a prohibited practice "
+                "lawful. Preserve the classification evidence, stop the prohibited use, "
+                "and document withdrawal/remediation and legal review. Separate duties "
+                "that independently apply (for example GDPR or incident handling) remain.\n"
+            )
+    for art in _applicable_recommended_artifacts(answers, cls):
         md.append(f"- {art}\n")
 
     md.append("\n## 8. Review & sign-off\n")
@@ -373,11 +476,21 @@ def render_dpia(assessment):
     md.append(f"- Human oversight (AI Act Art. 14): {_a(answers,'human_oversight')}\n")
 
     md.append("\n## 5. Link to the EU AI Act\n")
-    md.append(
-        "- Data governance & bias (Art. 10) - see bias audit checklist.\n"
-        "- Transparency towards data subjects (Art. 13, Art. 50).\n"
-        "- Fundamental rights impact assessment (Art. 27, FRIA) where applicable.\n"
-    )
+    if eu.annex_i_section_b_only(answers):
+        md.append(
+            "- Amended Art. 2(2) does not apply Arts. 10, 13, 27 or the ordinary "
+            "Chapter III high-risk duties through this Annex I Section B route.\n"
+            "- Check the applicable product legislation and any independent GDPR "
+            "duties; do not infer an AI Act FRIA from this classification.\n"
+        )
+    else:
+        md.append(
+            "- Data governance & bias (Art. 10) - see bias audit checklist where "
+            "the provider duty applies.\n"
+            "- Transparency towards affected persons (Art. 13) and Art. 50 duties "
+            "where triggered.\n"
+            "- Fundamental rights impact assessment (Art. 27, FRIA) where applicable.\n"
+        )
 
     md.append("\n## 6. DPO advice & decision\n")
     md.append(
@@ -527,19 +640,28 @@ def render_security_assessment(assessment):
 # --- 5. FRIA - fundamental rights impact assessment (Art. 27) ---------------
 def render_fria(assessment):
     answers = assessment.get("answers", {})
+    cls = assessment.get("classification", {})
     sys_name = _a(answers, "sys_name", "AI system")
 
     md = []
     md.append(f"# Fundamental Rights Impact Assessment (FRIA) - {sys_name}\n")
     md.append(_header(assessment))
     md.append(
-        "FRIA skeleton under **EU AI Act Art. 27**. Required, before first use, "
-        "for deployers that are bodies governed by public law or private "
-        "entities providing public services, and for deployers of the high-risk "
-        "systems in **Annex III point 5(b) and (c)** (creditworthiness/credit "
+        "FRIA skeleton under **EU AI Act Art. 27**. Where in scope, it is required "
+        "before first use for deployers that are bodies governed by public law or "
+        "private entities providing public services (except systems in **Annex III "
+        "point 2**), and for deployers of the high-risk systems in **Annex III point "
+        "5(b) and (c)** (creditworthiness/credit "
         "scoring and risk assessment/pricing in life & health insurance). "
         "Complements any GDPR DPIA (Art. 27(4)); the result must be notified to "
         "the market surveillance authority (Art. 27(3)).\n"
+    )
+
+    fria_required, scope_reason = _fria_scope(answers, cls)
+    md.append(
+        f"\n> **Applicability on the recorded answers: "
+        f"{'required' if fria_required else 'not established / not required'}** — "
+        f"{scope_reason}\n"
     )
 
     sub = eu.ANNEX_III_5_SUBAREAS.get(_select(answers, "hr_essential_subarea"))
@@ -621,22 +743,44 @@ def render_technical_documentation(assessment):
     answers = assessment.get("answers", {})
     cls = assessment.get("classification", {})
     sys_name = _a(answers, "sys_name", "AI system")
-    is_high = cls.get("tier") == eu.TIER_HIGH
+    section_b_only = eu.annex_i_section_b_only(answers)
+    is_chapter_iii_high = cls.get("tier") == eu.TIER_HIGH and not section_b_only
+    role = _role(answers)
 
     md = []
     md.append(f"# Technical Documentation (Annex IV) - {sys_name}\n")
     md.append(_header(assessment))
     md.append(
         f"Technical documentation skeleton under {_ref_link('Art. 11 + Annex IV')}. "
-        "**Required for high-risk systems** before placing on the market; for "
-        "other systems it is voluntary good practice. Pre-filled from the intake "
+        "Art. 11 requires the **provider of a Chapter III high-risk system** to "
+        "prepare this documentation before placing the system on the market or "
+        "putting it into service. In other cases this is a voluntary or supplier-"
+        "assurance template. Pre-filled from the intake "
         f"answers; everything else is marked {_TBC} for the provider to complete.\n"
     )
-    if not is_high:
+    if section_b_only:
+        md.append(
+            "\n> **Section B scope note.** Amended Art. 2(2) does not apply Art. 11 "
+            "or Annex IV through this Annex I Section B route. Check the applicable "
+            "product legislation instead; this report is only a voluntary template.\n"
+        )
+    elif not is_chapter_iii_high:
         md.append(
             "\n> This system was **not** classified as high-risk. Annex IV "
             "documentation is then not mandatory, but this skeleton can serve as "
             "voluntary good practice and to substantiate that conclusion.\n"
+        )
+    elif role == "deployer":
+        md.append(
+            "\n> **Role note.** Art. 11 is a provider obligation. A deployer should "
+            "obtain and govern the provider documentation needed to follow the "
+            "instructions for use; it does not issue the provider's Annex IV file.\n"
+        )
+    elif role not in ("provider", "both"):
+        md.append(
+            "\n> **Actor-scope note.** The intake does not establish that the assessed "
+            "organisation is the provider. Confirm the Art. 3 role before treating "
+            "Art. 11 as its own obligation.\n"
         )
 
     # 1. General description
@@ -745,8 +889,9 @@ def _compliance_rows(cls):
     from the classifier output. Status/owner/dates are left for the human."""
     applic = cls.get("applicability") or {}
     rows = []
-    for ref, desc in cls.get("high_risk_obligations", []):
-        rows.append((_ref_link(ref), desc, _applies_from_for("high", applic)))
+    if cls.get("tier") != eu.TIER_PROHIBITED:
+        for ref, desc in cls.get("high_risk_obligations", []):
+            rows.append((_ref_link(ref), desc, _applies_from_for("high", applic)))
     for f in cls.get("transparency_obligations", []):
         ref = f.get("refs", ["Art. 50"])[0]
         rows.append((_ref_link(ref), f.get("title", ""),
@@ -765,7 +910,11 @@ def _compliance_rows(cls):
     return rows
 
 
-def _penalty_keys(cls):
+def _penalty_keys(cls, answers):
+    if eu.annex_i_section_b_only(answers):
+        # Art. 99 is not among the provisions applied to Annex I Section B by
+        # amended Art. 2(2); enforcement follows the applicable product regime.
+        return []
     tier = cls.get("tier")
     keys = []
     if tier == eu.TIER_PROHIBITED:
@@ -794,10 +943,33 @@ def render_compliance_tracker(assessment):
         "in. Status is not inferred — every row starts as `Not started`.\n"
     )
 
+    if cls.get("tier") == eu.TIER_PROHIBITED:
+        md.append(
+            "\n> **Prohibited practice.** This tracker is not a conformity route for "
+            "the prohibited use. Stop/withhold that use and document withdrawal, "
+            "remediation and legal review. Independent obligations (including data "
+            "protection and incident duties) must still be assessed separately.\n"
+        )
+
+    if eu.annex_i_section_b_only(answers):
+        md.append(
+            "\n> **Annex I Section B limited regime.** Under amended Art. 2(2), the "
+            "ordinary Chapter III obligations and the Art. 99 penalty table do not apply "
+            "through this route. Check the applicable product legislation and the "
+            "directly applicable Art. 6(1), Art. 60a and Arts. 102–112 requirements.\n"
+        )
+
     rows = _compliance_rows(cls)
     md.append("\n## Obligations\n")
     if not rows:
-        md.append("_No specific obligations were triggered by the classification._\n")
+        if eu.annex_i_section_b_only(answers):
+            md.append(
+                "_No ordinary Chapter III obligation rows are emitted for this "
+                "Section B route. Record the applicable product-law and limited-"
+                "regime requirements here after specialist review._\n"
+            )
+        else:
+            md.append("_No specific obligations were triggered by the classification._\n")
     else:
         md.append(
             "| Obligation (Art.) | Requirement | Applies from | Status | "
@@ -807,7 +979,7 @@ def render_compliance_tracker(assessment):
         for ref, requirement, applies in rows:
             md.append(f"| {ref} | {requirement} | {applies} | Not started | | | |\n")
 
-    keys = _penalty_keys(cls)
+    keys = _penalty_keys(cls, answers)
     if keys:
         md.append("\n## Penalties (Art. 99)\n")
         md.append(
@@ -850,6 +1022,7 @@ def render_compliance_tracker(assessment):
 # --- 8. Post-market monitoring plan (Art. 72) ------------------------------
 def render_post_market_monitoring(assessment):
     answers = assessment.get("answers", {})
+    cls = assessment.get("classification", {})
     sys_name = _a(answers, "sys_name", "AI system")
 
     md = []
@@ -863,7 +1036,31 @@ def render_post_market_monitoring(assessment):
         "extend as needed.\n"
     )
 
-    tier = (assessment.get("classification") or {}).get("tier")
+    role = _role(answers)
+    if eu.annex_i_section_b_only(answers):
+        md.append(
+            "\n> **Section B scope note.** Amended Art. 2(2) does not apply Art. 72 "
+            "or Art. 26 through this Annex I Section B route. Use this as a voluntary "
+            "monitoring template and check the applicable product legislation.\n"
+        )
+    elif cls.get("tier") != eu.TIER_HIGH:
+        md.append(
+            "\n> **Scope note.** No high-risk route was triggered. This is a voluntary "
+            "monitoring template unless another legal or contractual duty applies.\n"
+        )
+    elif role == "deployer":
+        md.append(
+            "\n> **Role note.** The assessed organisation's duty is the deployer "
+            "monitoring route in Art. 26; the provider owns the Art. 72 post-market "
+            "monitoring system.\n"
+        )
+    elif role == "provider":
+        md.append(
+            "\n> **Role note.** The assessed organisation owns the provider's Art. 72 "
+            "post-market monitoring system; Art. 26 duties belong to deployers.\n"
+        )
+
+    tier = cls.get("tier")
     seeded = mon.seeded_rows(answers, tier)
     md.append(f"\n**Review cadence for the {tier or 'unknown'} tier:** "
               f"{mon.cadence_for(tier)}.\n")
@@ -1450,17 +1647,25 @@ def render_declaration_of_conformity(assessment):
     answers = assessment.get("answers", {})
     cls = assessment.get("classification", {})
     sys_name = _a(answers, "sys_name", "AI system")
-    is_high = cls.get("tier") == eu.TIER_HIGH
+    section_b_only = eu.annex_i_section_b_only(answers)
+    is_chapter_iii_high = cls.get("tier") == eu.TIER_HIGH and not section_b_only
 
     md = [f"# EU Declaration of Conformity — {sys_name}\n", _header(assessment)]
     md.append(
-        f"A skeleton **EU declaration of conformity** required by "
+        f"A skeleton **EU declaration of conformity** under "
         f"{_ref_link('Art. 47')}, with the content items of {_ref_link('Annex V')}. "
-        "The provider draws up one written DoC per high-risk system and keeps it "
+        "For a Chapter III high-risk system, the provider draws up one written DoC "
+        "and keeps it "
         f"for 10 years after it is placed on the market or put into service. "
         f"Complete every {_TBC} before relying on it.\n"
     )
-    if not is_high:
+    if section_b_only:
+        md.append(
+            "\n> **Section B scope note.** Amended Art. 2(2) does not apply Art. 47 "
+            "or Annex V through this Annex I Section B route. Check the applicable "
+            "product-law conformity declaration; this is only a voluntary template.\n"
+        )
+    elif not is_chapter_iii_high:
         md.append(
             f"\n> **Scope note.** On the current answers the system is "
             f"**{cls.get('tier_label', '-')}**, not high-risk. A DoC under "
@@ -1522,25 +1727,57 @@ def render_registration(assessment):
     cls = assessment.get("classification", {})
     sys_name = _a(answers, "sys_name", "AI system")
     is_high = cls.get("tier") == eu.TIER_HIGH
+    raw_usecases = answers.get("hr_usecases") or []
+    if isinstance(raw_usecases, str):
+        raw_usecases = [raw_usecases]
+    usecases = set(raw_usecases)
+    is_annex_iii_high = is_high and bool(usecases - {"none"})
     categories = [f"{eu.HIGH_RISK_USECASES[u]['ref']} — {eu.HIGH_RISK_USECASES[u]['title']}"
-                  for u in (answers.get("hr_usecases") or [])
+                  for u in raw_usecases
                   if u in eu.HIGH_RISK_USECASES]
     cat_str = "; ".join(categories) if categories else _TBC
 
     md = [f"# EU Database Registration Data Sheet — {sys_name}\n", _header(assessment)]
+    role = _select(answers, "provider_role")
+    registration_status = _select(answers, "deployer_registration_status")
+    public_deployer = role in ("deployer", "both") and registration_status == "qualifying"
     md.append(
-        f"A data sheet for registering a high-risk AI system in the EU database "
+        f"A data sheet for registration relating to an Annex III high-risk AI system "
         f"({_ref_link('Art. 49')} + {_ref_link('Art. 71')}), collecting the "
-        f"information items of {_ref_link('Annex VIII')} Section A. Registration "
-        "happens before the system is placed on the market or put into service.\n"
+        f"provider information in {_ref_link('Annex VIII')} Section A. Providers "
+        "register before placing the system on the market or putting it into service; "
+        "qualifying public-authority deployers separately register themselves, select "
+        "the system and register its use before use (Art. 49(1), (3)).\n"
     )
-    if not is_high:
+    if not is_annex_iii_high:
         md.append(
             f"\n> **Scope note.** On the current answers the system is "
             f"**{cls.get('tier_label', '-')}**. Registration under Art. 49 applies "
-            "to high-risk systems (and, per Art. 49(3), to certain public-authority "
-            "deployers) — treat this as a template until the classification is high-risk.\n"
+            "to Annex III high-risk systems—not an Annex I-only route—and, per Art. "
+            "49(3), qualifying public-authority deployers. Treat this as a template "
+            "unless an Annex III classification applies.\n"
         )
+    if role in ("deployer", "both") and not public_deployer:
+        md.append(
+            "\n> **Role note.** Art. 49(3) does not impose this registration on every "
+            "deployer: it covers public authorities, Union institutions/bodies/offices/"
+            "agencies and persons acting on their behalf. A private deployer should "
+            "verify whether it acts on such a body's behalf. The intake currently "
+            f"records this status as **{registration_status or 'unknown'}**.\n"
+        )
+    if public_deployer and is_annex_iii_high:
+        if usecases == {"critical_infra"}:
+            md.append(
+                "\n> **Public-deployer route.** Annex III point 2 is excluded from the "
+                "EU-database route and is registered at national level (Art. 49(5)).\n"
+            )
+        else:
+            md.append(
+                "\n> **Public-deployer route.** Before use, register the deployer, "
+                "select the provider-registered system and register its use (Art. "
+                "49(3); Annex VIII Section C). If the system is not registered, do not "
+                "use it and inform the provider or distributor (Art. 26(8)).\n"
+            )
 
     md.append("\n## Annex VIII Section A — registration information\n")
     md.append(
@@ -1565,9 +1802,16 @@ def render_registration(assessment):
         f"| 13 | URL for additional information (optional) | {_TBC} |\n"
     )
     md.append(
-        "\n> Registration for high-risk systems in **law enforcement, migration, "
-        "asylum and border control** (Annex III(6)–(8)) is made in a **secure "
+        "\n> For high-risk systems in protected law-enforcement/migration contexts, "
+        "registration for Annex III point **1** (biometrics in those contexts) and "
+        "points **6 and 7** (law enforcement; migration, asylum and border control) "
+        "is made in a **secure "
         "non-public** section of the database (Art. 49(4)).\n"
+    )
+    md.append(
+        "\n> Annex III point 2 (critical infrastructure) is not registered in the EU "
+        "database under Art. 49(1) or (3); it is registered at national level under "
+        "Art. 49(5).\n"
     )
     md.append(f"\n_Legal source: {_ref_link('Art. 49')} + {_ref_link('Annex VIII')}._\n")
     return "".join(md)
@@ -1697,7 +1941,26 @@ def render_data_governance(assessment):
     gaps = dg.gaps(answers, tier)
 
     md = [f"# Data Governance & Quality — {sys_name}\n", _header(assessment)]
-    if tier == "high":
+    section_b_only = eu.annex_i_section_b_only(answers)
+    if section_b_only:
+        md.append(
+            f"This is a voluntary/sectoral data-governance record for an Annex I "
+            f"Section B system. Under {_ref_link('Art. 2(2)')}, the ordinary "
+            f"{_ref_link('Art. 10')} and {_ref_link('Art. 26')} duties do not apply "
+            "through this classification route. Product, safety and data-protection "
+            "law may still require equivalent evidence.\n"
+        )
+    elif tier == "high" and role == "deployer":
+        md.append(
+            f"Data-governance record for a **high-risk** system used as a deployer. "
+            f"The deployer's direct dataset duty is to ensure input data under its "
+            f"control is relevant and sufficiently representative in view of the "
+            f"intended purpose ({_ref_link('Art. 26')}(4)). The provider remains "
+            f"responsible for {_ref_link('Art. 10')} compliance for training, validation "
+            "and test data and supplies the relevant characteristics through the "
+            f"instructions for use ({_ref_link('Art. 13')}(3)(b)).\n"
+        )
+    elif tier == "high":
         md.append(
             f"Data-governance record for a **high-risk** system. {_ref_link('Art. 10')} "
             "requires providers to evidence data governance and quality for training, "
@@ -1755,9 +2018,13 @@ def render_data_governance(assessment):
         f"- Intake: personal data = {_a(answers, 'data_personal')}, special categories = "
         f"{_a(answers, 'data_special_category')}, automated decision-making = "
         f"{_a(answers, 'automated_decision')}\n"
-        f"- Special categories may be processed for bias detection/correction only under "
-        f"{_ref_link('Art. 10')}(5) safeguards; that allowance does not create a lawful "
-        "basis for using them as model features.\n"
+        f"- Special-category data may be processed exceptionally for bias detection/"
+        f"correction only within {_ref_link('Art. 4a')}'s role-specific scope, strict-"
+        "necessity test and safeguards. Paragraph 1 covers providers of high-risk systems; "
+        "paragraph 2 covers deployers of high-risk systems and providers/deployers of "
+        "other systems or models where the stated harm threshold is met. It creates no "
+        "duty to perform that processing and is not a general basis for using special-"
+        "category data as model features.\n"
     )
     for r in personal_rows:
         md.append(
@@ -1788,11 +2055,23 @@ def render_data_governance(assessment):
     md.append(f"\nEvidence recorded: {_a(answers, 'dg_q_evidence')}\n")
 
     md.append(f"\n## 6. {_ref_link('Art. 10')} requirement checklist\n")
-    md.append("| ✓ | Ref | Requirement | Evidence / where |\n|---|---|---|---|\n")
-    for ref, req in eu.ART_10_REQUIREMENTS:
-        if ref.startswith("Art. 26") and role == "provider":
-            continue
-        md.append(f"| ☐ | {_ref_link(ref)} | {req} | |\n")
+    if section_b_only:
+        md.append(
+            "_Not applicable through the Annex I Section B route under Art. 2(2). "
+            "Use the remaining sections only as voluntary or sector-law evidence._\n"
+        )
+    else:
+        md.append("| ✓ | Ref | Requirement | Evidence / where |\n|---|---|---|---|\n")
+        for ref, req in eu.ART_10_REQUIREMENTS:
+            if ref.startswith("Art. 26") and role == "provider":
+                continue
+            if ref.startswith("Art. 10") and role == "deployer":
+                continue
+            if ref.startswith("Art. 4a(1)") and role == "deployer":
+                continue
+            if ref.startswith("Art. 4a(2)") and tier == "high" and role == "provider":
+                continue
+            md.append(f"| ☐ | {_ref_link(ref)} | {req} | |\n")
 
     md.append("\n## 7. Gaps and actions (derived from the intake)\n")
     if gaps:
@@ -1995,7 +2274,8 @@ def render_governance_register(assessment):
     md = [f"# Governance Register — {sys_name}\n", _header(assessment)]
     md.append(
         "The maintenance view of this system's governance: who owns the record, who "
-        "approved it, when it is reviewed, which exceptions run, who has been trained "
+        "approved it, when it is reviewed, which exceptions run, which AI-literacy "
+        "support measures are evidenced "
         f"({_ref_link('Art. 4')}), and how complete the intake is. Feeds the portfolio "
         "status columns and the AI-register export.\n"
     )
@@ -2029,16 +2309,28 @@ def render_governance_register(assessment):
     else:
         md.append("_No exceptions recorded._\n")
 
-    md.append(f"\n## 3. AI-literacy record ({_ref_link('Art. 4')})\n")
-    md.append("Art. 4 applies since 2 Feb 2025; supervision and enforcement since 2 Aug 2026 "
-              "(Digital Omnibus wording: measures that support the development of AI "
-              "literacy).\n\n")
+    md.append(f"\n## 3. AI-literacy support-measures evidence ({_ref_link('Art. 4')})\n")
+    if eu.art4_applies(answers, in_scope=not cls.get("out_of_scope")):
+        md.append("For the recorded provider/deployer role, Art. 4 applies since 2 Feb "
+                  "2025; supervision and enforcement apply since 2 Aug 2026. It "
+                  "requires proportionate measures supporting AI literacy, without "
+                  "prescribing training as the only format or guaranteeing a specific "
+                  "individual literacy level. This table is practical evidence, not a "
+                  "statutory form.\n\n")
+    elif eu.annex_i_section_b_only(answers):
+        md.append("Art. 4 does not apply through the limited Annex I Section B route "
+                  "in Art. 2(2). Use this table only as voluntary or product-law "
+                  "governance evidence.\n\n")
+    else:
+        md.append("The recorded actor/scope does not establish an Art. 4 duty. Use "
+                  "this table as voluntary evidence unless a provider or deployer role "
+                  "is confirmed.\n\n")
     if gov["literacy"]:
         md.append("| Role / group | Training / briefing | Date |\n|---|---|---|\n")
         for r in gov["literacy"]:
             md.append(f"| {_safe(r['role'])} | {_safe(r['training'])} | {r['date'] or '-'} |\n")
     else:
-        md.append("_No training recorded for this system._\n")
+        md.append("_No AI-literacy support measures evidenced for this system._\n")
 
     md.append("\n## 4. Intake completeness\n")
     md.append("| Section | Answered |\n|---|---|\n")
@@ -2079,6 +2371,11 @@ def render(report_type, assessment, lang="en"):
         full = dict(assessment)
         answers = full.get("answers", {}) or {}
         cls = full.get("classification") or {}
+        cls_for_report = dict(cls)
+        cls_for_report["recommended_artifacts"] = _applicable_recommended_artifacts(
+            answers, cls
+        )
+        full["classification"] = cls_for_report
         full.setdefault("forensics", assess_forensic_readiness(answers, cls))
         full.setdefault("governance", governance_status(answers, cls))
         full.setdefault("datagov", dg.summary(answers, cls.get("tier", "minimal")))

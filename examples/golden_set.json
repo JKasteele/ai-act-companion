@@ -560,5 +560,65 @@
       "sec_agentic": true,
       "data_personal": true
     }
+  },
+  {
+    "name": "Intimate deepfake generator marketed for non-consensual use",
+    "expected_tier": "prohibited",
+    "rationale": "The provider intends the system to generate realistic intimate material of identifiable people without explicit consent, satisfying Art. 5(1)(ba) and the provider gateway in Art. 5(1a)(a)(i); the new prohibition applies from 2 December 2026.",
+    "answers": {
+      "sys_name": "Non-consensual intimate deepfake generator",
+      "sys_description": "A service marketed to generate realistic sexually explicit depictions of identifiable adults without their consent.",
+      "intended_purpose": "Generate non-consensual intimate deepfakes.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_nonconsensual_intimate": true,
+      "p_sexual_provider_intended": true
+    }
+  },
+  {
+    "name": "Deployer deliberately generating child sexual abuse material",
+    "expected_tier": "prohibited",
+    "rationale": "The deployer deliberately uses an AI system to generate material within Directive 2011/93/EU Art. 2(c)/(e), with no national-law 'without right' defence: Art. 5(1)(bb) and 5(1a)(b).",
+    "answers": {
+      "sys_name": "Deliberate CSAM generation",
+      "sys_description": "A deployer uses a generative system specifically to create child sexual abuse material.",
+      "intended_purpose": "Generate prohibited material.",
+      "provider_role": "deployer",
+      "eu_market": true,
+      "p_child_sexual_material": true,
+      "p_sexual_deployer_purpose": true
+    }
+  },
+  {
+    "name": "General image model with effective intimate-content safeguards",
+    "expected_tier": "minimal",
+    "rationale": "A generic image model is not intended to generate prohibited intimate material and the foreseeable-output gateway is not met because reasonable and adequate safeguards reliably prevent and correct misuse; capability alone does not satisfy Art. 5(1a)(a).",
+    "answers": {
+      "sys_name": "Guarded general image model",
+      "sys_description": "A general image generator with refusal training, content filters, abuse detection and notice-and-action controls.",
+      "intended_purpose": "Generate ordinary creative images.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "p_nonconsensual_intimate": true,
+      "p_sexual_provider_intended": false,
+      "p_sexual_provider_foreseeable_unguarded": false
+    }
+  },
+  {
+    "name": "Annex I Section B aviation safety AI",
+    "expected_tier": "high",
+    "rationale": "The AI system is a safety component of an Annex I Section B product requiring third-party conformity assessment for health or safety risks. It is classified under Art. 6(1), but Art. 2(2) limits which AI Act provisions apply.",
+    "answers": {
+      "sys_name": "Aviation safety AI",
+      "sys_description": "An AI safety component in a regulated aviation product whose malfunction could endanger health and safety.",
+      "intended_purpose": "Prevent hazardous operation.",
+      "provider_role": "provider",
+      "eu_market": true,
+      "hr_annex_i_relation": "embedded_component",
+      "hr_annex_i_section": "B",
+      "hr_safety_function": true,
+      "hr_failure_endangers_health_safety": true,
+      "hr_third_party_health_safety": true
+    }
   }
 ]

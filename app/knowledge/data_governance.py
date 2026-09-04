@@ -11,7 +11,7 @@ areas and data-quality dimensions as they are commonly summarised in public
 material; no DAMA text is reproduced. The crosswalk rows are Companion-derived
 analytical alignments ("most-relevant anchor"), not official mappings.
 
-Sources: Regulation (EU) 2024/1689 Art. 10 and Art. 26(4); ISO/IEC 42001 Annex
+Sources: Regulation (EU) 2024/1689 Art. 4a, Art. 10 and Art. 26(4); ISO/IEC 42001 Annex
 A.7 (titles only); NIST AI RMF 1.0; EIOPA "Artificial Intelligence Governance
 Principles" (2021, data governance & record-keeping principle).
 """
@@ -121,8 +121,8 @@ CROSSWALK = [
     ("Dataset inventory & provenance", "Art. 10(2)(b), Art. 11 + Annex IV(2)(d)",
      "A.7.3, A.7.5", "MAP 1.1", "Data governance & record-keeping",
      "Metadata management"),
-    ("Classification & lawful basis", "Art. 10(5) (special categories for bias "
-     "detection); GDPR Art. 6/9", "A.7.3", "MEASURE 2.10",
+    ("Classification & lawful basis", "Art. 4a (special categories for bias "
+     "detection and correction); GDPR Art. 6/9", "A.7.3", "MEASURE 2.10",
      "Data governance & record-keeping", "Data security / privacy"),
     ("Lineage", "Art. 10(2)(c), Annex IV(2)(d)", "A.7.5, A.7.6", "MAP 2.3",
      "Transparency & explainability", "Data integration & interoperability"),
@@ -130,7 +130,7 @@ CROSSWALK = [
      "Robustness & performance", "Data quality"),
     ("Representativeness & bias", "Art. 10(2)(f–g), Art. 10(3)", "A.7.4, A.5.4",
      "MEASURE 2.11", "Fairness & non-discrimination", "Data quality"),
-    ("Retention & purpose limitation", "Art. 10(5)(e), Art. 12; GDPR Art. 5(1)(b),(e)",
+    ("Retention & purpose limitation", "Art. 4a(1)(e), Art. 12; GDPR Art. 5(1)(b),(e)",
      "A.7.2", "GOVERN 1.1", "Data governance & record-keeping",
      "Data governance / lifecycle"),
 ]
@@ -196,6 +196,7 @@ def gaps(answers, tier="minimal"):
     GDPR Art. 5 accuracy and good practice, so severities are one notch lower."""
     answers = answers or {}
     high = tier == "high"
+    role = select_field(answers, "provider_role")
     hi, med = ("high", "medium") if high else ("medium", "low")
     out = []
     rows = dataset_rows(answers)
@@ -203,10 +204,17 @@ def gaps(answers, tier="minimal"):
     special = truthy(answers.get("data_special_category"))
 
     if not rows:
-        out.append((hi, "No dataset inventory.",
-                    "List every training, validation, test and inference-time "
-                    "dataset with origin, owner, steward and classification.",
-                    "Art. 10(2)(b), Annex IV(2)(d)"))
+        if role == "deployer":
+            out.append((hi, "No input-data inventory.",
+                        "List the input datasets under the deployer's control and obtain "
+                        "the provider's Art. 13 data description; do not claim ownership "
+                        "of the provider's training, validation or test data.",
+                        "Art. 26(4), Art. 13(3)(b)"))
+        else:
+            out.append((hi, "No dataset inventory.",
+                        "List every training, validation, test and inference-time "
+                        "dataset with origin, owner, steward and classification.",
+                        "Art. 10(2)(b), Annex IV(2)(d)"))
     for r in rows:
         nm = r["name"] or "(unnamed dataset)"
         if not r["owner"]:
@@ -232,7 +240,7 @@ def gaps(answers, tier="minimal"):
                         "no special categories are processed.",
                         "Reconcile the dataset classification with section 6 of the "
                         "intake; the DPIA and bias plan depend on it.",
-                        "GDPR Art. 9; Art. 10(5)"))
+                        "GDPR Art. 9; Art. 4a"))
         if not r["retention"]:
             out.append(("low", f"'{nm}': no retention period.",
                         "Set a retention period and deletion rule; Art. 12 logs "

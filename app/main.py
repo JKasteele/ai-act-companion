@@ -3,8 +3,9 @@
 Endpoints:
   GET  /                                   -> frontend (static/index.html)
   GET  /api/questionnaire                  -> questionnaire definition
-  POST /api/assess                         -> classify + store
-  GET  /api/assessments                    -> list stored assessments
+  POST /api/assess                         -> classify (+ store outside demo mode)
+  POST /api/report                         -> render a stateless report
+  GET  /api/assessments                    -> list visible assessments
   GET  /api/assessments/{id}               -> full assessment
   GET  /api/assessments/{id}/report?type=  -> report (markdown) per type
   GET  /api/health                         -> health check
@@ -47,10 +48,9 @@ logger = logging.getLogger("ai_act_companion")
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 
-# Public-demo mode: when set, the UI shows a "public sandbox, synthetic data
-# only, not persisted" banner. Pair it with AIACT_DATA_DIR pointing at ephemeral
-# storage (e.g. /tmp on Hugging Face Spaces) and LLM_PROVIDER=none. It changes no
-# engine behaviour — the deterministic core is identical in every mode.
+# Public-demo mode: visitor submissions are classified without persistence.
+# Inventory/read/export endpoints expose only the shipped synthetic examples.
+# The deterministic core is identical in every mode.
 DEMO_MODE = os.environ.get("DEMO_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
 
 # The public sandbox has no model and no egress. So that visitors still see the
@@ -201,6 +201,35 @@ def list_examples():
     return out
 
 
+def _example_assessments():
+    """Build the curated, synthetic demo inventory without writing to disk."""
+    assessments = []
+    for example in list_examples():
+        answers = example["answers"]
+        aid = example["id"].replace("_", "-")
+        if not storage.is_valid_id(aid):
+            continue
+        assessments.append({
+            "id": aid,
+            "created_at": "",
+            "answers": answers,
+            "classification": classify(answers),
+            "security": assess_security(answers),
+        })
+    return assessments
+
+
+def _visible_assessments():
+    """Records visible through inventory endpoints in the current mode."""
+    return _example_assessments() if DEMO_MODE else storage.load_all()
+
+
+def _visible_assessment(assessment_id):
+    if DEMO_MODE:
+        return next((a for a in _example_assessments() if a["id"] == assessment_id), None)
+    return storage.load(assessment_id)
+
+
 @app.post("/api/assess", response_model=AssessResponse)
 def assess(req: AssessRequest):
     answers = req.answers or {}
@@ -213,18 +242,43 @@ def assess(req: AssessRequest):
         "classification": classification,
         "security": security,
     }
-    storage.save(assessment)
+    if not DEMO_MODE:
+        storage.save(assessment)
     return AssessResponse(
         id=assessment["id"],
         created_at=assessment["created_at"],
         classification=Classification(**classification),
         security=security,
+        persisted=not DEMO_MODE,
     )
+
+
+@app.post("/api/report", response_model=ReportResponse)
+def render_transient_report(req: AssessRequest, type: str = "risk", lang: str = "en"):
+    """Render a report directly from answers, without storing an assessment.
+
+    This powers the public demo's private/stateless result flow. It is also safe
+    to use locally when a caller wants a one-off report.
+    """
+    if type not in reports.REPORT_TYPES:
+        raise HTTPException(status_code=400, detail=f"Unknown type: {type}")
+    if lang not in ("en", "nl"):
+        raise HTTPException(status_code=400, detail=f"Unknown lang: {lang}")
+    answers = req.answers
+    transient = {
+        "id": storage.new_id(answers.get("sys_name")),
+        "created_at": storage.now_iso(),
+        "answers": answers,
+        "classification": classify(answers),
+        "security": assess_security(answers),
+    }
+    rtype, filename, markdown = reports.render(type, transient, lang=lang)
+    return ReportResponse(type=rtype, filename=filename, markdown=markdown)
 
 
 @app.get("/api/assessments", response_model=list[AssessmentSummary])
 def list_assessments():
-    return [AssessmentSummary(**s) for s in storage.list_all()]
+    return [AssessmentSummary(**storage.summarise(s)) for s in _visible_assessments()]
 
 
 # --- inventory portfolio roll-up -------------------------------------------
@@ -237,12 +291,12 @@ def _due_sort_key(date_str):
 
 
 def _portfolio_rows():
-    """One enriched row per saved assessment (pure aggregation over stored JSON).
+    """One enriched row per visible assessment.
 
-    Extends each list_all() summary with the obligation due-date and the
-    Art. 50 / high-risk obligation flags pulled from the stored classification."""
+    Demo mode supplies curated examples; local mode supplies saved JSON. This
+    remains a pure aggregation and does not create new persistence."""
     rows = []
-    for full in storage.load_all():
+    for full in _visible_assessments():
         cls = full.get("classification", {})
         answers = full.get("answers", {}) or {}
         appl = cls.get("applicability", {}) or {}
@@ -271,9 +325,9 @@ def _portfolio_rows():
 
 @app.get("/api/portfolio")
 def portfolio():
-    """Aggregate roll-up across all saved assessments: risk-tier distribution,
+    """Aggregate roll-up across all visible assessments: risk-tier distribution,
     obligations coming due by date, and the Art. 50 disclosure flag per system.
-    Single-user/local; pure aggregation, no new persistence."""
+    Pure aggregation, no new persistence."""
     rows = _portfolio_rows()
     distribution = {}
     for r in rows:
@@ -327,7 +381,7 @@ def export_register_csv():
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow([header for _key, header in REGISTER_COLUMNS])
-    for full in storage.load_all():
+    for full in _visible_assessments():
         fr = assess_forensic_readiness(full.get("answers", {}), full.get("classification", {}))
         row = register_row(full, forensic_band=fr["band"])
         writer.writerow([row.get(key, "") for key, _header in REGISTER_COLUMNS])
@@ -338,7 +392,7 @@ def export_register_csv():
 
 @app.get("/api/assessments/{assessment_id}")
 def get_assessment(assessment_id: str):
-    data = storage.load(assessment_id)
+    data = _visible_assessment(assessment_id)
     if not data:
         raise HTTPException(status_code=404, detail="Assessment not found")
     return data
@@ -346,12 +400,12 @@ def get_assessment(assessment_id: str):
 
 @app.delete("/api/assessments/{assessment_id}")
 def delete_assessment(assessment_id: str):
-    # In the public sandbox, storage is shared across visitors — enforce
-    # read-only server-side rather than trusting the UI banner.
+    # Demo submissions are stateless and the visible inventory is curated, but
+    # deletion is still forbidden rather than trusting a client-side control.
     if DEMO_MODE:
         raise HTTPException(
             status_code=403,
-            detail="Deletion is disabled in the public demo (read-only sandbox).")
+            detail="Deletion is unavailable in the stateless public demo.")
     if not storage.delete(assessment_id):
         raise HTTPException(status_code=404, detail="Assessment not found")
     return {"deleted": assessment_id}
@@ -363,45 +417,11 @@ def get_report(assessment_id: str, type: str = "risk", lang: str = "en"):
         raise HTTPException(status_code=400, detail=f"Unknown type: {type}")
     if lang not in ("en", "nl"):
         raise HTTPException(status_code=400, detail=f"Unknown lang: {lang}")
-    data = storage.load(assessment_id)
+    data = _visible_assessment(assessment_id)
     if not data:
         raise HTTPException(status_code=404, detail="Assessment not found")
     rtype, filename, markdown = reports.render(type, data, lang=lang)
     return ReportResponse(type=rtype, filename=filename, markdown=markdown)
-
-
-def _seed_demo_inventory():
-    """In DEMO_MODE, pre-load the synthetic examples so the inventory and the
-    portfolio roll-up aren't empty on a fresh (ephemeral) container. Idempotent:
-    uses a fixed id per example, so a re-run overwrites rather than duplicates."""
-    ex_dir = BASE_DIR / "examples"
-    if not ex_dir.exists():
-        return
-    for path in sorted(ex_dir.glob("*.json")):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            continue
-        if not isinstance(data, dict) or "sys_name" not in data:
-            continue
-        answers = {k: v for k, v in data.items() if not k.startswith("_")}
-        aid = path.stem.replace("_", "-")
-        if not storage.is_valid_id(aid):
-            continue
-        storage.save({
-            "id": aid,
-            "created_at": storage.now_iso(),
-            "answers": answers,
-            "classification": classify(answers),
-            "security": assess_security(answers),
-        })
-
-
-if DEMO_MODE:
-    try:
-        _seed_demo_inventory()
-    except Exception:  # noqa: BLE001 — never block startup on seeding
-        pass
 
 
 # Static frontend. Mounted last so that /api/* takes precedence.

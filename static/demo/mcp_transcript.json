@@ -14,7 +14,7 @@
       "role": "tool",
       "name": "get_questionnaire",
       "args": {},
-      "result": "13 sections, 102 fields (ids, types, allowed values)"
+      "result": "13 sections, 115 fields (ids, types, allowed values)"
     },
     {
       "role": "tool",

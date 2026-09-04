@@ -73,8 +73,9 @@ EVIDENCE_ARTEFACTS = [
      "Art. 10, Art. 11 + Annex IV(2)(d),(g); EIOPA Opinion Annex I §2", "data lake, version control",
      "provider"),
     ("eval_reports", "Evaluation and bias reports per release, with group statistics",
-     "non-discrimination claim; Art. 10(5) processing was necessary",
-     "Art. 10(2)(f)–(g), Art. 15(1); NIST MEASURE 2.11", "MLOps artefacts", "high"),
+     "non-discrimination claim; any special-category processing met Art. 4a's "
+     "strict-necessity test and safeguards",
+     "Art. 4a, Art. 10(2)(f)–(g), Art. 15(1); NIST MEASURE 2.11", "MLOps artefacts", "high"),
     ("drift_metrics", "Drift measurements and threshold breaches",
      "post-market monitoring actually ran",
      "Art. 72, Art. 26(5); DNB expectation", "monitoring platform", "high"),

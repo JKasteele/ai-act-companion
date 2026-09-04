@@ -8,14 +8,17 @@
 [![Code style: ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 [![Live demo on Hugging Face Spaces](https://img.shields.io/badge/🤗%20Live%20demo-Spaces-blue.svg)](https://huggingface.co/spaces/JesseKasteele/ai-act-companion)
 
-AI Act Companion helps you run a structured AI risk assessment for an AI system,
-aligned with the **EU AI Act** (Regulation (EU) 2024/1689) and the **NIST AI
-RMF**, and generates the accompanying documentation. It runs entirely on your
-own machine.
+AI Act Companion is an end-to-end portfolio project by **Jesse van de Kasteele**:
+it translates EU AI Act rules into a deterministic, cited assessment and turns
+the outcome into evidence-ready governance, security and assurance artefacts.
+The rule engine runs locally without an LLM; optional AI can help draft inputs
+and narrative, but never determines the legal result.
 
 > 🔗 **[Live demo →](https://huggingface.co/spaces/JesseKasteele/ai-act-companion)**
-> A public sandbox on Hugging Face Spaces that runs the deterministic engine with
-> the AI layer off and ephemeral storage (**synthetic data only**). See
+> A public, stateless sandbox on Hugging Face Spaces. It demonstrates the
+> deterministic engine and an optional, rate-limited drafting assistant; when
+> hosted AI is unavailable it falls back to labelled replay data. Submissions
+> are not added to a shared inventory (**synthetic data only**). See
 > [docs/DEPLOY-HF-SPACE.md](docs/DEPLOY-HF-SPACE.md) for how it is hosted.
 >
 > 📂 **[Browse example reports →](docs/examples/)** — real generated artifacts
@@ -24,7 +27,8 @@ own machine.
 
 > ⚠️ **Not legal advice.** This is an aid for a structured self-assessment. It
 > does not replace an assessment by a qualified lawyer or the competent
-> supervisory authority. Use synthetic / generic example data only.
+> supervisory authority. Use synthetic/generic data only; do not enter personal,
+> confidential or production data.
 
 ---
 
@@ -33,34 +37,22 @@ own machine.
 ## Why this one?
 
 Most open EU AI Act repos are either static checklists or heavyweight platforms.
-This project focuses on three things that are uncommon in free tooling:
+This project focuses on three connected capabilities:
 
 - **Explainable & cited.** Every verdict tells you *which* Article/Annex drove it
   and *why* — a traceable, deterministic rule engine, not a black box.
-- **Tested.** The classifier ships with a unit-test suite (golden cases per risk
-  tier), so the compliance logic is *validated, not vibes*.
-- **Local & private, with honest AI.** Optional AI assist runs locally (Ollama)
-  or via a paste-into-your-own-LLM flow — and **never** decides for you: a
-  human-in-the-loop review is mandatory by design (EU AI Act Art. 14 in spirit).
-- **Claude-native.** Ships as a **Claude Code plugin**: an MCP server exposes
-  the deterministic engine as tools, and a skill orchestrates a full
-  human-in-the-loop assessment. Claude becomes the interface; the audited rule
-  engine stays the ground truth. See [Use inside Claude Code](#use-inside-claude-code).
-- **A security lens, not just compliance.** Maps the system to the **OWASP Top
-  10 for LLM Applications (2025)** and **MITRE ATLAS**, linked to EU AI Act
-  Art. 15 and NIST AI RMF — the governance × security intersection that
-  otherwise lives only in commercial tools. See [AI security lens](#ai-security-lens).
-- **From findings to a red-team test plan.** Turns the security lens into a
-  prioritised, **architecture-aware** adversarial **test plan** for an
-  *authorized* purple-team exercise — each test case prioritised by the same
-  deterministic severity and traced back to the control it validates. A planning
-  aid (no exploit payloads), not an attack tool. See [Red-team test plan](#red-team-test-plan).
-- **…and back to a defensive control catalogue.** The blue-team mirror: the
-  controls to *implement* per risk, prioritised by the same severity, each naming
-  the red-team test that verifies it — *implement, then test*. Plus an **OWASP
-  GenAI Data Security** lens (DSGAI01–21) for the data layer (training data,
-  prompts, retrieval, embeddings, telemetry), anchored on EU AI Act Art. 10. See
-  [Control catalogue & data security](#control-catalogue--data-security).
+- **Governance becomes evidence.** One intake drives 21 artefacts: FRIA/DPIA,
+  Annex IV documentation, data governance, monitoring, incident and forensic
+  readiness, plus NIST/ISO/DORA and sector crosswalks.
+- **Security is part of assurance.** Architecture-aware OWASP/MITRE findings
+  feed an authorised red-team plan and the matching defensive controls — an
+  auditable offense-to-defense loop rather than a disconnected checklist.
+
+**Engineering evidence:** 270 automated tests (95% statement coverage in the
+current review), a 37-case maintainer-curated legal regression set, Linux/Windows
+CI, Docker smoke testing, SAST and dependency auditing. The web app, CLI, API and
+MCP server all use the same questionnaire and rule engine. See
+[DESIGN.md](DESIGN.md) for the decisions and trade-offs.
 
 ## Two ways to use it
 
@@ -72,7 +64,7 @@ flowchart TB
     A["🔒 Local web app<br/>(privacy-first)"]
     B["⚡ Claude Code plugin<br/>(MCP)"]
     E["<b>Deterministic engine</b><br/>classifier · reports · knowledge<br/>= ground truth"]
-    O["Risk tier + cited articles<br/>risk · DPIA · bias · security · FRIA · techdoc<br/>compliance · monitoring · framework-matrix<br/>red-team plan · control catalogue · data security<br/>STRIDE · incident · model card · DoC · registration · GPAI"]
+    O["Risk tier + cited articles<br/>21 governance, assurance, privacy<br/>conformity and AI-security reports"]
     A -->|"optional local AI:<br/>Ollama or paste-into-your-own-LLM"| E
     B -->|"Claude is the interface<br/>& narrative author"| E
     E --> O
@@ -81,8 +73,8 @@ flowchart TB
 | | 🔒 Local web app | ⚡ Claude Code plugin |
 |---|---|---|
 | **Interface** | Browser UI on your machine | Claude Code (chat) |
-| **AI assist** | Local Ollama, or paste-into-your-own-LLM | Claude Code itself, via MCP tools |
-| **Privacy** | Fully local — data never leaves your device | Uses your existing Claude Code session |
+| **AI assist** | Local Ollama, manual/replay, or explicit Anthropic opt-in | Claude Code itself, via MCP tools |
+| **Privacy** | Local by default; Anthropic mode sends disclosed drafting input | Uses your existing Claude Code session |
 | **Best for** | Privacy-sensitive / offline / no subscription | If you already live in Claude Code |
 | **Set-up** | [Quickstart](#quickstart) | [Use inside Claude Code](#use-inside-claude-code) |
 
@@ -126,8 +118,14 @@ required. The engine can also be driven headless via the [CLI](#cli).
    - defensive control catalogue (the controls to implement, each cross-linked to
      the red-team test that verifies it)
    - OWASP GenAI Data Security assessment (DSGAI01–21, data-layer lens)
-   all mapped to EU AI Act + NIST AI RMF, exportable to **Markdown** and **PDF**
-   (via browser print-to-PDF).
+   - STRIDE threat model and serious-incident response helper
+   - model card, EU Declaration of Conformity and EU-database registration sheet
+   - dedicated GPAI-provider obligations report
+   - data-governance, forensic-readiness and governance-register reports
+
+   The set uses applicable EU AI Act references, includes dedicated NIST/ISO
+   crosswalks, and is exportable to **Markdown** and **PDF** (via browser
+   print-to-PDF).
 4. **Optional AI layer** (human-in-the-loop): turn a free-text system description
    into draft answers and draft narrative sections — output is always a draft you
    review; it is never classified, submitted or stored automatically.
@@ -158,7 +156,7 @@ files in `examples/`:
 
 | Example | Tier | What it shows |
 |---|---|---|
-| `hiring_cv_screening` | High (Annex III-4) | The high-risk governance pack: FRIA, Annex IV, conformity tracker, approved governance record with Art. 4 literacy |
+| `hiring_cv_screening` | High (Annex III-4) | The high-risk governance pack: FRIA, Annex IV, conformity tracker, approved governance record with Art. 4 support-measures evidence |
 | `health_insurance_pricing` | High (Annex III-5(c)) | Health-insurer pricing: the insurance path (FRIA for every deployer, Zvw note), data-governance inventory, EIOPA/DNB block, DORA checklist, forensic readiness |
 | `health_insurer_claims_fraud` | Minimal | Claims anomaly & fraud scoring: not Annex III, yet profiling — GDPR Art. 22, EIOPA Opinion, ZN data separation; the "minimal but heavily governed" case |
 | `health_insurer_service_assistant` | Limited (Art. 50) | GenAI service assistant with claim-status tools: health data in prompts, external model (DORA), agentic controls, governance still in review |
@@ -168,10 +166,7 @@ files in `examples/`:
 | `social_scoring` | Prohibited | What an Art. 5 system looks like |
 | `spam_filter` | Minimal | The trivial case — a baseline for the tier logic |
 
-> **Install note.** Not yet on PyPI — install from source (editable, as above),
-> via [Docker](#docker), or use the
-> [hosted demo](https://huggingface.co/spaces/JesseKasteele/ai-act-companion).
-> On [PyPI](https://pypi.org/project/ai-act-companion/) since v0.8.0 —
+> **Install note.** On [PyPI](https://pypi.org/project/ai-act-companion/) since v0.8.0 —
 > `pip install ai-act-companion`. Releases are published by the tag-triggered
 > trusted-publishing workflow (`.github/workflows/release.yml`).
 > Optional extras: `.[dev]` (pytest/ruff/mypy/bandit/pip-audit), `.[mcp]` (the
@@ -180,16 +175,16 @@ files in `examples/`:
 > enough to run the web app.
 
 **Public demo vs. local install** — the [Hugging Face Space](https://huggingface.co/spaces/JesseKasteele/ai-act-companion)
-is a read-only showcase; a local install unlocks the full tool:
+is a stateless showcase; a local install unlocks the full tool:
 
 | | Public demo (Spaces) | Local install |
 |---|---|---|
 | Deterministic engine + all 21 reports | ✅ | ✅ |
-| AI assist (Ollama / paste-prompt) | ❌ (off) | ✅ (optional) |
-| Persistent storage & inventory | ❌ (ephemeral, shared) | ✅ (`data/`, private) |
-| Delete assessments | ❌ (read-only sandbox) | ✅ |
+| AI assist | Hosted draft or labelled replay fallback | Optional Ollama, manual, replay or Anthropic |
+| Persistent storage & inventory | Curated examples only; submissions are stateless | ✅ (`data/`, private) |
+| Delete assessments | N/A — submissions are not stored | ✅ |
 | Claude Code / Copilot MCP + CLI | ❌ | ✅ |
-| Your data leaves your machine | never (synthetic only) | never |
+| Data boundary | Input crosses the public network; use synthetic data only | Local by default; Anthropic mode is explicit egress |
 
 ### Docker
 
@@ -263,9 +258,10 @@ pytest                              # or: python tests/test_classifier.py
 ruff check .                        # lint
 ```
 
-The suite includes a **33-case golden-set accuracy evaluation**
-(`tests/test_accuracy.py` against `examples/golden_set.json`, 100% — expected
-tiers labelled by independent regulatory reasoning) and an **adversarial
+The suite includes a **37-case maintainer-curated legal regression set**
+(`tests/test_accuracy.py` against `examples/golden_set.json`, currently 100%).
+It protects expected behaviour but is **not independent legal validation**. The
+suite also includes an **adversarial
 red-team suite** (`tests/test_red_team.py`) that proves prompt-injection /
 jailbreak input cannot move the deterministic risk tier.
 
@@ -309,13 +305,14 @@ ai-act-companion/
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/questionnaire` | questionnaire definition |
-| POST | `/api/assess` | classify + store |
-| GET | `/api/assessments` | list stored assessments (inventory) |
+| POST | `/api/assess` | classify; stores locally, returns a stateless result in `DEMO_MODE` |
+| POST | `/api/report?type=…&lang=…` | render a report directly from answers without persistence |
+| GET | `/api/assessments` | list saved assessments locally, or curated examples in `DEMO_MODE` |
 | GET | `/api/portfolio` | inventory roll-up (tier distribution, obligations due, Art. 50) |
 | GET | `/api/assessments/{id}` | full assessment (JSON export) |
 | DELETE | `/api/assessments/{id}` | delete an assessment |
 | GET | `/api/export.csv` | inventory as a CSV register |
-| GET | `/api/assessments/{id}/report?type=risk\|dpia\|bias\|security\|fria\|techdoc\|compliance\|monitoring\|framework-matrix\|redteam\|controls\|datasec\|stride\|incident\|modelcard\|doc\|registration\|gpai` | report (markdown) |
+| GET | `/api/assessments/{id}/report?type={type}` | one of the 21 report types exposed by `/api/config` (markdown) |
 | GET | `/api/health` | health/liveness probe |
 | GET | `/api/config` | frontend config (report catalogue, version, demo mode) |
 | GET | `/api/timeline` | EU AI Act application milestones (for the countdown) |
@@ -349,13 +346,13 @@ Full configuration (copy `.env.example` to `.env`):
 | `LLM_TIMEOUT` | `180` | Seconds before a slow local model is abandoned. |
 | `ANTHROPIC_API_KEY` | *(unset)* | API key for the `anthropic` provider. Read by the SDK directly; never logged. |
 | `ANTHROPIC_WORKSPACE_ID` | _(empty)_ | Required for **identity-linked** API keys: the id (`wrkspc_…`) of the workspace the key belongs to, sent as the `anthropic-workspace-id` header. Classic keys leave it empty. |
-| `ANTHROPIC_MODEL` | `claude-sonnet-5` | Model id for the `anthropic` provider. |
-| `AI_BUDGET_USD` | `5.00` | Lifetime USD spend cap for the `anthropic` provider (estimated from reported token usage). |
-| `AI_DAILY_CALLS` | `40` | Daily call cap for the `anthropic` provider, independent of the budget. |
+| `ANTHROPIC_MODEL` | `claude-haiku-4-5` | Model id for the `anthropic` provider. |
+| `AI_BUDGET_USD` | `4.00` | Lifetime USD spend cap for the `anthropic` provider (estimated from reported token usage). |
+| `AI_DAILY_CALLS` | `25` | Daily call cap for the `anthropic` provider, independent of the budget. |
 | `AI_COOLDOWN_SECONDS` | `20` | Minimum seconds between two live calls from the same client; identical descriptions within an hour are served from a cache at no cost. |
 | `AI_CALLS_PER_IP_DAY` | `8` | Per-client daily call cap for the `anthropic` provider. |
-| `DEMO_MODE` | *(unset)* | `1` enables the public-sandbox banner and **server-side read-only** (deletion returns 403). |
-| `AIACT_DATA_DIR` | `./data` | Where assessments are stored; point at ephemeral storage for a demo. |
+| `DEMO_MODE` | *(unset)* | `1` enables the public-sandbox banner and stateless assessment submissions; curated examples remain available. |
+| `AIACT_DATA_DIR` | `./data` | Local assessment storage and provider-budget state. Demo submissions remain stateless. |
 
 > A Claude Max/Pro subscription is **not** an API backend. The `manual` provider
 > is the way to use your own subscription — it prints a prompt you paste in.
@@ -497,14 +494,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: JKasteele/ai-act-companion@v0.8.0   # pin a release tag for stability
+      - uses: JKasteele/ai-act-companion@v0.9.2   # pin a release tag for stability
         with:
           path: .
-          # version: "0.8.0"         # optional: pin the PyPI version installed
+          # version: "0.9.2"         # optional: pin the PyPI version installed
           # fail-on-detect: "true"   # optional: turn the scan into a gate
 ```
 
-> **Version pinning.** `uses: …@v0.8.0` selects the **action** version; the
+> **Version pinning.** `uses: …@v0.9.2` selects the **action** version; the
 > `version` input (default: latest PyPI release) selects which version of the
 > **tool** it installs (`ref` installs from a git ref instead). Pin both to the
 > same release for reproducible runs.
@@ -518,10 +515,14 @@ References are modelled as data in `app/knowledge/`. The classifier cites the
 concrete article/annex per conclusion, and every citation in the app/reports
 deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 [AI Act Explorer](https://artificialintelligenceact.eu/); the primary source is
-[EUR-Lex CELEX 32024R1689](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689)):
+[consolidated EUR-Lex text](https://eur-lex.europa.eu/eli/reg/2024/1689),
+including the official [2026/1744 amending act](https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng)).
+The knowledge module covers the provisions used by this tool; it is not an
+exhaustive restatement of the Regulation:
 
 - **[Art. 2](https://artificialintelligenceact.eu/article/2/)** — scope, incl. the military / R&D / pre-market / personal-use exemptions
-- **[Art. 4](https://artificialintelligenceact.eu/article/4/)** — AI literacy (baseline for all in-scope actors)
+- **[Art. 4](https://artificialintelligenceact.eu/article/4/)** — measures supporting AI literacy
+- **Art. 4a** — exceptional processing of special-category data for bias detection and correction
 - **[Art. 5](https://artificialintelligenceact.eu/article/5/)** — prohibited practices
 - **[Art. 6](https://artificialintelligenceact.eu/article/6/) + Annex I/III** — high-risk (incl. the Art. 6(3) derogation)
 - **[Art. 50](https://artificialintelligenceact.eu/article/50/)** — transparency obligations
@@ -564,19 +565,19 @@ deep-links to the full text (the engine's `ref_url()` resolves tokens to the
 - [x] **Live demo** (Hugging Face Spaces) + **EU AI Act deadline countdown** + a refreshed UI
 - [x] **Static example report gallery** — real generated artifacts, viewable on GitHub
 - [x] **Repo AI-usage scanner** — `ai-act scan` + a GitHub Action that flags EU AI Act relevance in any codebase
-- [x] **Regulatory-logic pass (0.8.0)** — Art. 2 scope exemptions, provider vs. deployer obligation split, GPAI open-source carve-out (Art. 53(2)), Art. 4 AI literacy as a baseline obligation
-- [x] **Conformity artifacts (0.8.0)** — EU Declaration of Conformity (Art. 47), EU-database registration sheet (Art. 49), GPAI obligations report (Art. 53–55) — 18 report types total
+- [x] **Regulatory-logic pass (0.8.0+)** — Art. 2 scope and exemptions, actor-specific obligations, GPAI provider/integrator distinction, Annex I/III routing, and Art. 4 support measures for in-scope providers/deployers
+- [x] **Conformity artifacts (0.8.0)** — EU Declaration of Conformity (Art. 47), EU-database registration sheet (Art. 49), GPAI obligations report (Art. 53–55) — brought the catalogue to 18 report types at that milestone (21 today)
 - [x] **PyPI release** — `pip install ai-act-companion` (since v0.8.0, via the tag-triggered trusted-publishing workflow)
-- [x] **Data-governance layer** — section 11 of the intake (data owner / steward, dataset inventory with provenance, classification and lawful basis, lineage, seven quality dimensions) and the `datagov` report (Art. 10 / Art. 26(4), DAMA-style dimensions, derived gap list, ISO 42001 A.7 / NIST / EIOPA crosswalk); the DPIA and FRIA draw on the same inventory — 19 report types total
-- [x] **Governance register + compliance-monitoring portfolio** — section 13 (`gov_*`: policy owner, approval body, status, approval / review dates, exceptions with end dates, Art. 4 AI-literacy record, register contact, DPIA reference) and the `governance` report; the inventory now shows per system the forensic-readiness score, governance status, next review (derived from the approval date and a tier cadence, with an overdue flag) and documentation completeness, with roll-up counters; `/api/register.csv` exports an **AI-register** (Algoritmeregister-style fields); the post-market monitoring plan seeds KPI rows (performance vs. baseline, drift, override rate, complaints, incidents) with a tier-based cadence; MCP gains `assess_data_governance`, `assess_forensic_readiness` and `governance_status` — 21 report types total
-- [x] **Forensic readiness & evidence plan** — section 12 of the intake (`fr_*`: log scope, retention + basis, integrity, time sync, model/prompt pinning, retrieval snapshot, override logging, PII in logs, supplier log access, legal hold, evidence owner, drill) and the `forensics` report: an **evidence register** (16 artefacts → obligation → location → retention → owner → integrity, with gap rows), an 8-dimension readiness score, a **retention-vs-minimisation** check, the **parallel reporting clocks** (AI Act Art. 73 / GDPR Art. 33 / DORA Art. 19 / NIS2) — also added to the incident report — and a crosswalk to ISO 27001 5.28/8.15/8.17, ISO 42001 A.6.2.8, CIS Control 8, MITRE ATLAS AML.M0024, OWASP AI Exchange #MONITORUSE and Rowlingson's ten steps; 20 report types total
+- [x] **Data-governance layer** — section 11 of the intake (data owner / steward, dataset inventory with provenance, classification and lawful basis, lineage, seven quality dimensions) and the `datagov` report (Art. 10 / Art. 26(4), DAMA-style dimensions, derived gap list, ISO 42001 A.7 / NIST / EIOPA crosswalk); the DPIA and FRIA draw on the same inventory
+- [x] **Governance register + compliance-monitoring portfolio** — section 13 (`gov_*`: policy owner, approval body, status, approval / review dates, exceptions with end dates, evidence of Art. 4 AI-literacy support measures, register contact, DPIA reference) and the `governance` report; the inventory now shows per system the forensic-readiness score, governance status, next review (derived from the approval date and a tier cadence, with an overdue flag) and documentation completeness, with roll-up counters; `/api/register.csv` exports an **AI-register** (Algoritmeregister-style fields); the post-market monitoring plan seeds KPI rows (performance vs. baseline, drift, override rate, complaints, incidents) with a tier-based cadence; MCP gains `assess_data_governance`, `assess_forensic_readiness` and `governance_status` — 21 report types total
+- [x] **Forensic readiness & evidence plan** — section 12 of the intake (`fr_*`: log scope, retention + basis, integrity, time sync, model/prompt pinning, retrieval snapshot, override logging, PII in logs, supplier log access, legal hold, evidence owner, drill) and the `forensics` report: an **evidence register** (16 artefacts → obligation → location → retention → owner → integrity, with gap rows), an 8-dimension readiness score, a **retention-vs-minimisation** check, the **parallel reporting clocks** (AI Act Art. 73 / GDPR Art. 33 / DORA Art. 19 / NIS2) — also added to the incident report — and a crosswalk to ISO 27001 5.28/8.15/8.17, ISO 42001 A.6.2.8, CIS Control 8, MITRE ATLAS AML.M0024, OWASP AI Exchange #MONITORUSE and Rowlingson's ten steps
 - [x] **Sector crosswalks + DORA hook** — ALTAI (the seven HLEG requirements, with the intake fields that evidence each) in every risk report; for insurers/banks (`org_sector`) the EIOPA AI governance principles, DNB SAFEST and the AI Act's own financial-institution carve-ins (Art. 9(10), 17(4), 18(3), 26(5)–(6), 74(6)); a DORA Art. 28–30 ICT third-party checklist in the compliance tracker when a financial entity relies on external models or vendor datasets
 - [x] **Annex III(5) split** — 5(a)–(d) as distinct sub-points with the Art. 27(1) rule (FRIA for *every* deployer of a 5(b)/5(c) system) and an insurance path with sector notes (Dutch Zvw basic package, supplementary, life)
-- [ ] **Demo video** — shot list ready in `docs/DEMO-SCRIPT.md`
-- [x] **MCP SDK v2** — `mcp_server.py` imports `MCPServer` (mcp 2.x) with a `FastMCP` fallback (1.x); the extra accepts `mcp>=1.2,<3`
+- [x] **Visual walkthrough** — reproducible seven-frame hero GIF and refreshed screenshots; `docs/DEMO-SCRIPT.md` retains the optional narration shot list
+- [x] **MCP SDK v2** — `mcp_server.py` imports `MCPServer` (mcp 2.x) with a `FastMCP` fallback (1.x); the extra accepts patched releases from `mcp>=1.28.1,<3`
 - [x] **Agentic tool-call controls** — for agentic systems the control catalogue adds per-call identity binding and per-tool least privilege, a tool allowlist with an approval gate for irreversible actions, a tamper-evident tool-call audit trail with correlation ids (ATLAS AML.M0024, OWASP AI Exchange #MONITORUSE) and loop / blast-radius bounds, each verified by new red-team tests (tool privilege escalation, goal hijack through tool output; OWASP Agentic Top 10 2026 ASI01–03/05)
 - [x] **`--lang nl`** — every report can carry a Dutch summary block (risk tier, applicability, findings, transparency duties, recommended documentation, governance headlines) built from the structured results; the citable body stays English. CLI `--lang nl`, API `?lang=nl`, MCP `lang`, and a language selector in the UI
-- [x] **Knowledge-base freshness process** — the EU AI Act module carries `KNOWLEDGE_VERSION` / `LAST_REVIEWED` / `AMENDMENTS`, shown in every report header, on the landing page and in `/api/timeline`; tests pin the amended dates. First review (2026-09-03) applied the Digital Omnibus timeline. Ongoing: re-review as AI Office guidance and harmonised standards land
+- [x] **Knowledge-base freshness process** — the EU AI Act module carries `KNOWLEDGE_VERSION` / `LAST_REVIEWED` / `AMENDMENTS`, shown in every report header, on the landing page and in `/api/timeline`; tests pin the amended dates. Reviewed 2026-09-04 against the consolidated text and Regulation (EU) 2026/1744. Ongoing: re-review as AI Office guidance and harmonised standards land
 
 ## Data & privacy
 
@@ -585,7 +586,10 @@ Assessments are stored as **plain JSON**, one file per assessment, under `data/`
 at rest** — use synthetic/generic data only. To purge, delete the files (or the
 whole `data/` directory); in the UI, the two-step **Delete** removes one record.
 Writes are atomic (temp file + `os.replace`), so an interrupted save can't corrupt
-an existing record. In `DEMO_MODE` storage is read-only server-side.
+an existing record. In `DEMO_MODE`, submitted assessments are classified
+statelessly and are not added to the shared inventory; only curated synthetic
+examples are exposed. Public-demo input still crosses the network, so do not
+submit personal, confidential or production data.
 
 ## Contributing & changelog
 

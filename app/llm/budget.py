@@ -32,7 +32,7 @@ PRICES = {
     "claude-haiku-4-5": (1.00, 5.00, 0.10, 1.25),
     "claude-opus-5": (5.00, 25.00, 0.50, 6.25),
 }
-_DEFAULT_PRICE = PRICES["claude-sonnet-5"]
+_DEFAULT_PRICE = PRICES["claude-haiku-4-5"]
 
 _LOCK = threading.Lock()
 _IP_CALLS: dict[str, dict[str, int]] = {}   # day -> ip -> calls
@@ -94,7 +94,7 @@ def _save(d):
     os.replace(tmp, p)
 
 
-def estimate_cost(usage, model="claude-sonnet-5"):
+def estimate_cost(usage, model="claude-haiku-4-5"):
     """USD for one response from its `usage` (dict or SDK object)."""
     price_in, price_out, price_read, price_write = PRICES.get(model, _DEFAULT_PRICE)
 
@@ -107,7 +107,7 @@ def estimate_cost(usage, model="claude-sonnet-5"):
             + g("cache_creation_input_tokens") * price_write) / 1_000_000
 
 
-def record(usage, model="claude-sonnet-5"):
+def record(usage, model="claude-haiku-4-5"):
     """Add one call's cost to the persisted counter; returns the new state."""
     cost = estimate_cost(usage, model)
     today = date.today().isoformat()

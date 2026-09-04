@@ -8,7 +8,7 @@ All notable changes are documented here. Format based on
 
 ### Added
 - **Abuse hardening for the hosted AI provider**: the per-client cap keys on the proxy-appended hop of `X-Forwarded-For` (a client-supplied first value no longer bypasses it), a per-client cooldown (`AI_COOLDOWN_SECONDS`, 20 s), a one-hour dedupe cache for identical descriptions (repeats cost nothing), tighter defaults (`AI_DAILY_CALLS` 25, `AI_BUDGET_USD` 4.00) so the in-app ceiling stays under the Console spend limit, and Claude Haiku 4.5 as the default hosted model.
-- Hosted Anthropic provider (Claude Sonnet 5) with a spend guard: a lifetime
+- Hosted Anthropic provider (Claude Haiku 4.5 by default) with a spend guard: a lifetime
   USD budget, a daily call cap and a per-IP daily cap (`AI_BUDGET_USD`,
   `AI_DAILY_CALLS`, `AI_CALLS_PER_IP_DAY`), all persisted next to the
   assessments. When any cap is hit — or no `ANTHROPIC_API_KEY` is set — the
@@ -32,13 +32,44 @@ All notable changes are documented here. Format based on
   Opinion, ZN separation of basic/supplementary data, DORA via a vendor dataset)
   and `health_insurer_service_assistant` (GenAI service assistant on a hosted
   model with claim-status tools — limited risk, health data in prompts, agentic
-  controls, governance still in review). Both in the golden set (33 cases) and
+  controls, governance still in review). Both in the golden set (now 37 cases) and
   the gallery. `foundation_model` gains training-data governance (provenance,
   TDM opt-out, Art. 53 training-content summary) and evidence fields; the
   gallery now also renders its GPAI and data-governance reports.
 - `tests/test_examples.py`: every example uses only known fields, classifies
   to its expected tier, and renders all 21 reports in both languages; README
   gains an example index.
+
+### Changed
+- **Regulation (EU) 2026/1744 legal pass.** The intake and deterministic engine
+  now model the amended Annex-I safety-component filters, safety of persons or
+  property, the limited Section-B regime, the Section-A Art. 2(13) delegated-act
+  watchpoint, Art. 4a, the new Art. 5(1)(ba)/(bb) prohibitions and their actor
+  gateways/application date, and the distinction between providing and merely
+  integrating a GPAI model.
+- **Actor- and route-specific outputs.** Provider/deployer artifacts, FRIA scope,
+  Art. 49 registration and data-governance duties now follow the recorded legal
+  role and Annex-I/III route. Art. 4 is described as proportionate literacy
+  support measures; the evidence record is explicitly a practical artifact, not
+  a prescribed statutory form.
+- Portfolio documentation now presents the project as an authored case study,
+  distinguishes the maintainer-curated legal regression set from independent
+  validation, and aligns demo/privacy/configuration claims with runtime behavior.
+
+### Fixed
+- `DEMO_MODE` visitor submissions are now stateless end to end: assessments are
+  never written to the inventory, transient reports render directly from the
+  submitted answers, and read/export endpoints expose only curated examples.
+- Corrected the Art. 2 territorial test (third-country **output used in the
+  Union**, not merely effects on people), removed deleted Art. 10(5) references,
+  and prevented Annex-I Section-B systems from inheriting Art. 5, Art. 50 or the
+  ordinary Chapter-III compliance pack through generic flags.
+- Added bounded API inputs, non-empty/trimmed system names, an unprivileged
+  container user, blocking mypy/dependency-audit gates and a frontend syntax
+  check in CI.
+- Raised the MCP and screenshot-tooling dependency floors to patched releases;
+  CI audits the complete resolved dev/MCP environment, including transitive
+  packages, rather than only the core requirements file.
 
 ## [0.9.2] - 2026-09-03
 

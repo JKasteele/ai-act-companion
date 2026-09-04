@@ -83,7 +83,7 @@ and usually a knowledge module + an MCP tool.
 - **Changing classification logic** → add/adjust a labelled case in
   `examples/golden_set.json`, labelling the expected tier by reasoning from the
   regulation, **not** by running the classifier. `tests/test_accuracy.py` runs
-  the 25-case golden set at 100%.
+  the 37-case golden set at 100%.
 - **Knowledge honesty** → cite a source for any article/standard reference; where
   a cross-framework mapping is the project's own analytical alignment and not an
   official crosswalk, say so in the code/data **and** the output. Match existing

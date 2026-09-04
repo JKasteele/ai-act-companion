@@ -1,4 +1,4 @@
-"""Hosted Anthropic (Claude Sonnet 5) provider, guarded by a spend cap.
+"""Hosted Anthropic provider (Claude Haiku 4.5 by default), guarded by a spend cap.
 
 Calls the real Claude API for a public demo, but only within a small budget
 (see budget.py: a lifetime USD cap, a daily call cap, a per-IP daily cap).

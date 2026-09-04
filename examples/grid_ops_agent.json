@@ -13,6 +13,8 @@
   ],
   "hr_safety_component": false,
   "hr_does_profiling": false,
+  "gpai_model": false,
+  "gpai_integrated": true,
   "data_personal": false,
   "data_scale": "medium",
   "data_sources": "Synthetic SCADA telemetry and internal operational runbooks.",

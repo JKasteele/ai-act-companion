@@ -34,8 +34,8 @@ pause ~1s on each report so a viewer can read the headline row.
 
 ## Notes
 
-- If recording the **public demo**, the AI-assist panel is hidden (that's
-  intentional — the demo shows the deterministic engine). Mention that the
-  optional local AI only drafts inputs a human reviews.
+- If recording the **public demo**, show that the AI-assist panel clearly labels
+  whether a hosted draft or replay draft is being used. The assistant only
+  drafts inputs a human reviews; the deterministic engine decides the tier.
 - Best example for a single-clip story: **GridSentinel** (high-risk *and* Critical
   security). For a GPAI angle, use **OpenScribe-7B**.

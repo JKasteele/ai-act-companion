@@ -10,6 +10,8 @@
   "lifecycle_stage": "production",
   "t_interacts_humans": true,
   "t_synthetic_content": true,
+  "gpai_model": false,
+  "gpai_integrated": true,
   "data_personal": true,
   "data_scale": "large",
   "autonomy_level": "human_on_the_loop",

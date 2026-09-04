@@ -116,7 +116,10 @@ def scan_repo(root="."):
 
     considerations = []
     if ai_detected:
-        considerations.append("Art. 2 — does it reach the EU market or affect persons in the EU?")
+        considerations.append(
+            "Art. 2 — does an actor/territorial route apply, including Union market "
+            "placement, an EU deployer, or third-country system output used in the Union?"
+        )
         considerations.append("Art. 5 — could any use be a prohibited practice "
                               "(e.g. social scoring, manipulation, untargeted scraping)?")
         considerations.append("Art. 6 + Annex III — is it used in a high-risk domain "

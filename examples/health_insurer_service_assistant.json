@@ -19,6 +19,7 @@
   "t_deepfake": false,
   "t_emotion_or_biometric_cat": false,
   "gpai_model": false,
+  "gpai_integrated": true,
   "data_personal": true,
   "data_special_category": true,
   "automated_decision": false,

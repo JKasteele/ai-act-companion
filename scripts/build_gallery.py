@@ -19,7 +19,9 @@ from app import reports  # noqa: E402
 from app.classifier import classify  # noqa: E402
 
 OUT = ROOT / "docs" / "examples"
-FIXED_TS = "2026-06-17T00:00:00+00:00"
+# Fixed for reproducible diffs, but never earlier than the legal knowledge
+# review stamped into the same report header.
+FIXED_TS = "2026-09-04T12:00:00+02:00"
 
 # Curated: (example file, one-line note, [report types]).
 GALLERY = [
