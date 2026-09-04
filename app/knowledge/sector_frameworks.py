@@ -38,7 +38,7 @@ ALTAI = [
       "arch_auth_strength", "arch_access_control_layer", "arch_rate_limits"]),
     ("3", "Privacy and data governance",
      "Privacy, quality and integrity of data, access to data.",
-     "Art. 10, Art. 10(5); GDPR", "A.7.2–A.7.6",
+     "Art. 4a, Art. 10; GDPR", "A.7.2–A.7.6",
      ["data_personal", "data_special_category", "dg_data_owner", "dg_data_steward",
       "dg_datasets", "dg_lineage", "dg_q_representativeness"]),
     ("4", "Transparency",

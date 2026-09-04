@@ -12,8 +12,8 @@ The main `README.md` embeds these captures of the running app:
 | `datasec.png` | OWASP GenAI Data Security lens — applicable DSGAI risks with OWASP / Art. 10 / GDPR mappings |
 | `report.png` | Obligations & conformity tracker with the Art. 99 penalty block |
 | `framework-matrix.png` | NIST CSF 2.0 / ISO 27001:2022 framework integration matrix |
-| `ai-assist.png` | The AI assist panel (free-text → human-in-the-loop draft) |
-| `inventory.png` | The AI system inventory dashboard |
+| `ai-assist.png` | The public-demo AI assist panel with its explicit replay/live label |
+| `inventory.png` | The curated public-demo AI system inventory dashboard |
 
 They are real captures of the live UI (no mock-ups). To regenerate, run the app
 and the capture script:
@@ -26,3 +26,5 @@ python scripts/capture_demo.py           # another (writes the files here)
 The script (`scripts/capture_demo.py`) drives the same UI a user would — load an
 example from the dropdown, classify, click through the report tabs — using a
 headless browser. Requires `pip install -e ".[dev,capture]" && playwright install chromium`.
+These browser-rendered captures are reviewed visually rather than compared in CI;
+font rasterisation and browser builds can otherwise create noisy binary diffs.

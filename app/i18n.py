@@ -30,8 +30,10 @@ ROLE_NL = {
 # Recommended-artifact strings (classifier._recommended_artifacts) -> Dutch.
 ARTIFACT_NL = {
     "AI risk assessment report": "AI-risicobeoordeling",
-    "AI literacy measures / staff training record (AI Act Art. 4)":
-        "AI-geletterdheidsmaatregelen / trainingsregister (AI-verordening art. 4)",
+    "AI literacy support-measures plan and evidence record (AI Act Art. 4)":
+        "Plan en bewijsdossier voor AI-geletterdheidsmaatregelen (AI-verordening art. 4)",
+    "AI literacy actor-scope check (AI Act Art. 4: providers/deployers)":
+        "Actorcheck voor AI-geletterdheid (AI-verordening art. 4: aanbieders/gebruiksverantwoordelijken)",
     "DPIA (data protection impact assessment, GDPR Art. 35)":
         "DPIA (gegevensbeschermingseffectbeoordeling, AVG art. 35)",
     "Data governance & quality record (AI Act Art. 10)":
@@ -42,8 +44,18 @@ ARTIFACT_NL = {
         "Bias-/fairnessauditrapport (AI-verordening art. 10)",
     "Technical documentation (AI Act Art. 11 + Annex IV)":
         "Technische documentatie (AI-verordening art. 11 + bijlage IV)",
+    "Deployer input-data and use record (AI Act Art. 26)":
+        "Dossier over inputdata en gebruik door de gebruiksverantwoordelijke (AI-verordening art. 26)",
+    "Fundamental rights impact assessment - FRIA, where applicable (AI Act Art. 27)":
+        "Grondrechteneffectbeoordeling - FRIA, indien van toepassing (AI-verordening art. 27)",
     "Fundamental rights impact assessment - FRIA (AI Act Art. 27)":
         "Grondrechteneffectbeoordeling - FRIA (AI-verordening art. 27)",
+    "Special-category bias-processing necessity & safeguards record (AI Act Art. 4a; only if that exceptional basis is used)":
+        "Noodzaak- en waarborgendossier voor biasverwerking van bijzondere persoonsgegevens (AI-verordening art. 4a)",
+    "Prohibition decision and withdrawal/remediation record (AI Act Art. 5)":
+        "Besluit over verbod en dossier voor intrekking/herstel (AI-verordening art. 5)",
+    "Annex I Section B applicability record (AI Act Art. 2(2))":
+        "Toepasselijkheidsdossier voor bijlage I, deel B (AI-verordening art. 2(2))",
     "Bias audit checklist (good practice)": "Bias-auditchecklist (goede praktijk)",
     "AI security assessment (OWASP LLM Top 10 + MITRE ATLAS)":
         "AI-securitybeoordeling (OWASP LLM Top 10 + MITRE ATLAS)",

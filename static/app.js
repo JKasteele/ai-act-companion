@@ -8,6 +8,7 @@ let REPORT_MD = "";
 let REPORT_FILENAME = "report.md";
 let AI_STATUS = null;       // { enabled, provider, interactive, available, model, ... }
 let EXAMPLES = [];          // ready-made example systems
+let IS_DEMO = false;
 
 const NARRATIVE_FIELDS = ["sys_description", "intended_purpose", "human_oversight", "data_sources"];
 
@@ -63,6 +64,10 @@ async function init() {
   }
   await loadAiStatus();   // before renderForm: determines whether narrative buttons appear
   renderForm();
+  ["#ai-desc", "#ai-manual-prompt", "#ai-manual-answer"].forEach((selector) => {
+    const node = $(selector);
+    if (node) node.setAttribute("maxlength", "10000");
+  });
   await loadSaved();
 
   $("#btn-assess").addEventListener("click", assess);
@@ -103,12 +108,19 @@ async function loadConfig() {
     if (v) v.textContent = `AI Act Companion v${cfg.version}`;
   }
   if (!cfg.demo_mode) return cfg;
+  IS_DEMO = true;
+  const modeCopy = $(".modes");
+  if (modeCopy) {
+    modeCopy.innerHTML = "You're using the <strong>public hosted sandbox</strong>. " +
+      "Use synthetic data only; visitor assessments are not added to its inventory.";
+  }
   const main = document.querySelector("main.wrap") || document.body;
   const banner = el("div", { class: "demo-banner no-print" },
     el("strong", {}, "Public sandbox. "),
     "Synthetic / example data only — do not enter real or personal data. " +
-    "Assessments are not persisted and are visible to other visitors during " +
-    "the demo. The AI assist may run live (Claude, capped budget) or in replay " +
+    "Your assessment is processed only to generate this result: it is not saved, " +
+    "listed, or retrievable by other visitors. The inventory contains curated " +
+    "synthetic examples only. The AI assist may run live (Claude, capped budget) or in replay " +
     "mode (pre-recorded drafts) — the label on the AI panel says which; the " +
     "classification is always the real deterministic engine.");
   main.prepend(banner);
@@ -155,7 +167,7 @@ async function loadTimeline() {
   if (data.last_reviewed) {
     const amend = (data.amendments || []).map((a) => a.name).join(", ");
     box.append(el("span", { class: "cd-meta" },
-      `Knowledge base reviewed ${data.last_reviewed}${amend ? " · incl. " + amend : ""}`));
+      `Knowledge base reviewed ${data.last_reviewed}${amend ? " · checked against " + amend : ""}`));
   }
   box.classList.remove("hidden");
 }
@@ -316,7 +328,7 @@ const TOUR_STEPS = [
   },
   {
     title: "Governance register (section 13)",
-    body: "Section 13 tracks who approved this system, the review cadence, any exceptions with an end date, and the Art. 4 AI-literacy record.",
+    body: "Section 13 tracks who approved this system, the review cadence, any exceptions with an end date, and evidence of Art. 4 AI-literacy support measures.",
     target: "#gov_exceptions",
   },
   {
@@ -620,9 +632,11 @@ function renderField(q) {
 
   let input;
   if (q.type === "text") {
-    input = el("input", { type: "text", id: q.id, name: q.id, placeholder: q.placeholder || "" });
+    input = el("input", { type: "text", id: q.id, name: q.id,
+      maxlength: q.id === "sys_name" ? "200" : "10000", placeholder: q.placeholder || "" });
   } else if (q.type === "textarea") {
-    input = el("textarea", { id: q.id, name: q.id, placeholder: q.placeholder || "" });
+    input = el("textarea", { id: q.id, name: q.id, maxlength: "10000",
+      placeholder: q.placeholder || "" });
   } else if (q.type === "select") {
     input = el("select", { id: q.id, name: q.id });
     input.append(el("option", { value: "" }, "— select —"));
@@ -669,7 +683,7 @@ function tableRow(q, values = {}) {
       cell.append(el("option", { value: "" }, "—"));
       (c.options || []).forEach((o) => cell.append(el("option", { value: o.value }, o.label)));
     } else {
-      cell = el("input", { type: "text", "data-col": c.id, "aria-label": c.label });
+      cell = el("input", { type: "text", maxlength: "10000", "data-col": c.id, "aria-label": c.label });
     }
     if (values[c.id] !== undefined && values[c.id] !== null) cell.value = String(values[c.id]);
     tr.append(el("td", {}, cell));
@@ -793,15 +807,24 @@ function setAnswers(a) {
 // --- run assessment ---------------------------------------------------------
 async function assess() {
   const answers = collectAnswers();
-  if (!answers.sys_name) { toast("Enter at least a system name."); return; }
+  if (!answers.sys_name || !String(answers.sys_name).trim()) {
+    toast("Enter a system name."); return;
+  }
   const res = await fetch("/api/assess", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ answers }),
   });
-  if (!res.ok) { toast("Classification failed."); return; }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const detail = Array.isArray(err.detail)
+      ? err.detail.map((d) => d.msg).filter(Boolean).join(" ")
+      : err.detail;
+    toast(detail || "Classification failed."); return;
+  }
   const data = await res.json();
-  CURRENT = { id: data.id, created_at: data.created_at, answers, classification: data.classification, security: data.security };
+  CURRENT = { id: data.id, created_at: data.created_at, answers,
+    classification: data.classification, security: data.security, persisted: data.persisted };
   renderClassification();
   await loadSaved();
   await selectReport("risk");
@@ -814,8 +837,10 @@ function renderClassification() {
   box.innerHTML = "";
 
   box.append(el("span", { class: `tier-badge tier-${c.tier}` }, c.tier_label));
-  box.append(el("p", {}, c.tier_description));
-  box.append(el("p", {}, c.summary));
+  // The summary already carries the tier meaning plus the assessment-specific
+  // nuance. Showing the generic tier description above it duplicated the same
+  // sentence in the most important screenshot/result view.
+  box.append(el("p", {}, c.summary || c.tier_description));
 
   const app = c.applicability;
   if (app && app.date) {
@@ -897,7 +922,14 @@ async function selectReport(type) {
   document.querySelectorAll(".tab").forEach((t) =>
     t.classList.toggle("active", t.dataset.type === type));
   const lang = ($("#report-lang") || {}).value || "en";
-  const res = await fetch(`/api/assessments/${CURRENT.id}/report?type=${type}&lang=${lang}`);
+  const transient = CURRENT.persisted === false;
+  const res = await fetch(transient
+    ? `/api/report?type=${type}&lang=${lang}`
+    : `/api/assessments/${CURRENT.id}/report?type=${type}&lang=${lang}`,
+  transient ? {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ answers: CURRENT.answers }),
+  } : undefined);
   if (!res.ok) { toast("Failed to load report."); return; }
   const data = await res.json();
   REPORT_MD = data.markdown;
@@ -969,9 +1001,11 @@ async function loadSaved() {
                                   onclick: () => openSaved(it.id) }, "Open"));
     actions.append(el("button", { type: "button", class: "linkish",
                                   onclick: () => exportJson(it.id) }, "JSON"));
-    const del = el("button", { type: "button", class: "linkish danger" }, "Delete");
-    del.addEventListener("click", () => confirmDelete(del, it.id));
-    actions.append(del);
+    if (!IS_DEMO) {
+      const del = el("button", { type: "button", class: "linkish danger" }, "Delete");
+      del.addEventListener("click", () => confirmDelete(del, it.id));
+      actions.append(del);
+    }
     tbody.append(el("tr", {},
       el("td", {}, it.sys_name || "(unnamed)"),
       el("td", {}, el("span", {
@@ -1055,7 +1089,7 @@ function showResult() {
   $("#intake-section").classList.add("hidden");
   $("#result-section").classList.remove("hidden");
   $("#reports-section").classList.remove("hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  $("#result-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function showIntake() {
   $("#intake-section").classList.remove("hidden");

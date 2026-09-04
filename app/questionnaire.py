@@ -70,9 +70,40 @@ QUESTIONNAIRE = {
                      {"value": "both", "label": "Both"},
                      {"value": "other", "label": "Other / not yet known"},
                  ]},
+                {"id": "deployer_fria_status", "type": "select", "required": False,
+                 "label": "For a deployer: what is the organisation's Art. 27 "
+                          "public-service status?",
+                 "help": "This is a legal-status test, not the same as selecting a "
+                         "public-sector industry. Outside Annex III 5(b)/(c), it "
+                         "determines whether a FRIA is mandatory (subject to the "
+                         "Annex III point 2 exception).",
+                 "options": [
+                     {"value": "body_public_law", "label": "Body governed by public law"},
+                     {"value": "private_public_service",
+                      "label": "Private entity providing public services"},
+                     {"value": "neither", "label": "Neither"},
+                     {"value": "unknown", "label": "Unknown / needs legal verification"},
+                 ]},
+                {"id": "deployer_registration_status", "type": "select", "required": False,
+                 "label": "For a deployer: what is the Art. 49(3) registration status?",
+                 "help": "Qualifying deployers are public authorities, Union institutions/"
+                         "bodies/offices/agencies, or persons acting on their behalf. "
+                         "Do not infer this status from sector alone.",
+                 "options": [
+                     {"value": "qualifying",
+                      "label": "Qualifying public body / acting on its behalf"},
+                     {"value": "not_qualifying",
+                      "label": "Not in an Art. 49(3) category"},
+                     {"value": "unknown", "label": "Unknown / needs legal verification"},
+                 ]},
                 {"id": "eu_market", "type": "boolean", "required": True,
-                 "label": "Placed on the market or used in the EU, or affecting persons in the EU?",
-                 "help": "If not, the AI Act may not apply (Art. 2)."},
+                 "label": "Does an Art. 2(1) territorial-scope route apply?",
+                 "help": "Yes if you place/put the system or a GPAI model on the Union "
+                         "market; are a deployer established or located in the Union; "
+                         "are a third-country provider/deployer whose system output is "
+                         "used in the Union; or are an importer, distributor or covered "
+                         "product manufacturer. Mere effects on a person in the Union are "
+                         "not the Art. 2(1)(c) test."},
                 {"id": "exempt_military", "type": "boolean", "required": False,
                  "label": "Is the system used exclusively for military, defence or "
                           "national-security purposes?",
@@ -110,17 +141,59 @@ QUESTIONNAIRE = {
             ),
             "questions": [
                 {"id": "p_manipulation", "type": "boolean", "required": True,
-                 "label": "Does the system use subliminal, manipulative or "
-                          "deceptive techniques that materially distort behaviour?"},
+                 "label": "Does the system use subliminal, purposefully manipulative "
+                          "or deceptive techniques that appreciably impair informed "
+                          "decision-making, materially distort behaviour, and cause or "
+                          "are reasonably likely to cause significant harm?",
+                 "help": "Answer yes only when all material Art. 5(1)(a) elements are met."},
                 {"id": "p_vulnerability", "type": "boolean", "required": True,
                  "label": "Does it exploit vulnerabilities (age, disability, "
-                          "socio-economic situation)?"},
+                          "socio-economic situation) to materially distort behaviour "
+                          "in a way that causes or is reasonably likely to cause "
+                          "significant harm?",
+                 "help": "Answer yes only when all material Art. 5(1)(b) elements are met."},
+                {"id": "p_nonconsensual_intimate", "type": "boolean", "required": True,
+                 "label": "Does it generate or manipulate realistic intimate or "
+                          "sexually explicit material of an identifiable person "
+                          "without that person's freely given, specific, informed, "
+                          "unambiguous and explicit consent?",
+                 "help": "Art. 5(1)(ba). Answer no for an edit that neither increases "
+                         "exposure of intimate parts nor changes the nature of depicted "
+                         "sexual activity (Art. 5(1b)). The actor-specific Art. 5(1a) "
+                         "gateway is asked below."},
+                {"id": "p_child_sexual_material", "type": "boolean", "required": True,
+                 "label": "Does it generate or manipulate child sexual abuse material "
+                          "or a pornographic performance involving a child within "
+                          "Directive 2011/93/EU Art. 2(c)/(e)?",
+                 "help": "Art. 5(1)(bb). Answer no where a 'without right' defence "
+                         "applies under national law; then complete the actor-specific "
+                         "Art. 5(1a) gateway below."},
+                {"id": "p_sexual_provider_intended", "type": "boolean", "required": False,
+                 "label": "Provider route: is generating/manipulating that prohibited "
+                          "material an intended purpose of the system?",
+                 "help": "Art. 5(1a)(a)(i); relevant when you place the system on the "
+                         "market or put it into service as provider."},
+                {"id": "p_sexual_provider_foreseeable_unguarded", "type": "boolean",
+                 "required": False,
+                 "label": "Provider route: is that output reasonably foreseeable and "
+                          "reproducible without significant technical modification, "
+                          "while reasonable and adequate safeguards do not reliably "
+                          "prevent and correct the misuse?",
+                 "help": "All elements of the alternative Art. 5(1a)(a)(ii) gateway "
+                         "must be met before answering yes."},
+                {"id": "p_sexual_deployer_purpose", "type": "boolean", "required": False,
+                 "label": "Deployer route: do you use the system for the purpose of "
+                          "generating or manipulating that prohibited material?",
+                 "help": "Art. 5(1a)(b); mere access to a capable system is not enough."},
                 {"id": "p_social_scoring", "type": "boolean", "required": True,
                  "label": "Does it perform social scoring with detrimental/"
-                          "unfavourable treatment in an unrelated context?"},
+                          "unfavourable treatment in an unrelated context, or treatment "
+                          "that is unjustified or disproportionate to the behaviour?"},
                 {"id": "p_predictive_policing", "type": "boolean", "required": True,
                  "label": "Does it predict criminal behaviour based solely on "
-                          "profiling or personality traits?"},
+                          "profiling or personality traits, rather than supporting a "
+                          "human assessment already based on objective, verifiable facts "
+                          "directly linked to criminal activity?"},
                 {"id": "p_facial_scraping", "type": "boolean", "required": True,
                  "label": "Does it untargetedly scrape facial images "
                           "(internet/CCTV) for facial recognition databases?"},
@@ -129,10 +202,14 @@ QUESTIONNAIRE = {
                           "education (not for medical/safety reasons)?"},
                 {"id": "p_biometric_categorization_sensitive", "type": "boolean", "required": True,
                  "label": "Does it infer sensitive attributes via biometrics "
-                          "(race, religion, political opinion, sexual orientation, ...)?"},
+                          "(race, religion, political opinion, sexual orientation, ...), "
+                          "outside the narrow dataset-labelling/filtering and law-"
+                          "enforcement carve-outs?"},
                 {"id": "p_realtime_rbi_le", "type": "boolean", "required": True,
                  "label": "Is it real-time remote biometric identification in "
-                          "public spaces for law enforcement?"},
+                          "public spaces for law enforcement outside an exhaustively "
+                          "listed, necessary, proportionate and properly authorised "
+                          "Art. 5(1)(h) exception?"},
             ],
         },
         {
@@ -141,9 +218,50 @@ QUESTIONNAIRE = {
             "description": "Determines whether the heavy obligations apply.",
             "questions": [
                 {"id": "hr_safety_component", "type": "boolean", "required": True,
-                 "label": "Is the system a product, or the safety component of a "
-                          "product, covered by EU harmonisation legislation "
-                          "(Annex I) that requires third-party conformity assessment?"},
+                 "label": "Could the system fall within the Annex I regulated-product "
+                          "route (as an AI product or embedded component)?",
+                 "help": "Screening flag retained for older assessments. A new "
+                         "assessment is classified under Art. 6(1) only after the "
+                         "relationship, safety and third-party-assessment questions "
+                         "below are answered."},
+                {"id": "hr_annex_i_relation", "type": "select", "required": False,
+                 "label": "What is the AI system's relationship to the Annex I product?",
+                 "options": [
+                     {"value": "ai_product", "label": "The AI system is itself the Annex I product"},
+                     {"value": "embedded_component", "label": "Component of an Annex I product"},
+                      {"value": "none", "label": "Neither / Annex I does not apply"},
+                  ]},
+                {"id": "hr_annex_i_section", "type": "select", "required": False,
+                 "label": "Which part of AI Act Annex I lists the applicable product law?",
+                 "help": "Section B follows the limited Art. 2(2) regime: classification "
+                         "under Art. 6(1), but not the ordinary Chapter III high-risk "
+                         "compliance pack. For Section A, also monitor future delegated "
+                         "acts under Art. 2(13), which may limit duties where product law "
+                         "provides equivalent protection. If unknown, verify the product "
+                         "legislation.",
+                 "options": [
+                     {"value": "A", "label": "Section A — ordinary Art. 6(1) route"},
+                     {"value": "B", "label": "Section B — limited Art. 2(2) regime"},
+                     {"value": "unknown", "label": "Unknown / needs legal verification"},
+                 ]},
+                {"id": "hr_safety_function", "type": "boolean", "required": False,
+                 "label": "For an embedded component: is its intended purpose to "
+                          "prevent or mitigate risks to the health and safety of persons "
+                          "or property?",
+                 "help": "Safety function under amended Art. 3(14)."},
+                {"id": "hr_failure_endangers_health_safety", "type": "boolean",
+                 "required": False,
+                 "label": "Would failure or malfunction of the AI system endanger "
+                          "the health and safety of persons or property?",
+                 "help": "If yes, it remains a safety component under Art. 6(1b), even "
+                         "if used for assistance, optimisation, efficiency, automation, "
+                         "convenience or quality control."},
+                {"id": "hr_third_party_health_safety", "type": "boolean", "required": False,
+                 "label": "Is third-party conformity assessment required for the "
+                          "product because of risks to health or safety?",
+                 "help": "Answer no if assessment is required solely for other risks, "
+                         "such as spectrum distribution or electromagnetic interference "
+                         "that does not affect health or safety (Art. 6(1c))."},
                 {"id": "hr_usecases", "type": "multiselect", "required": False,
                  "label": "In which Annex III areas is it used? (multiple allowed)",
                  "options": [
@@ -217,8 +335,17 @@ QUESTIONNAIRE = {
             "description": "Chapter V - in addition to the risk tier.",
             "questions": [
                 {"id": "gpai_model", "type": "boolean", "required": False,
-                 "label": "Is this (or does this contain) a general-purpose AI "
-                          "model (a broadly applicable foundation/language model)?"},
+                 "label": "Are you the provider of the general-purpose AI model itself "
+                          "(not merely integrating or using somebody else's model)?",
+                 "help": "Chapter V duties attach to the GPAI model provider. Building "
+                         "an application with a third-party model does not by itself make "
+                         "you that model's provider; separately assess whether you are "
+                         "provider or deployer of the resulting AI system."},
+                {"id": "gpai_integrated", "type": "boolean", "required": False,
+                 "label": "Does your system integrate or use a GPAI model supplied by "
+                          "another provider?",
+                 "help": "This records the value-chain dependency but does not assign "
+                         "the upstream provider's Chapter V duties to you."},
                 {"id": "gpai_systemic", "type": "boolean", "required": False,
                  "label": "Does the model have systemic risk (>= 10^25 FLOP "
                           "training compute or designated as such)?"},
@@ -574,7 +701,8 @@ QUESTIONNAIRE = {
             "title": "13. Governance register & policy metadata",
             "description": (
                 "Who owns this record, who approved it, when it is reviewed, which "
-                "exceptions run, and who has been trained (Art. 4). Feeds the governance "
+                "exceptions run, and what AI-literacy support measures are evidenced "
+                "(Art. 4). Feeds the governance "
                 "register report, the portfolio status columns and the AI-register CSV. "
                 "Dates as YYYY-MM-DD. None of these fields affect the risk tier."
             ),
@@ -611,7 +739,10 @@ QUESTIONNAIRE = {
                      {"id": "expires", "label": "Expires (YYYY-MM-DD)", "type": "text"},
                  ]},
                 {"id": "gov_literacy", "type": "table", "required": False,
-                 "label": "AI-literacy record (Art. 4): who was trained on this system",
+                 "label": "Evidence of AI-literacy support measures (Art. 4)",
+                 "help": "Art. 4 requires providers and deployers to take proportionate "
+                         "support measures; it does not prescribe training as the only "
+                         "format or guarantee a specific individual literacy level.",
                  "columns": [
                      {"id": "role", "label": "Role / group", "type": "text"},
                      {"id": "training", "label": "Training / briefing", "type": "text"},

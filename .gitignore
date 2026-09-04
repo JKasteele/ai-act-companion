@@ -28,6 +28,7 @@ Thumbs.db
 # Test / build
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 dist/
 build/

@@ -13,14 +13,15 @@ from .._normalize import truthy
 
 REGULATION = "Regulation (EU) 2024/1689 (EU AI Act)"
 CELEX = "32024R1689"
-EURLEX_URL = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689"
+EURLEX_URL = "https://eur-lex.europa.eu/eli/reg/2024/1689"
+AMENDMENT_2026_URL = "https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng"
 
 # --- Knowledge-base metadata -------------------------------------------
 # The law moves; a report must say WHICH state of the law it reflects.
 # Bump LAST_REVIEWED whenever the rules or dates in this module are checked
 # against new guidance, and record every amending act in AMENDMENTS.
 KNOWLEDGE_VERSION = "2026-09"
-LAST_REVIEWED = "2026-09-03"
+LAST_REVIEWED = "2026-09-04"
 # (short name, what it changed, source URL)
 AMENDMENTS = [
     ("Regulation (EU) 2026/1744 (Digital Omnibus on AI)",
@@ -30,7 +31,11 @@ AMENDMENTS = [
      "obligations from 2 Aug 2027 to 2 Aug 2028. Art. 50 transparency, the "
      "penalty and enforcement provisions and supervision of Art. 4 AI literacy "
      "apply from 2 Aug 2026 as originally planned; generative systems already "
-     "on the market get until 2 Dec 2026 for machine-readable marking.",
+     "on the market get until 2 Dec 2026 for machine-readable marking. It also "
+     "inserted Art. 4a, Art. 5(1)(ba)/(bb) and Art. 6(1a)-(1c); the two new "
+     "prohibitions apply from 2 Dec 2026. Amended Art. 2(2) limits the regime "
+     "for Annex I Section B, while Art. 2(13) creates a delegated-act framework "
+     "for equivalent product-law protections in Section A.",
      "https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng"),
 ]
 _EXPLORER = "https://artificialintelligenceact.eu"
@@ -47,6 +52,15 @@ def ref_url(ref):
     """
     if not ref:
         return None
+    if "2026/1744" in ref:
+        return AMENDMENT_2026_URL
+    # The third-party explorer may not yet reproduce newly inserted paragraphs.
+    # Send amendment-specific tokens to the official amending act instead of
+    # accidentally resolving e.g. "Art. 4a" to the old Article 4 page.
+    if re.search(r"Art\.?\s*4a\b", ref, re.IGNORECASE) or re.search(
+            r"Art\.?\s*5\(1\)\((?:ba|bb)\)|Art\.?\s*5\(1[ab]\)|Art\.?\s*6\(1[abc]\)",
+            ref, re.IGNORECASE):
+        return AMENDMENT_2026_URL
     m = re.search(r"Art\.?\s*(\d+)", ref)
     if m:
         return f"{_EXPLORER}/article/{int(m.group(1))}/"
@@ -82,9 +96,9 @@ TIER_DESCRIPTIONS = {
         "used in the Union."
     ),
     TIER_HIGH: (
-        "The system is high-risk. Extensive obligations apply (e.g. risk "
-        "management system, data governance, technical documentation, logging, "
-        "human oversight, conformity assessment and CE marking)."
+        "The system is high-risk. Extensive actor- and route-specific obligations "
+        "apply: providers carry the conformity and product-governance duties, while "
+        "deployers carry the use, oversight, monitoring and applicable FRIA duties."
     ),
     TIER_LIMITED: (
         "The system is subject to transparency obligations (Article 50): "
@@ -92,8 +106,10 @@ TIER_DESCRIPTIONS = {
         "or about generated/manipulated content."
     ),
     TIER_MINIMAL: (
-        "No mandatory AI Act requirements. Voluntary codes of conduct are "
-        "encouraged (Article 95). Good governance is still recommended."
+        "The minimal-risk tier adds no system-specific mandatory duty. Cross-cutting "
+        "duties such as AI-literacy support measures (Article 4), any separate GPAI "
+        "duties and other applicable law still need to be assessed; voluntary codes "
+        "of conduct are encouraged (Article 95)."
     ),
 }
 
@@ -104,8 +120,10 @@ PROHIBITED_PRACTICES = {
         "ref": "Art. 5(1)(a)",
         "title": "Subliminal, manipulative or deceptive techniques",
         "summary": (
-            "Techniques that materially distort behaviour beyond a person's "
-            "awareness and that (are likely to) cause harm."
+            "Subliminal techniques beyond a person's consciousness, or purposefully "
+            "manipulative/deceptive techniques, that appreciably impair informed "
+            "decision-making, materially distort behaviour and cause or are reasonably "
+            "likely to cause significant harm."
         ),
     },
     "p_vulnerability": {
@@ -114,7 +132,7 @@ PROHIBITED_PRACTICES = {
         "summary": (
             "Exploiting vulnerabilities due to age, disability or a specific "
             "socio-economic situation to materially distort behaviour with "
-            "(likely) harm."
+            "significant harm or a reasonable likelihood of significant harm."
         ),
     },
     "p_social_scoring": {
@@ -131,7 +149,9 @@ PROHIBITED_PRACTICES = {
         "title": "Predictive policing based on profiling",
         "summary": (
             "Assessing the risk that a person will commit a criminal offence "
-            "based solely on profiling or personality traits."
+            "based solely on profiling or personality traits, outside AI supporting "
+            "a human assessment already based on objective and verifiable facts "
+            "directly linked to criminal activity."
         ),
     },
     "p_facial_scraping": {
@@ -156,7 +176,8 @@ PROHIBITED_PRACTICES = {
         "summary": (
             "Biometric categorisation that infers a person's race, political "
             "opinions, trade union membership, religion, sex life or sexual "
-            "orientation."
+            "orientation, excluding the Regulation's narrow dataset-labelling/"
+            "filtering and law-enforcement categorisation carve-outs."
         ),
     },
     "p_realtime_rbi_le": {
@@ -164,20 +185,56 @@ PROHIBITED_PRACTICES = {
         "title": "Real-time remote biometric identification (RBI) for law enforcement",
         "summary": (
             "Real-time remote biometric identification in publicly accessible "
-            "spaces for law enforcement, except for an exhaustively listed set "
-            "of pre-authorised exceptions."
+            "spaces for law enforcement outside the exhaustively listed, necessary "
+            "and proportionate exceptions and their prior-authorisation safeguards."
         ),
     },
 }
 
+# The two prohibitions inserted by Reg. (EU) 2026/1744 are not unconditional
+# content flags.  Article 5(1a) contains different gateways for providers and
+# deployers; the classifier evaluates those gateways separately instead of
+# treating a general-purpose generator as prohibited merely because misuse is
+# technically possible.  These provisions apply from 2 December 2026.
+CONDITIONAL_PROHIBITED_PRACTICES = {
+    "p_nonconsensual_intimate": {
+        "ref": "Art. 5(1)(ba)",
+        "title": "Non-consensual intimate or sexually explicit material",
+        "summary": (
+            "Realistic image, video, audio or similar material depicts an "
+            "identifiable person's intimate parts or sexually explicit activity "
+            "without that person's freely given, specific, informed, unambiguous "
+            "and explicit consent. Under Art. 5(1b), an edit that neither increases "
+            "exposure of intimate parts nor changes the nature of depicted sexual "
+            "activity is not manipulation for this prohibition."
+        ),
+    },
+    "p_child_sexual_material": {
+        "ref": "Art. 5(1)(bb)",
+        "title": "Child sexual abuse material or performance",
+        "summary": (
+            "Material or a performance within Article 2(c) or (e) of Directive "
+            "2011/93/EU is generated or manipulated, unless a 'without right' "
+            "defence applies under national law."
+        ),
+    },
+}
+
+NEW_ART_5_APPLICATION_DATE = "2 Dec 2026"
+
 # --- Article 6 + Annex III: high-risk use cases ----------------------------
 ART_6_1 = {
-    "ref": "Art. 6(1) jo. Annex I",
+    "ref": "Art. 6(1)–(1c) jo. Annex I",
     "title": "Safety component under Union harmonisation legislation",
     "summary": (
         "The AI system is a product, or the safety component of a product, "
         "covered by the harmonisation legislation listed in Annex I and "
-        "required to undergo a third-party conformity assessment."
+        "required to undergo a third-party conformity assessment for health or "
+        "safety risks. A component's safety function and the consequences of its "
+        "failure include the health and safety of persons or property (Art. 3(14)). "
+        "Solely non-safety assistance, optimisation, efficiency, automation, "
+        "convenience or quality-control functions are excluded, unless failure or "
+        "malfunction would endanger health or safety (Art. 6(1a)–(1c))."
     ),
 }
 
@@ -334,7 +391,7 @@ INSURANCE_SCOPE_NOTES = {
     "health_supplementary": (
         "Supplementary health insurance: acceptance and pricing may be risk-based, "
         "so this is the Annex III(5)(c) core case. Special-category (health) data "
-        "needs a GDPR Art. 9(2) condition; the Art. 10(5) allowance to process "
+        "needs a GDPR Art. 9(2) condition; the Art. 4a allowance to process "
         "special categories for bias detection is narrow and comes with strict "
         "safeguards."
     ),
@@ -371,9 +428,18 @@ ART_10_REQUIREMENTS = [
                    "fit the persons and groups the system is used on."),
     ("Art. 10(4)", "Datasets reflect the geographical, contextual, behavioural or "
                    "functional setting in which the system will be used."),
-    ("Art. 10(5)", "Special categories of personal data are processed for bias "
-                   "detection/correction only when strictly necessary and under the "
-                   "listed safeguards (pseudonymisation, access controls, deletion)."),
+    ("Art. 4a(1)", "Provider of a high-risk system: special categories of personal "
+                   "data may exceptionally be processed for Art. 10(2)(f)–(g) bias "
+                   "detection/correction only where strictly necessary and subject "
+                   "to every listed safeguard (including alternatives assessment, "
+                   "reuse limits, pseudonymisation/security, access controls, no "
+                   "third-party access, timely deletion and processing records)."),
+    ("Art. 4a(2)", "Providers and deployers of other AI systems or models, and "
+                   "deployers of high-risk systems, may use the same exceptional "
+                   "basis only where strictly necessary for biases likely to affect "
+                   "health or safety, fundamental rights or Union-law discrimination, "
+                   "and all Art. 4a(1) safeguards apply; this creates no duty to carry "
+                   "out such processing."),
     ("Art. 26(4)", "Deployer: input data under its control is relevant and sufficiently "
                    "representative in view of the intended purpose."),
 ]
@@ -404,7 +470,8 @@ HIGH_RISK_OBLIGATIONS = [
                 "become a provider).", "both"),
     ("Art. 43", "Conformity assessment before putting into service.", "provider"),
     ("Art. 47 + 48", "EU declaration of conformity and CE marking.", "provider"),
-    ("Art. 49", "Registration in the EU database for high-risk systems.", "provider"),
+    ("Art. 49", "Registration in the EU database for Annex III high-risk systems.",
+     "provider"),
     ("Art. 72", "Post-market monitoring.", "provider"),
     ("Art. 26", "Obligations for deployers (use per instructions, human "
                 "oversight, monitoring, keep logs).", "deployer"),
@@ -413,18 +480,27 @@ HIGH_RISK_OBLIGATIONS = [
 ]
 
 
-def high_risk_obligations_for_role(role):
+def high_risk_obligations_for_role(role, answers=None):
     """Return the (ref, description) high-risk obligations for a given Art. 3
     role. Provider-only and deployer-only duties are filtered so the guidance
-    is not wrong for the actor. Unknown/"both"/"other" -> show everything."""
+    is not wrong for the actor or classification route. Unknown/"both"/"other"
+    shows both actor sets. Art. 27 and Art. 49 are Annex-III-only here."""
     role = (role or "").strip().lower()
+    raw_usecases = (answers or {}).get("hr_usecases") or []
+    if isinstance(raw_usecases, str):
+        raw_usecases = [raw_usecases]
+    has_annex_iii = any(u and u != "none" for u in raw_usecases)
     if role == "provider":
         keep = {"provider", "both"}
     elif role == "deployer":
         keep = {"deployer", "both"}
     else:
         keep = {"provider", "deployer", "both"}
-    return [(ref, desc) for ref, desc, r in HIGH_RISK_OBLIGATIONS if r in keep]
+    return [
+        (ref, desc)
+        for ref, desc, r in HIGH_RISK_OBLIGATIONS
+        if r in keep and (has_annex_iii or ref not in ("Art. 27", "Art. 49"))
+    ]
 
 
 # --- Article 2: scope exemptions -------------------------------------------
@@ -651,13 +727,16 @@ TIMELINE = [
     ("2 Feb 2026", "Commission guidance on high-risk classification due "
      "(draft guidelines published 19 May 2026).", "Art. 6(5)"),
     ("27 Jul 2026", "Digital Omnibus on AI (Reg. (EU) 2026/1744) enters into "
-     "force: Annex III high-risk obligations postponed to 2 Dec 2027, "
-     "Annex I to 2 Aug 2028.", "Art. 113"),
+     "force, including Art. 4a and the revised Annex I scope framework; Annex III "
+     "high-risk obligations move to 2 Dec 2027 and Annex I to 2 Aug 2028.",
+     "Reg. (EU) 2026/1744"),
     ("2 Aug 2026", "Art. 50 transparency obligations, the penalty and enforcement "
      "provisions and supervision of Art. 4 AI literacy apply.", "Art. 113"),
-    ("2 Dec 2026", "End of the grace period for machine-readable marking "
-     "(Art. 50(2)) for generative systems already on the market before "
-     "2 Aug 2026.", "Art. 50"),
+    ("2 Dec 2026", "New prohibited practices for non-consensual intimate material "
+     "and child sexual abuse material (Art. 5(1)(ba)/(bb), subject to Art. "
+     "5(1a)/(1b)) apply; also the end of the Art. 50(2) machine-readable-marking "
+     "grace period for generators already on the market before 2 Aug 2026.",
+     "Art. 113(a); Art. 111(4)"),
     ("2 Aug 2027", "GPAI models already on the market before 2 Aug 2025 must "
      "comply.", "Art. 111(3)"),
     ("2 Dec 2027", "High-risk obligations for Annex III systems (Ch. III s. 2, "
@@ -674,12 +753,72 @@ TIMELINE = [
 MILESTONES = [
     ("2025-02-02", "Prohibited practices (Art. 5) & AI literacy (Art. 4)", "Art. 113(a)"),
     ("2025-08-02", "GPAI obligations, governance & penalties", "Art. 113(b)"),
+    ("2026-07-27", "Digital Omnibus in force, incl. Art. 4a and Annex I scope changes",
+     "Reg. (EU) 2026/1744"),
     ("2026-08-02", "Art. 50 transparency obligations, penalties & Art. 4 supervision",
      "Art. 113"),
+    ("2026-12-02", "Art. 5(1)(ba)/(bb) new prohibited practices apply",
+     "Art. 113(a)"),
     ("2027-12-02", "High-risk (Annex III) obligations apply (Digital Omnibus date)",
      "Art. 113"),
     ("2028-08-02", "High-risk under Art. 6(1)/Annex I (regulated products)", "Art. 113(c)"),
 ]
+
+
+def annex_i_high_risk_trigger(answers):
+    """Evaluate the amended Art. 6(1)/(1a)-(1c) Annex I route.
+
+    Saved pre-2026 assessments only have ``hr_safety_component``; retain their
+    result.  Once any granular field is present, the legacy screening answer is
+    insufficient on its own.
+    """
+    answers = answers or {}
+    detail_fields = {
+        "hr_annex_i_relation", "hr_safety_function",
+        "hr_failure_endangers_health_safety", "hr_third_party_health_safety",
+    }
+    if not any(key in answers for key in detail_fields):
+        return truthy(answers.get("hr_safety_component"))
+    relation = (answers.get("hr_annex_i_relation") or "").strip().lower()
+    if not truthy(answers.get("hr_third_party_health_safety")):
+        return False
+    if relation == "ai_product":
+        return True
+    return relation == "embedded_component" and (
+        truthy(answers.get("hr_safety_function"))
+        or truthy(answers.get("hr_failure_endangers_health_safety"))
+    )
+
+
+def annex_i_section_b_only(answers):
+    """Whether amended Art. 2(2)'s limited Section-B regime is the only route.
+
+    These systems remain classified through Art. 6(1), but only Art. 6(1),
+    Art. 60a and Arts. 102–112 apply (with Arts. 57–59 only insofar as the
+    product legislation integrates the high-risk requirements). They must not
+    receive the ordinary Chapter III provider/deployer compliance pack.
+    """
+    answers = answers or {}
+    raw_usecases = answers.get("hr_usecases") or []
+    if isinstance(raw_usecases, str):
+        raw_usecases = [raw_usecases]
+    has_annex_iii = any(u and u != "none" for u in raw_usecases)
+    return (
+        annex_i_high_risk_trigger(answers)
+        and str(answers.get("hr_annex_i_section") or "").strip().upper() == "B"
+        and not has_annex_iii
+    )
+
+
+def art4_applies(answers, in_scope=True):
+    """Whether the recorded actor carries the Art. 4 support-measures duty."""
+    answers = answers or {}
+    role = str(answers.get("provider_role") or "").strip().lower()
+    return (
+        in_scope
+        and role in ("provider", "deployer", "both")
+        and not annex_i_section_b_only(answers)
+    )
 
 
 def applies_from(tier, answers):
@@ -691,16 +830,46 @@ def applies_from(tier, answers):
     report's headline consistent with the obligations & conformity tracker.
     """
     answers = answers or {}
+    # The questionnaire now defines gpai_model narrowly: the assessed actor is
+    # the GPAI model provider, not merely an integrator of an upstream model.
     gpai = truthy(answers.get("gpai_model"))
     gpai_note = (" GPAI model obligations (Chapter V) additionally apply from "
                  "2 Aug 2025 (Art. 113(b)).")
 
     if tier == TIER_PROHIBITED:
-        base = {"date": "2 Feb 2025",
-                "what": "Prohibition under Art. 5 already applies.",
-                "basis": "Art. 113(a)"}
+        old_trigger = any(truthy(answers.get(qid)) for qid in PROHIBITED_PRACTICES)
+        new_trigger = any(
+            truthy(answers.get(qid)) for qid in CONDITIONAL_PROHIBITED_PRACTICES
+        )
+        if new_trigger and not old_trigger:
+            base = {"date": NEW_ART_5_APPLICATION_DATE,
+                    "what": "The Art. 5(1)(ba)/(bb) prohibitions apply from "
+                            "2 Dec 2026, subject to Art. 5(1a)/(1b).",
+                    "basis": "Art. 113(a)"}
+        else:
+            base = {"date": "2 Feb 2025",
+                    "what": "Prohibition under Art. 5 already applies.",
+                    "basis": "Art. 113(a)"}
     elif tier == TIER_HIGH:
-        if truthy(answers.get("hr_safety_component")):
+        raw_usecases = answers.get("hr_usecases") or []
+        if isinstance(raw_usecases, str):
+            raw_usecases = [raw_usecases]
+        annex_iii = any(u and u != "none" for u in raw_usecases)
+        annex_i = annex_i_high_risk_trigger(answers)
+        if annex_i_section_b_only(answers):
+            base = {"date": "2 Aug 2028",
+                    "what": "The Art. 6(1) classification and limited Annex I "
+                            "Section B regime in Art. 2(2) apply from 2 Aug 2028; "
+                            "the ordinary Chapter III high-risk pack does not apply "
+                            "through this route.",
+                    "basis": "Art. 113(c)"}
+        elif annex_i and annex_iii:
+            base = {"date": "2 Dec 2027",
+                    "what": "Annex III high-risk obligations apply from 2 Dec 2027; "
+                            "the parallel Art. 6(1)/Annex I route applies from "
+                            "2 Aug 2028 (Reg. (EU) 2026/1744).",
+                    "basis": "Art. 113(c)"}
+        elif annex_i:
             base = {"date": "2 Aug 2028",
                     "what": "High-risk obligations for Art. 6(1)/Annex I "
                             "(regulated products); postponed from 2 Aug 2027 "

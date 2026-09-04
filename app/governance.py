@@ -135,7 +135,7 @@ def exceptions(answers, today=None):
 
 
 def literacy(answers):
-    """AI-literacy record rows (Art. 4): role, training, date."""
+    """Evidence rows for AI-literacy support measures: role, activity, date."""
     rows = []
     for raw in as_list((answers or {}).get("gov_literacy")):
         if not isinstance(raw, dict):
@@ -198,11 +198,12 @@ def governance_status(answers, classification=None, today=None):
         elif e["open_ended"]:
             gaps.append(("medium", f"Open-ended exception: {e['exception'] or e['decision']}.",
                          "Give every exception an end date.", "ISO 42001 A.2.4"))
-    if not lit:
-        gaps.append(("medium", "No AI-literacy record.",
-                     "Record which roles received which training and when (Art. 4 is in "
-                     "force since 2 Feb 2025; supervision since 2 Aug 2026).",
-                     "Art. 4"))
+    art4_in_scope = eu.art4_applies(answers, in_scope=not cls.get("out_of_scope"))
+    if not lit and art4_in_scope:
+        gaps.append(("medium", "No evidence of AI-literacy support measures.",
+                     "Record the proportionate support measures, target roles, content "
+                     "and dates. Art. 4 prescribes measures, not a specific training "
+                     "format or guaranteed individual literacy level.", "Art. 4"))
     if not comp["complete"]:
         weak = [s for s, share in comp["per_section"].items()
                 if s in _COMPLETENESS_SECTIONS and share < _COMPLETENESS_SECTIONS[s]]

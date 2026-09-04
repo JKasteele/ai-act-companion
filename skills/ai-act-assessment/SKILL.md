@@ -98,8 +98,9 @@ The engine is the ground truth; you are the interface and the narrative author.
      pure function of those fields.
    - `governance` — **Governance register**: policy owner / approval body / status,
      review cadence per tier with the next-review date (derived from the approval
-     date when not recorded) and overdue flag, exceptions with end dates, the Art. 4
-     AI-literacy record, intake completeness and the AI-register entry. Collect
+     date when not recorded) and overdue flag, exceptions with end dates, evidence
+     of Art. 4 AI-literacy support measures, intake completeness and the AI-register
+     entry. Collect
      section 13 (`gov_*`; dates as YYYY-MM-DD). `governance_status`,
      `assess_data_governance` and `assess_forensic_readiness` return the structured
      forms of the three governance lenses.

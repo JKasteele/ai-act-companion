@@ -1,9 +1,9 @@
 """Golden-set accuracy evaluation for the rule-based classifier.
 
-Validates the classifier against a curated set of synthetic AI systems whose
-expected EU AI Act tier was derived by independent reading of the regulation
-(Art. 5 / 6 / 50), NOT by running the classifier. This turns "it works" into a
-measurable, reproducible accuracy figure instead of vibes.
+Validates the classifier against a maintainer-curated set of synthetic AI
+systems whose expected EU AI Act tier was reasoned from the regulation (Art. 5 /
+6 / 50), not copied from the classifier output. This is reproducible regression
+evidence, not independent legal validation.
 
 Runs with pytest (`pytest`) or standalone (`python tests/test_accuracy.py`).
 """

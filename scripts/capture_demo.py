@@ -82,6 +82,18 @@ def main():
         page = ctx.new_page()
         frames = []
 
+        # --- landing-page proof: curated demo inventory + labelled AI assist -
+        page.goto(BASE, wait_until="networkidle")
+        page.add_style_tag(content=".toast{display:none !important}")
+        page.wait_for_function("() => document.querySelector('#saved-count').textContent !== '0'")
+        page.eval_on_selector("#saved-box", "el => { el.open = true; el.scrollIntoView(); }")
+        time.sleep(0.35)
+        shot(page, "inventory.png")
+        page.wait_for_selector("#ai-panel:not(.hidden)")
+        page.eval_on_selector("#ai-panel", "el => el.scrollIntoView({block: 'start'})")
+        time.sleep(0.35)
+        shot(page, "ai-assist.png")
+
         # --- support_chatbot: severity -> test (offense) -> control (defense)
         #     -> the offense<->defense loop -> data security -> framework matrix -
         load_and_classify(page, "support_chatbot")

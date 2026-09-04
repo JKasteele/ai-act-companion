@@ -15,6 +15,7 @@ Run directly (`python mcp_server.py`) over stdio. Requires `pip install mcp`.
 """
 
 import sys
+from importlib import import_module
 from pathlib import Path
 from typing import Literal
 
@@ -23,10 +24,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # mcp 2.x renamed FastMCP to MCPServer (same decorator/run API for stdio);
 # support both so `pip install ai-act-companion[mcp]` works on either major.
-try:  # noqa: E402
-    from mcp.server.mcpserver import MCPServer as _Server  # mcp >= 2
-except ImportError:  # pragma: no cover - depends on the installed SDK
-    from mcp.server.fastmcp import FastMCP as _Server  # mcp 1.x
+try:  # pragma: no branch - depends on the installed SDK
+    _Server = import_module("mcp.server.mcpserver").MCPServer  # mcp >= 2
+except (ImportError, AttributeError):  # pragma: no cover - SDK-version dependent
+    _Server = import_module("mcp.server.fastmcp").FastMCP  # mcp 1.x
 
 from app import reports, storage  # noqa: E402
 from app.classifier import classify as _classify  # noqa: E402
@@ -142,7 +143,7 @@ def assess_forensic_readiness(answers: dict) -> dict:
 def governance_status(answers: dict) -> dict:
     """**Governance register** status: policy owner, approval body, status, review
     cadence for the tier, next review (recorded or derived) and the overdue flag,
-    exceptions (expired / open-ended), the Art. 4 AI-literacy record, intake
+    exceptions (expired / open-ended), evidence of Art. 4 support measures, intake
     completeness per section and a gap list. Reads the `gov_*` fields."""
     return _governance_status(answers, _classify(answers))
 
@@ -200,7 +201,8 @@ def generate_report(
         27001, ISO 42001, CIS Control 8, ATLAS AML.M0024;
       'governance' - governance register: policy owner / approval body /
         status / review cadence and overdue flag, exceptions with end dates,
-        Art. 4 AI-literacy record, intake completeness and the AI-register entry.
+        evidence of Art. 4 AI-literacy support measures, intake completeness and
+        the AI-register entry.
     `lang='nl'` prepends a Dutch summary block (risk tier, applicability, findings,
     recommended documentation, governance headlines); the citable body stays
     English. Provide either `answers` (classified on the fly) or `assessment_id`

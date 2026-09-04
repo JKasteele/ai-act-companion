@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app import main as main_module  # noqa: E402
 from app.llm import budget  # noqa: E402
 from app.llm.config import settings  # noqa: E402
 from app.main import app  # noqa: E402
@@ -51,6 +52,65 @@ def test_questionnaire_endpoint():
     r = client.get("/api/questionnaire")
     assert r.status_code == 200
     assert len(r.json()["sections"]) == 13
+
+
+def test_assess_rejects_blank_name_and_oversized_free_text():
+    blank = client.post("/api/assess", json={"answers": {"sys_name": "   "}})
+    assert blank.status_code == 422
+    assert "non-empty system name" in str(blank.json())
+
+    oversized = client.post("/api/assess", json={"answers": {
+        "sys_name": "Bounded", "sys_description": "x" * 10_001}})
+    assert oversized.status_code == 422
+    assert "at most 10000 characters" in str(oversized.json())
+
+    prefill = client.post("/api/ai/prefill", json={"description": "x" * 10_001})
+    assert prefill.status_code == 422
+
+    nested = "value"
+    for _ in range(10):
+        nested = {"child": nested}
+    too_deep = client.post("/api/assess", json={"answers": {
+        "sys_name": "Nested", "dg_datasets": nested}})
+    assert too_deep.status_code == 422
+    assert "nested at most" in str(too_deep.json())
+
+
+def test_demo_submissions_are_stateless_and_inventory_is_curated(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_module, "DEMO_MODE", True)
+    monkeypatch.setattr(main_module.storage, "DATA_DIR", tmp_path)
+
+    # Even a pre-existing private/local record is not exposed by demo endpoints.
+    main_module.storage.save({
+        "id": "private-local-record", "created_at": main_module.storage.now_iso(),
+        "answers": {"sys_name": "Must stay private"},
+        "classification": {}, "security": {},
+    })
+    before = set(tmp_path.glob("*.json"))
+
+    result = client.post("/api/assess", json={"answers": {
+        "sys_name": "Visitor Secret", "eu_market": True}})
+    assert result.status_code == 200
+    body = result.json()
+    assert body["persisted"] is False
+    assert set(tmp_path.glob("*.json")) == before
+    assert client.get(f"/api/assessments/{body['id']}").status_code == 404
+
+    portfolio = client.get("/api/portfolio").json()
+    names = {row["sys_name"] for row in portfolio["systems"]}
+    assert "Visitor Secret" not in names
+    assert "Must stay private" not in names
+    assert names  # shipped synthetic examples remain usable
+    assert "Visitor Secret" not in client.get("/api/export.csv").text
+    assert "Must stay private" not in client.get("/api/register.csv").text
+
+    example_id = portfolio["systems"][0]["id"]
+    assert client.get(f"/api/assessments/{example_id}").status_code == 200
+
+    report = client.post("/api/report?type=risk", json={"answers": {
+        "sys_name": "Visitor Secret", "eu_market": True}})
+    assert report.status_code == 200
+    assert len(report.json()["markdown"]) > 200
 
 
 def test_timeline_endpoint_for_countdown():

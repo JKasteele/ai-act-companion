@@ -42,6 +42,57 @@ def test_social_scoring_is_prohibited():
     assert any("Art. 5(1)(c)" in ref for f in r["findings"] for ref in f["refs"])
 
 
+def test_new_intimate_content_prohibition_requires_provider_gateway_and_new_date():
+    answers = {
+        "eu_market": True,
+        "provider_role": "provider",
+        "p_nonconsensual_intimate": True,
+        "p_sexual_provider_intended": True,
+    }
+    r = classify(answers)
+    assert r["tier"] == eu.TIER_PROHIBITED
+    refs = {ref for f in r["findings"] for ref in f["refs"]}
+    assert {"Art. 5(1)(ba)", "Art. 5(1a)(a)"} <= refs
+    assert r["applicability"]["date"] == "2 Dec 2026"
+
+
+def test_new_sexual_content_capability_alone_is_not_prohibited():
+    # A provider-side generic capability is insufficient unless intended, or
+    # foreseeable/reproducible AND lacking the required safeguards.
+    r = classify({
+        "eu_market": True,
+        "provider_role": "provider",
+        "p_nonconsensual_intimate": True,
+        "p_sexual_provider_intended": False,
+        "p_sexual_provider_foreseeable_unguarded": False,
+    })
+    assert r["tier"] == eu.TIER_MINIMAL
+    assert not r["findings"]
+
+
+def test_new_csam_deployer_route_requires_use_for_that_purpose():
+    base = {
+        "eu_market": True,
+        "provider_role": "deployer",
+        "p_child_sexual_material": True,
+    }
+    assert classify(base)["tier"] == eu.TIER_MINIMAL
+    r = classify({**base, "p_sexual_deployer_purpose": True})
+    assert r["tier"] == eu.TIER_PROHIBITED
+    refs = {ref for f in r["findings"] for ref in f["refs"]}
+    assert {"Art. 5(1)(bb)", "Art. 5(1a)(b)"} <= refs
+
+
+def test_actor_gateway_does_not_cross_from_deployer_to_provider():
+    r = classify({
+        "eu_market": True,
+        "provider_role": "provider",
+        "p_nonconsensual_intimate": True,
+        "p_sexual_deployer_purpose": True,
+    })
+    assert r["tier"] == eu.TIER_MINIMAL
+
+
 def test_spam_filter_is_minimal():
     r = classify(_load("spam_filter.json"))
     assert r["tier"] == eu.TIER_MINIMAL
@@ -128,6 +179,51 @@ def test_provider_obligations_include_conformity_and_ce():
     assert "Art. 26" not in refs and "Art. 27" not in refs
 
 
+def test_art6_granular_questions_prevent_broad_annex_i_overclassification():
+    r = classify({
+        "eu_market": True,
+        "hr_safety_component": True,  # broad screening flag is not dispositive
+        "hr_annex_i_relation": "embedded_component",
+        "hr_safety_function": False,
+        "hr_failure_endangers_health_safety": False,
+        "hr_third_party_health_safety": True,
+    })
+    assert r["tier"] == eu.TIER_MINIMAL
+
+    non_safety_assessment = classify({
+        "eu_market": True,
+        "hr_safety_component": True,
+        "hr_annex_i_relation": "embedded_component",
+        "hr_safety_function": True,
+        "hr_failure_endangers_health_safety": True,
+        "hr_third_party_health_safety": False,
+    })
+    assert non_safety_assessment["tier"] == eu.TIER_MINIMAL
+
+
+def test_art6_failure_danger_override_and_ai_product_routes():
+    component = classify({
+        "eu_market": True,
+        "hr_annex_i_relation": "embedded_component",
+        "hr_safety_function": False,
+        "hr_failure_endangers_health_safety": True,
+        "hr_third_party_health_safety": True,
+    })
+    assert component["tier"] == eu.TIER_HIGH
+    assert component["applicability"]["date"] == "2 Aug 2028"
+
+    product = classify({
+        "eu_market": True,
+        "hr_annex_i_relation": "ai_product",
+        "hr_third_party_health_safety": True,
+    })
+    assert product["tier"] == eu.TIER_HIGH
+
+
+def test_legacy_annex_i_flag_remains_backward_compatible():
+    assert classify({"eu_market": True, "hr_safety_component": True})["tier"] == eu.TIER_HIGH
+
+
 def test_open_source_gpai_carveout_present_without_systemic():
     answers = {"eu_market": True, "gpai_model": True, "gpai_open_source": True,
                "gpai_systemic": False}
@@ -137,6 +233,37 @@ def test_open_source_gpai_carveout_present_without_systemic():
     assert "Art. 53(2)" in refs  # open-source carve-out surfaced
     # Minimal-tier GPAI now has a real applicability date (2 Aug 2025), not "-".
     assert r["applicability"]["date"] == "2 Aug 2025"
+
+
+def test_integrating_upstream_gpai_does_not_assign_model_provider_duties():
+    r = classify({"eu_market": True, "provider_role": "provider",
+                  "gpai_integrated": True, "gpai_model": False,
+                  "gpai_systemic": True})
+    assert r["tier"] == eu.TIER_MINIMAL
+    assert r["gpai_obligations"] == []
+    assert r["applicability"]["date"] == "-"
+
+
+def test_recommended_high_risk_artifacts_are_role_specific_and_use_art4a():
+    deployer = classify({
+        "eu_market": True, "provider_role": "deployer",
+        "hr_usecases": ["employment"], "data_special_category": True,
+    })
+    joined = " | ".join(deployer["recommended_artifacts"])
+    assert "Art. 26" in joined and "Art. 27" in joined and "Art. 4a" in joined
+    assert "Art. 10" not in joined and "Art. 11" not in joined
+
+    provider = classify({
+        "eu_market": True, "provider_role": "provider",
+        "hr_usecases": ["employment"], "data_special_category": True,
+    })
+    joined = " | ".join(provider["recommended_artifacts"])
+    assert "Art. 10" in joined and "Art. 11" in joined and "Art. 4a" in joined
+    assert "Art. 26" not in joined and "Art. 27" not in joined
+
+    refs = {ref for ref, _requirement in eu.ART_10_REQUIREMENTS}
+    assert "Art. 10(5)" not in refs
+    assert {"Art. 4a(1)", "Art. 4a(2)"} <= refs
 
 
 def test_omnibus_postponed_high_risk_dates():

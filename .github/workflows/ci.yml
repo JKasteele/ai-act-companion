@@ -29,17 +29,27 @@ jobs:
 
       - name: Install (with dev + mcp extras)
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e ".[dev,mcp]"
 
       - name: Lint (ruff)
         run: ruff check .
 
-      - name: Type check (mypy, non-blocking)
-        run: mypy app || true
+      - name: Frontend syntax check
+        run: node --check static/app.js
+
+      - name: Generated artifact drift
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
+        run: |
+          python scripts/build_gallery.py
+          python scripts/build_demo_assets.py
+          git diff --exit-code -- docs/examples static/demo/mcp_transcript.json
+
+      - name: Type check (mypy)
+        run: mypy app mcp_server.py
 
       - name: Tests (pytest + coverage)
-        run: pytest --cov=app --cov=mcp_server --cov-report=term-missing --cov-report=xml
+        run: pytest --cov=app --cov=mcp_server --cov-report=term-missing --cov-report=xml --cov-fail-under=90
 
   security:
     runs-on: ubuntu-latest
@@ -50,12 +60,14 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -e ".[dev,mcp]"
       - name: SAST (bandit)
         run: bandit -r app mcp_server.py -ll
-      - name: Dependency audit (pip-audit, non-blocking)
-        run: pip-audit || true
+      - name: Dependency audit (pip-audit)
+        # Audit the resolved environment so the dev, MCP and hosted-LLM extras
+        # installed above are covered as well as the core requirements.
+        run: python -m pip_audit
 
   docker:
     runs-on: ubuntu-latest

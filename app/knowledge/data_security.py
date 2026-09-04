@@ -114,8 +114,8 @@ DSGAI = {
         "ai_act_refs": ["Art. 10 (data governance)", "Art. 9 (risk management)"],
         "gdpr_refs": ["GDPR Art. 6 (lawfulness)", "GDPR Art. 35 (DPIA)"],
         "nist_refs": ["GOVERN 1.1"],
-        "mitigation": "Map data flows to a lawful basis, run the required DPIA/"
-                      "FRIA, and record processing — see the DPIA and FRIA reports.",
+        "mitigation": "Map data flows to a lawful basis, run a DPIA/FRIA where "
+                      "required, and record processing — see the DPIA and FRIA reports.",
     },
     "DSGAI09": {
         "name": "Multimodal Capture & Cross-Channel Data Leakage",

@@ -1,14 +1,14 @@
 # Deploying the public demo on Hugging Face Spaces
 
-The public demo runs the **deterministic engine** with the optional AI layer off
-and ephemeral storage, behind a "public sandbox" banner. It deploys from the
+The public demo runs the **deterministic engine** behind a "public sandbox"
+banner. Assessment submissions are stateless: they are classified and returned
+to that browser but are never added to a shared inventory. It deploys from the
 repo's existing `Dockerfile` — no code changes per deploy.
 
-> The demo is a public, multi-visitor sandbox: it stores synthetic assessments in
-> ephemeral storage shared across visitors. That is acceptable **only** with
-> `DEMO_MODE=1` (banner + synthetic-data-only guidance). Do not point a public
-> Space at persistent storage — multi-user isolation is out of scope by design
-> (see `DESIGN.md` / `SECURITY.md`).
+> The demo is a public, multi-visitor sandbox. Use synthetic data only: input
+> still crosses the public network and, when the Anthropic provider is enabled,
+> is sent to that provider for drafting. `DEMO_MODE=1` prevents submitted
+> assessments from entering shared storage; only shipped examples are listed.
 
 ## Demo-mode runtime settings
 
@@ -16,7 +16,7 @@ repo's existing `Dockerfile` — no code changes per deploy.
 |---|---|---|
 | `DEMO_MODE` | `1` | Shows the sandbox banner. |
 | `LLM_PROVIDER` | `replay` | Pre-recorded drafts from the shipped examples (no model, no keys, no egress) so the AI-assist flow is visible. `none` hides the AI panel; with `DEMO_MODE=1`, `none` falls back to `replay` anyway. |
-| `AIACT_DATA_DIR` | `/tmp/data` | Ephemeral storage; reset on rebuild/restart. |
+| `AIACT_DATA_DIR` | `/tmp/data` | Ephemeral provider-budget state; visitor assessments are not persisted. |
 | `PORT` | `7860` | HF Spaces injects this; the Dockerfile honours `$PORT`. |
 
 ### Optional: live AI drafts (`LLM_PROVIDER=anthropic`)
@@ -31,11 +31,11 @@ optionally, three **variables**:
 | `ANTHROPIC_API_KEY` | **secret** | your API key | Never set this as a plain variable — Space *variables* are visible to anyone who can view the Space; *secrets* are not. Also set a spend limit on this key in the Anthropic Console as the hard guarantee. |
 | `ANTHROPIC_WORKSPACE_ID` | `wrkspc_…` | Only for identity-linked keys (the API answers 400 "anthropic-workspace-id is required" otherwise). A variable, not a secret. |
 | `AI_COOLDOWN_SECONDS` | `20` | Per-client cooldown; repeats of the same description are cached for an hour. |
-| `AI_BUDGET_USD` | variable | `5.00` (default) | Lifetime USD spend cap; the app degrades to `replay` once it's hit. |
-| `AI_DAILY_CALLS` | variable | `40` (default) | Daily call cap, independent of the budget. |
+| `AI_BUDGET_USD` | variable | `4.00` (default) | Lifetime USD spend cap; the app degrades to `replay` once it's hit. |
+| `AI_DAILY_CALLS` | variable | `25` (default) | Daily call cap, independent of the budget. |
 | `AI_CALLS_PER_IP_DAY` | variable | `8` (default) | Per-visitor daily call cap. |
 
-`ANTHROPIC_MODEL` (default `claude-sonnet-5`) can also be set as a variable
+`ANTHROPIC_MODEL` (default `claude-haiku-4-5`) can also be set as a variable
 to change the model. All four cap/model variables are optional — omit them to
 keep the defaults above.
 
@@ -84,8 +84,9 @@ docker run --rm -p 7860:7860 -e DEMO_MODE=1 -e LLM_PROVIDER=none \
    `~/.cache/huggingface/token`). In Claude Code you can run the login
    interactively by typing `! hf auth login`.
 5. **Wait for the build**, then open `https://huggingface.co/spaces/<your-hf-username>/ai-act-companion`.
-   Confirm the sandbox banner shows, the AI panel is hidden, and a synthetic
-   classification + reports render end-to-end.
+   Confirm the sandbox banner shows, the labelled replay AI flow is available,
+   a synthetic classification + reports render end-to-end, and a submitted
+   assessment does not appear in the inventory after a refresh.
 6. **Link it from the README.** Once the URL is live, point the live-demo badge
    at the top of `README.md` at your Space (the canonical deployment already
    carries one).
@@ -109,6 +110,6 @@ short_description: Local-first, explainable EU AI Act risk classifier (demo).
 
 A public sandbox of [AI Act Companion](https://github.com/JKasteele/ai-act-companion):
 a local-first, explainable EU AI Act risk classifier with an AI-security lens.
-This demo runs the deterministic engine with the AI layer **off** and ephemeral
-storage — **synthetic/example data only**.
+This demo runs the deterministic engine with stateless assessment submissions
+and a labelled replay drafting assistant — **synthetic/example data only**.
 ```

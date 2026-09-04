@@ -107,7 +107,8 @@ def test_governance_report_renders_and_escapes():
                             "expires": "2027-01-01"}]
     rtype, filename, md = reports.render("governance", _assessment(a))
     assert rtype == "governance" and filename.startswith("governance-register-")
-    for h in ("## 1. Policy metadata", "## 2. Exceptions", "## 3. AI-literacy record",
+    for h in ("## 1. Policy metadata", "## 2. Exceptions",
+              "## 3. AI-literacy support-measures evidence",
               "## 4. Intake completeness", "## 5. Gaps", "## 6. Register entry"):
         assert h in md, h
     assert "\n# nope" not in md and "x \\| y" in md
