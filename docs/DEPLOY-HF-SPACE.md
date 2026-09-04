@@ -17,7 +17,7 @@ repo's existing `Dockerfile` — no code changes per deploy.
 | `DEMO_MODE` | `1` | Shows the sandbox banner. |
 | `LLM_PROVIDER` | `replay` | Pre-recorded drafts from the shipped examples (no model, no keys, no egress) so the AI-assist flow is visible. `none` hides the AI panel; with `DEMO_MODE=1`, `none` falls back to `replay` anyway. |
 | `AIACT_DATA_DIR` | `/tmp/data` | Ephemeral provider-budget state; visitor assessments are not persisted. |
-| `PORT` | `7860` | HF Spaces injects this; the Dockerfile honours `$PORT`. |
+| `PORT` | `8000` (default) | Optional override. Keep the Space card's `app_port` equal to the port the container serves. |
 
 ### Optional: live AI drafts (`LLM_PROVIDER=anthropic`)
 
@@ -46,8 +46,8 @@ DEMO_MODE=1 LLM_PROVIDER=none AIACT_DATA_DIR=/tmp/aiact-demo \
   uvicorn app.main:app --port 8000
 # or, against the container:
 docker build -t ai-act-companion .
-docker run --rm -p 7860:7860 -e DEMO_MODE=1 -e LLM_PROVIDER=none \
-  -e AIACT_DATA_DIR=/tmp/data -e PORT=7860 ai-act-companion
+docker run --rm -p 8000:8000 -e DEMO_MODE=1 -e LLM_PROVIDER=replay \
+  -e AIACT_DATA_DIR=/tmp/data ai-act-companion
 ```
 
 ## Steps (you run these — they need your Hugging Face login)
@@ -56,7 +56,9 @@ docker run --rm -p 7860:7860 -e DEMO_MODE=1 -e LLM_PROVIDER=none \
    `ai-act-companion`), **SDK = Docker** (blank template), visibility **Public**.
 2. **Set the variables.** Space → *Settings* → *Variables and secrets* → add the
    three **variables** (not secrets) from the table above: `DEMO_MODE=1`,
-   `LLM_PROVIDER=none`, `AIACT_DATA_DIR=/tmp/data`. (HF sets `PORT` itself.)
+   `LLM_PROVIDER=replay`, `AIACT_DATA_DIR=/tmp/data`. The checked-in Space card
+   and Docker default both use port 8000; only set `PORT` if you update
+   `app_port` to the same value.
 3. **Add the Space card.** A Docker Space needs `app_port` in the README front
    matter. In the Space's web editor, create/replace its `README.md` with the
    header in [the Space card](#space-card-readmemd-front-matter) below. Keep this
@@ -67,11 +69,12 @@ docker run --rm -p 7860:7860 -e DEMO_MODE=1 -e LLM_PROVIDER=none \
    Space branch instead:
    ```bash
    git remote add space https://huggingface.co/spaces/<your-hf-username>/ai-act-companion
+   git fetch origin main
    GIT_LFS_SKIP_SMUDGE=1 git -c protocol.version=1 fetch space
    GIT_LFS_SKIP_SMUDGE=1 git worktree add ../space-deploy space/main
    cd ../space-deploy
-   git checkout main -- app static examples tests skills mcp_server.py \
-       pyproject.toml action.yml CHANGELOG.md Dockerfile
+   git checkout origin/main -- app static examples tests skills mcp_server.py \
+       pyproject.toml requirements.txt action.yml CHANGELOG.md Dockerfile
    git commit -m "Deploy vX.Y.Z (<what changed>)"
    git -c protocol.version=1 push space HEAD:main
    cd - && git worktree remove ../space-deploy
@@ -100,7 +103,7 @@ emoji: ⚖️
 colorFrom: indigo
 colorTo: blue
 sdk: docker
-app_port: 7860
+app_port: 8000
 pinned: false
 license: mit
 short_description: Local-first, explainable EU AI Act risk classifier (demo).
