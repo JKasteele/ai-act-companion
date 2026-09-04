@@ -6,6 +6,8 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-04
+
 ### Added
 - **Abuse hardening for the hosted AI provider**: the per-client cap keys on the proxy-appended hop of `X-Forwarded-For` (a client-supplied first value no longer bypasses it), a per-client cooldown (`AI_COOLDOWN_SECONDS`, 20 s), a one-hour dedupe cache for identical descriptions (repeats cost nothing), tighter defaults (`AI_DAILY_CALLS` 25, `AI_BUDGET_USD` 4.00) so the in-app ceiling stays under the Console spend limit, and Claude Haiku 4.5 as the default hosted model.
 - Hosted Anthropic provider (Claude Haiku 4.5 by default) with a spend guard: a lifetime
@@ -55,6 +57,8 @@ All notable changes are documented here. Format based on
 - Portfolio documentation now presents the project as an authored case study,
   distinguishes the maintainer-curated legal regression set from independent
   validation, and aligns demo/privacy/configuration claims with runtime behavior.
+- Release automation now rejects tags that disagree with the package, runtime
+  or Claude Code plugin version; the bundled GitHub Action uses setup-python v7.
 
 ### Fixed
 - `DEMO_MODE` visitor submissions are now stateless end to end: assessments are
@@ -70,6 +74,9 @@ All notable changes are documented here. Format based on
 - Raised the MCP and screenshot-tooling dependency floors to patched releases;
   CI audits the complete resolved dev/MCP environment, including transitive
   packages, rather than only the core requirements file.
+- Aligned the selective Hugging Face deployment inputs with the Docker runtime,
+  and stopped the public AI-status response from returning the optional
+  Anthropic workspace routing identifier.
 
 ## [0.9.2] - 2026-09-03
 

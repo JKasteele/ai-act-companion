@@ -169,6 +169,8 @@ files in `examples/`:
 > **Install note.** On [PyPI](https://pypi.org/project/ai-act-companion/) since v0.8.0 —
 > `pip install ai-act-companion`. Releases are published by the tag-triggered
 > trusted-publishing workflow (`.github/workflows/release.yml`).
+> The wheel provides the CLI and Python/API engine; clone the repository or use
+> Docker/the live demo for the bundled browser UI and synthetic example files.
 > Optional extras: `.[dev]` (pytest/ruff/mypy/bandit/pip-audit), `.[mcp]` (the
 > Claude Code MCP server), `.[capture]` (the demo-screenshot tooling). The
 > rule-based core needs none of them — `pip install -r requirements.txt` is
@@ -493,15 +495,15 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: JKasteele/ai-act-companion@v0.9.2   # pin a release tag for stability
+      - uses: actions/checkout@v7
+      - uses: JKasteele/ai-act-companion@v0.10.0  # pin a release tag for stability
         with:
           path: .
-          # version: "0.9.2"         # optional: pin the PyPI version installed
+          # version: "0.10.0"        # optional: pin the PyPI version installed
           # fail-on-detect: "true"   # optional: turn the scan into a gate
 ```
 
-> **Version pinning.** `uses: …@v0.9.2` selects the **action** version; the
+> **Version pinning.** `uses: …@v0.10.0` selects the **action** version; the
 > `version` input (default: latest PyPI release) selects which version of the
 > **tool** it installs (`ref` installs from a git ref instead). Pin both to the
 > same release for reproducible runs.
