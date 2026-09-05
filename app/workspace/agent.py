@@ -69,7 +69,7 @@ def run_agent(message: str, state: ReviewState, ip=None, *, documents=None, revi
         context["intake_fields"] = [{k: q[k] for k in ("id", "label", "type", "options") if k in q}
                                     for q in QUESTIONS.values() if q["type"] != "table"]
     events: list[dict[str, str]] = []
-    seen_sources = set()
+    seen_sources: set[str] = set()
     for step in range(5):
         context["read_sources"] = sorted(seen_sources)
         context["remaining_tool_calls"] = 4 - step
