@@ -1,28 +1,14 @@
-# About page image
+# Actual app captures
 
-`about-context.png` is an AI-generated editorial illustration, created with the
-built-in imagegen tool on 2026-09-05. It depicts fictional people and workplaces;
-it is not photography of customers, staff, or the organisations in the dossiers.
-Used on the About page and repository README. Dimensions: 2172 × 724 pixels.
+These images show the running AI Act Companion workspace, captured on 2026-09-05
+at 1440 x 1000 using Playwright in an isolated browser. They use shipped fictional
+systems only. No generated artwork, fabricated interface, or live model output.
 
-Generation prompt:
+- `workspace-overview.png`: GridSentinel reference assessment with high-risk badge.
+- `workspace-evidence.png`: Meridian Health's source-linked intake proposals.
+- `workspace-report.png`: the Python engine's generated AI security report.
+- `workspace-tour.gif`: these three screenshots, held for 3.5 / 4.5 / 4.5 seconds.
 
-> Use case: photorealistic-natural. Asset type: AI Act Companion About page
-> editorial photographic banner. Generate exactly one wide 3:1 photographic
-> triptych, three equal vertical panels joined edge to edge in a single banner.
-> Left: candid healthcare insurer member-support office, anonymous staff member
-> wearing a simple headset at a desk, colleagues and daylight office context
-> softly visible; insurance customer support, no clinical hospital setting.
-> Middle: Dutch water infrastructure with two waterworks engineers wearing
-> understated protective outerwear and hard hats, surveying a canal pumping
-> station or sluice with visible water and utilitarian infrastructure under a
-> pale daylight sky. Right: candid recruitment conversation between two
-> anonymous adults across a table in a modern office, attentive and natural.
-> Photo-natural professional editorial photography; fictional anonymous people
-> and organisations; authentic expressions, plausible anatomy, realistic skin
-> and workplace textures, understated documentary aesthetic. Three equal-width
-> panels; balanced eye-level compositions, enough environmental context to
-> distinguish settings, straight boundaries, no gutters or frame. Natural
-> daylight, calm and professional. Cohesive cool blue, teal, neutral palette.
-> No logos, words, readable documents, overlay text, watermarks, robots,
-> holograms, UI screenshots, clinical equipment or hospital imagery. One image.
+Reproduce with `scripts/capture_workspace.py` against a running demo-mode server.
+The About page uses static images with full-size links and an optional GIF link;
+the README embeds the GIF. The mark in `../favicon.svg` is the app's vector logo.

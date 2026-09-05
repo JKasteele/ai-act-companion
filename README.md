@@ -6,9 +6,9 @@
 [Explore realistic cases](https://jessekasteele-ai-act-companion.hf.space/static/workspace/index.html#examples) ·
 [About the app](https://jessekasteele-ai-act-companion.hf.space/static/workspace/index.html#about)
 
-![Illustrated settings for the fictional healthcare, water operations and recruitment cases](static/workspace/assets/about-context.png)
+![Actual app walkthrough: high-risk system assessment, source-linked intake review and generated security report](static/workspace/assets/workspace-tour.gif)
 
-*AI-generated editorial illustration of the fictional case settings.*
+*Real app captures using shipped fictional examples. [System workspace](static/workspace/assets/workspace-overview.png) · [Evidence review](static/workspace/assets/workspace-evidence.png) · [Generated report](static/workspace/assets/workspace-report.png).*
 
 Manage AI systems, complete structured assessments, investigate evidence and
 security findings, and prepare documents with Companion alongside your work.

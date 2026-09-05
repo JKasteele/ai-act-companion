@@ -60,7 +60,7 @@ the workspace About page pointed at the public Space.
 For the 1.0 workspace, verify `/api/health` reports the intended version,
 `/` opens `/static/workspace/index.html`, and `/api/workspace/catalogue`
 contains three dossiers, nine reference profiles and 21 reports. Check that
-the served `hub.js`, `hub.css` and `assets/about-context.png` match the release
+the served `hub.js`, `hub.css` and `assets/workspace-overview.png` match the release
 files. The public sandbox notice must remain visible. A GitHub merge or a
 successful private preview alone is not evidence that the public demo updated.
 
