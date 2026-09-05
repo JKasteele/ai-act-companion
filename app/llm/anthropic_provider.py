@@ -50,7 +50,10 @@ class AnthropicProvider(LLMProvider):
         info["workspace_routing_configured"] = bool(self.workspace_id)
         return info
 
-    def generate(self, system, user, as_json=True):
+    def generate_structured(self, system, user, schema):
+        return self.generate(system, user, as_json=True, schema=schema)
+
+    def generate(self, system, user, as_json=True, schema=None):
         import anthropic
 
         # Lazy client construction: importing this module (or building the
@@ -78,6 +81,8 @@ class AnthropicProvider(LLMProvider):
                 # Haiku 4.5 rejects the effort parameter; the larger models accept it
                 # and "low" keeps a draft-extraction call cheap.
                 kwargs["output_config"] = {"effort": "low"}
+            if schema is not None:
+                kwargs.setdefault("output_config", {})["format"] = {"type": "json_schema", "schema": schema}
             response = client.messages.create(
                 model=self.model,
                 max_tokens=4096,

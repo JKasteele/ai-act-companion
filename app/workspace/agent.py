@@ -11,6 +11,7 @@ from ..llm import budget
 from ..llm.base import extract_json
 from ..llm.service import provider_for
 from .case import get_case, read_evidence
+from .output_schema import response_schema
 from .review import ReviewState, review_summary
 from .toolkit import QUESTIONS, validate_proposals
 
@@ -111,13 +112,19 @@ silence. Do not resolve conflicting evidence by choosing the convenient value.
 Leave conflicting or unsupported fields out and explain the missing information.
 Return proposals: [] if the sources support no answers. Never assert verification
 or determine a risk tier. A human must individually accept each proposal."""
-            if step == 4 or allowed_sources.issubset(seen_sources):
+            final = step == 4 or allowed_sources.issubset(seen_sources)
+            if final:
                 prompt += """\nFINAL RESPONSE REQUIRED NOW. Tools are no longer available for this turn.
 Return exactly one JSON object with answer and sources, using the completed
 tool_results above. Include proposals for intake or actions/questions/reports for
 a plan as requested. Keep the answer under 150 words, reasons brief, and quotations
 to the shortest relevant passage. No analysis outside the JSON, no tool requests."""
-            result = extract_json(provider.generate(prompt, json.dumps(context), as_json=True))
+            structured = getattr(provider, "generate_structured", None)
+            if callable(structured):
+                raw = structured(prompt, json.dumps(context), response_schema(intake=intake, plan=plan, final=final))
+            else:
+                raw = provider.generate(prompt, json.dumps(context), as_json=True)
+            result = extract_json(raw)
         except Exception as exc:
             raise AgentUnavailable(provider_failure(exc)) from exc
         if not isinstance(result, dict):
