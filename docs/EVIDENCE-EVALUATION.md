@@ -63,3 +63,9 @@ A separate [live review-plan smoke result](evaluation-results/2026-09-05-review-
 returned one unapplied action proposal and two clarification questions with read
 sources. The request included prior conversation about contact-update approval.
 This verifies the live protocol path; it does not quantify conversation quality.
+
+Author observation (not independent review): the live plan's rationale calls
+approval enforcement a mandatory control for any system modifying user data.
+The supplied sources do not establish that universal requirement. Treat this as
+an unsupported normative claim requiring correction during human review. It is
+an example of why valid JSON and matching quotations are not semantic verification.
