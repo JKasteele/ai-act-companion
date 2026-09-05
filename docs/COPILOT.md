@@ -8,7 +8,7 @@ read the same custom-instructions file.
 
 As everywhere else: **the risk tier and citations come only from the engine** —
 Copilot is the interface and narrative author, and human-in-the-loop review is
-mandatory. See [`DESIGN.md`](../DESIGN.md) for why.
+mandatory. See [`DESIGN.md`](DESIGN.md) for why.
 
 ## What's in the repo for Copilot
 

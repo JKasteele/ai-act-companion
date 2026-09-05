@@ -11,6 +11,10 @@ pull requests are welcome.
 
 ## Before opening a PR
 
+- Follow the shared instructions in [AGENTS.md](AGENTS.md).
+- For workspace changes, run `node --test tests/frontend/*.test.mjs` and
+  `python scripts/build_workspace.py`. Generated case assets must match their sources.
+
 - `ruff check .` is clean.
 - `pytest` passes — including the golden-set accuracy eval
   (`tests/test_accuracy.py`) and the red-team suite (`tests/test_red_team.py`).
@@ -26,9 +30,9 @@ pull requests are welcome.
 This is a structured **self-assessment aid, not legal advice**. Please don't add
 features that present the output as a definitive legal determination, or that
 let the AI layer decide a risk tier (the deterministic engine is the ground
-truth — see [DESIGN.md](DESIGN.md)).
+truth — see [DESIGN.md](docs/DESIGN.md)).
 
 ## Security
 
 See [SECURITY.md](SECURITY.md) to report a vulnerability, and
-[THREAT_MODEL.md](THREAT_MODEL.md) for the tool's own threat model.
+[THREAT_MODEL.md](docs/THREAT_MODEL.md) for the tool's own threat model.

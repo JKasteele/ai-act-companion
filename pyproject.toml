@@ -50,7 +50,7 @@ Homepage = "https://github.com/JKasteele/ai-act-companion"
 Repository = "https://github.com/JKasteele/ai-act-companion"
 
 [tool.setuptools]
-packages = ["app", "app.knowledge", "app.llm"]
+packages = ["app", "app.knowledge", "app.llm", "app.workspace"]
 py-modules = ["mcp_server"]
 
 [tool.ruff]

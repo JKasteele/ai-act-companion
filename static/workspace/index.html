@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Investigate an AI system through its evidence. A synthetic health-insurer governance and security case by Jesse van de Kasteele."
+    />
+    <title>AI Act Companion · Evidence workspace</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./workspace.css" />
+    <script type="module" src="./workspace.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to assessment</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Workspace navigation">
+        <a class="brand" href="#overview"
+          ><span class="brand-mark" aria-hidden="true">a</span
+          ><span>AI Act<br /><strong>Companion</strong></span></a
+        >
+        <div class="workspace-name">
+          <span class="org-mark">M</span>
+          <div>Meridian Health<small>Example organisation</small></div>
+        </div>
+        <nav id="navigation">
+          <a href="#overview" data-view="overview" class="nav-link active"
+            ><span aria-hidden="true">◫</span> Case overview</a
+          >
+          <a href="#evidence" data-view="evidence" class="nav-link"
+            ><span aria-hidden="true">▤</span> Evidence library
+            <span class="nav-count">4</span></a
+          >
+          <a href="#findings" data-view="findings" class="nav-link"
+            ><span aria-hidden="true">◎</span> Findings
+            <span id="finding-count" class="nav-count">3</span></a
+          >
+          <a href="#actions" data-view="actions" class="nav-link"
+            ><span aria-hidden="true">☑</span> Action plan</a
+          >
+          <a href="#record" data-view="record" class="nav-link"
+            ><span aria-hidden="true">▧</span> Review record</a
+          >
+        </nav>
+        <div class="sidebar-bottom">
+          <a href="#about" data-view="about" class="nav-link"
+            ><span aria-hidden="true">ⓘ</span> About this project</a
+          >
+          <div class="author">
+            <span class="avatar">JK</span>
+            <div>
+              Jesse van de Kasteele<small>AI governance & security</small>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <div class="workspace-shell">
+        <header class="topbar">
+          <div>
+            <span class="breadcrumb">Assessments</span
+            ><span class="crumb-slash">/</span
+            ><span>Member service assistant</span>
+          </div>
+          <span class="demo-label"><span></span> Synthetic case</span>
+        </header>
+        <div class="work-area">
+          <main id="main" tabindex="-1">
+            <div class="page-heading">
+              <div>
+                <p class="context">Pre-launch review</p>
+                <h1>Member service assistant</h1>
+                <p class="subheading">
+                  An evidence-led review of Meridian Health’s proposed AI
+                  assistant.
+                </p>
+              </div>
+              <span class="status-pill amber">Review in progress</span>
+            </div>
+            <section class="decision-banner">
+              <div class="decision-symbol" aria-hidden="true">!</div>
+              <div>
+                <h2>One important question before launch.</h2>
+                <p>
+                  The business proposal and architecture disagree about the data
+                  sent to the model. Start by comparing the evidence.
+                </p>
+                <button class="button primary" data-action="investigate">
+                  Investigate the data gap <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+            </section>
+            <section class="system-section">
+              <div class="section-heading">
+                <h2>The system at a glance</h2>
+                <span class="muted">Proposed deployment</span>
+              </div>
+              <div class="system-facts">
+                <div>
+                  <span>Purpose</span
+                  ><strong>Coverage questions & claim status</strong>
+                </div>
+                <div>
+                  <span>Accountability</span
+                  ><strong>Customer Contact team</strong>
+                </div>
+                <div><span>Stage</span><strong>Internal pilot</strong></div>
+                <div>
+                  <span>Decision authority</span
+                  ><strong>No coverage or payment decisions</strong>
+                </div>
+              </div>
+            </section>
+            <section class="flow-section">
+              <div class="section-heading">
+                <h2>Follow the data</h2>
+                <span class="muted">From architecture notes</span>
+              </div>
+              <div class="data-flow">
+                <div class="flow-node">
+                  <span class="node-icon">↳</span><strong>Member</strong
+                  ><small>Authenticated request</small>
+                </div>
+                <span class="flow-line" aria-hidden="true"></span>
+                <div class="flow-node">
+                  <span class="node-icon">◇</span><strong>Assistant</strong
+                  ><small>Retrieval & tools</small>
+                </div>
+                <span class="flow-line attention" aria-hidden="true"></span>
+                <div class="flow-node attention">
+                  <span class="node-icon">▦</span><strong>Hosted model</strong
+                  ><small>Data boundary unresolved</small>
+                </div>
+              </div>
+            </section>
+            <section>
+              <div class="section-heading">
+                <h2>What needs attention</h2>
+                <a class="text-link" href="#findings">View findings</a>
+              </div>
+              <div class="finding-list">
+                <button class="finding-row" data-action="investigate">
+                  <span class="finding-dot amber-dot"></span
+                  ><span
+                    ><strong>Conflicting descriptions of health data</strong
+                    ><small
+                      >Business proposal and architecture notes</small
+                    ></span
+                  ><span class="row-arrow">↗</span></button
+                ><button class="finding-row" data-action="oversight">
+                  <span class="finding-dot blue-dot"></span
+                  ><span
+                    ><strong>Human approval is stated, not evidenced</strong
+                    ><small>Confirm how tool calls are authorised</small></span
+                  ><span class="row-arrow">↗</span></button
+                ><button class="finding-row" data-action="retention">
+                  <span class="finding-dot blue-dot"></span
+                  ><span
+                    ><strong>Model log retention needs a decision</strong
+                    ><small>Vendor guide and governance checklist</small></span
+                  ><span class="row-arrow">↗</span>
+                </button>
+              </div>
+            </section>
+          </main>
+          <aside class="agent-panel" aria-label="Companion assistant">
+            <div class="agent-heading">
+              <span class="companion-mark" aria-hidden="true">✳</span>
+              <div>
+                <h2>Companion</h2>
+                <span id="agent-mode">Guided demo · no live model</span>
+              </div>
+              <button
+                class="icon-button"
+                id="reset"
+                aria-label="Reset the demo"
+                title="Reset the demo"
+              >
+                ↺
+              </button>
+            </div>
+            <div
+              class="agent-messages"
+              id="messages"
+              role="log"
+              aria-label="Conversation"
+              aria-live="polite"
+            >
+              <div class="agent-message">
+                <p>
+                  I’ve opened the four documents for this case. Let’s work
+                  through the evidence together.
+                </p>
+                <p>
+                  The first question is whether claim details reach the external
+                  model.
+                </p>
+                <button class="suggestion" data-action="investigate">
+                  Compare the two sources <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+            </div>
+            <form id="chat-form" class="composer">
+              <label for="message">Ask about this case</label>
+              <div class="input-row">
+                <textarea
+                  id="message"
+                  rows="2"
+                  maxlength="2000"
+                  placeholder="What should I investigate first?"
+                ></textarea
+                ><button
+                  type="submit"
+                  class="send-button"
+                  aria-label="Send message"
+                >
+                  ↑
+                </button>
+              </div>
+              <div class="composer-meta">
+                <label class="live-switch"
+                  ><input type="checkbox" id="live-mode" disabled /> Live
+                  AI</label
+                ><span id="connection-status">Opening workspace…</span>
+              </div>
+            </form>
+            <p class="agent-note">
+              Draft support for human review. No approval or legal sign-off is
+              automated.
+            </p>
+          </aside>
+        </div>
+        <footer class="workspace-footer">
+          <span>Fictional organisation. Synthetic evidence.</span
+          ><button class="text-link" data-action="reset">Reset case</button
+          ><a
+            href="https://github.com/JKasteele/ai-act-companion"
+            target="_blank"
+            rel="noreferrer"
+            >View source ↗</a
+          >
+        </footer>
+      </div>
+    </div>
+    <dialog id="evidence-dialog" aria-labelledby="evidence-title">
+      <div class="dialog-heading">
+        <span class="context">Source evidence</span
+        ><button
+          class="icon-button"
+          id="close-evidence"
+          aria-label="Close evidence"
+        >
+          ×
+        </button>
+      </div>
+      <div id="evidence-content"></div>
+    </dialog>
+    <div class="toast" id="toast" role="status" hidden></div>
+  </body>
+</html>

@@ -6,6 +6,23 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+### Added
+- Evidence workspace for a fictional health-insurer case, with inspectable source
+  passages, explicit unknowns, reviewer clarifications, action owners, and draft export.
+- Optional live AI investigation through bounded, read-only evidence tools; the
+  guided walkthrough remains available without a model and is labelled as such.
+- Reproducible static preview generated from the curated case and existing engine.
+- Regression tests for provenance, tool limits, invalid citations, review-state
+  boundaries, and browser-state/export logic.
+
+### Changed
+- The application opens the evidence workspace; the original toolkit remains at `/classic`.
+- Replaced the long front-page reference with a focused README and documentation index.
+- Moved design, threat-model, and toolkit reference material under `docs/`.
+- Consolidated coding-assistant guidance in `AGENTS.md`.
+- Moved the Windows launcher under `scripts/` and removed machine-specific paths
+  and network addresses; it now binds to loopback by default.
+
 ## [0.10.0] - 2026-09-04
 
 ### Added
