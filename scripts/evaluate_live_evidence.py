@@ -44,6 +44,11 @@ def run(base, output, interval=21):
             row.update(response=body, target_check=evaluate_target(case, body), outcome="answered")
         except HTTPError as exc:
             row.update(outcome="request_failed", status=exc.code, target_check=False)
+            # This endpoint returns sanitized workspace errors, not provider exceptions.
+            try:
+                row["workspace_error"] = str(json.loads(exc.read()).get("detail", ""))[:1000]
+            except (ValueError, AttributeError):
+                row["workspace_error"] = "Non-JSON server error"
         except (URLError, TimeoutError, ValueError):
             row.update(outcome="request_failed", target_check=False)
         row["seconds"] = round(time.monotonic() - start, 2)

@@ -107,6 +107,8 @@ def test_agent_reads_sources_and_returns_real_tool_trace(monkeypatch):
     assert result["mode"] == "live" and result["draft"] is True
     assert len(result["events"]) == 3
     assert provider.calls[-1]["tool_results"][0]["result"]["source"] == "business:data"
+    assert provider.calls[-1]["remaining_tool_calls"] == 1
+    assert "business:data" in provider.calls[-1]["read_sources"]
     assert state == ReviewState()
 
 
