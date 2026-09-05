@@ -237,6 +237,34 @@ def test_refusal_returns_draft_with_warning_not_raise(monkeypatch, with_key, as_
 
 
 # --- (h) persistence -----------------------------------------------------------
+def test_truncated_output_is_rejected_after_recording_usage(monkeypatch, with_key, as_anthropic):
+    from app.llm.anthropic_provider import AnthropicProvider
+
+    install_fake_anthropic(monkeypatch, lambda kwargs: FakeResponse(
+        text='{"answer":', stop_reason="max_tokens", usage=FakeUsage(input_tokens=50, output_tokens=4096)))
+    with pytest.raises(RuntimeError, match="output limit"):
+        AnthropicProvider().generate("System", "Question")
+    assert budget.state()["calls_total"] == 1
+    assert budget.state()["spent_usd"] > 0
+
+
+def test_agent_output_uses_provider_schema_without_haiku_effort(monkeypatch, with_key, as_anthropic):
+    from app.llm.anthropic_provider import AnthropicProvider
+    from app.workspace.output_schema import response_schema
+
+    holder = install_fake_anthropic(monkeypatch, lambda kwargs: FakeResponse(text='{"answer":"Draft","sources":[]}'))
+    schema = response_schema(intake=True, final=True)
+    provider = AnthropicProvider()
+    provider.model = "claude-haiku-4-5"
+    provider.generate_structured("System", "Question", schema)
+    config = holder["client"].messages.calls[0]["output_config"]
+    assert config["format"]["schema"] == schema
+    assert "effort" not in config
+    assert schema["additionalProperties"] is False
+    assert "tool" not in schema["properties"]
+    assert "proposals" in schema["required"]
+
+
 def test_spend_persists_on_disk_across_state_reads(tmp_path):
     budget.record(FakeUsage(input_tokens=100_000, output_tokens=100_000), "claude-sonnet-5")
     st1 = budget.state()

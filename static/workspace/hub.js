@@ -1,4 +1,6 @@
 import { riskClass, severityClass } from "./risk-style.mjs";
+import { workPlan, tourPanel, nextWork, recommendedReports } from './review-path.mjs';
+import { appendTurn, requestHistory } from './conversation.mjs';
 import {
   INVENTORY_KEY,
   newSystem,
@@ -18,6 +20,7 @@ import {
   acceptProposal,
   saveAction,
   reviewPack,
+  acceptActionProposal,
 } from "./casework-model.mjs";
 import {
   scenarioCards,
@@ -26,10 +29,12 @@ import {
   proposalsView,
   dossierFindings,
   actionsView,
+  sourceLinks,
 } from "./casework.mjs";
 const $ = (s) => document.querySelector(s);
 let catalogue,
   backend = false,
+  liveAvailable = false,
   publicDemo = false,
   systems = [],
   serverSystems = [],
@@ -59,6 +64,33 @@ const all = () => [
   })),
 ];
 const editable = () => selected && !selected.source;
+const referenceChats = new Map();
+function chatRecord(target) {
+  if (!target?.source) return target;
+  if (!referenceChats.has(target.id)) referenceChats.set(target.id, {conversation: []});
+  return referenceChats.get(target.id);
+}
+function remember(target, turn) {
+  if (!target) return;
+  appendTurn(chatRecord(target), turn);
+  if (!target.source) persist();
+}
+function turnHTML(turn, target) {
+  return `<div class="agent-message ${turn.role === 'user' ? 'user' : ''}"><span class="message-label">${turn.role === 'user' ? 'You' : turn.live ? 'Companion · live AI draft' : 'Companion · workflow guidance'}</span>${turn.content.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}${turn.sources?.length ? `<div class="source-links">${sourceLinks(target, turn.sources)}</div>` : ''}</div>`;
+}
+function renderConversation() {
+  syncLiveMode();
+  const turns = chatRecord(selected)?.conversation || [];
+  const next = selected ? nextWork(selected, catalogue) : null;
+  $('#messages').innerHTML = `<div class="agent-message"><p>${selected ? `Reviewing ${esc(selected.answers.sys_name)}. Earlier replies are context, not verified evidence.` : 'Start the five-minute Meridian review, or select a system to work with Companion.'}</p>${next ? `<button class="suggestion" data-action="${next.view}">${esc(next.title)}</button>` : '<button class="suggestion" data-action="start-tour">Start the Meridian review</button>'}</div>` + turns.map(t => turnHTML(t, selected)).join('');
+  if (selected) $('#messages').insertAdjacentHTML('beforeend', `<div class="companion-tools"><button class="suggestion" data-action="clear-chat">Clear this conversation</button>${editable() && !$('#live-mode').disabled ? '<button class="suggestion" data-action="suggest-plan">Ask live AI for a review plan</button>' : ''}</div>`);
+  $('#messages').scrollTop = $('#messages').scrollHeight;
+}
+function syncLiveMode() {
+  $('#live-mode').disabled = !liveAvailable || !selected;
+  if ($('#live-mode').disabled) $('#live-mode').checked = false;
+  $('#agent-mode').textContent = $('#live-mode').checked ? 'Live AI · selected system · drafts' : 'Workflow guidance · no live model';
+}
 function persist() {
   try {
     localStorage.setItem(
@@ -80,7 +112,9 @@ function toast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => ($("#toast").hidden = true), 4500);
 }
-function message(text, actions = [], live = false) {
+function message(text, actions = [], live = false, sources = [], target = selected) {
+  remember(target, {role: 'assistant', content: text, live, sources});
+  if (target && selected?.id !== target.id) return;
   const box = document.createElement("div");
   box.className = "agent-message";
   box.innerHTML = `<span class="message-label">Companion · ${live ? "live AI draft" : "workflow guidance"}</span>${text
@@ -88,7 +122,7 @@ function message(text, actions = [], live = false) {
     .map((p) => `<p>${esc(p)}</p>`)
     .join(
       "",
-    )}${actions.map((a) => `<button class="suggestion" data-action="${esc(a.action)}">${esc(a.label)} ↗</button>`).join("")}`;
+    )}${target && sources.length ? `<div class="source-links">${sourceLinks(target, sources)}</div>` : ''}${actions.map((a) => `<button class="suggestion" data-action="${esc(a.action)}">${esc(a.label)} ↗</button>`).join("")}`;
   $("#messages").append(box);
   $("#messages").scrollTop = $("#messages").scrollHeight;
 }
@@ -125,7 +159,7 @@ function home() {
       "Pick up an assessment, investigate a risk, or prepare your next document.",
       '<a class="button primary" href="#new">Add system</a>',
     ) +
-    `<section class="start-panel"><span class="companion-mark" aria-hidden="true">✳</span><h2>What would you like to work on?</h2><p>Start with a system. Companion keeps the assessment, evidence, and documentation connected.</p><div class="toolbar"><a class="button primary" href="#new">Assess a new system</a><a class="button secondary" href="#examples">Explore examples</a><a class="text-link" href="#documents">Browse all ${catalogue.reports.length} documents</a></div></section><section class="system-section"><div class="section-heading"><h2>Your assessments <span class="muted">${own.length}</span></h2><div><button class="text-link" data-action="import">Import JSON</button> <button class="text-link" data-action="register">Export register</button></div></div>${own.length ? `<div class="system-grid">${own.map(card).join("")}</div>` : '<div class="empty-state">Your workspace is ready. Add a system or copy an example to begin. Your drafts stay on this device.</div>'}</section><section class="case-invitation"><div><h2>A guided introduction</h2><p>Investigate a health insurer’s conflicting evidence.</p></div><a class="button secondary" href="./case.html">Open case study ↗</a></section>`
+    `<section class="start-panel"><span class="companion-mark" aria-hidden="true">✳</span><h2>What would you like to work on?</h2><p>Start with a system. Companion keeps the assessment, evidence, and documentation connected.</p><div class="toolbar"><button class="button primary" data-action="start-tour">Try the five-minute Meridian review</button><a class="button secondary" href="#new">Assess a new system</a><a class="text-link" href="#examples">Explore all examples</a><a class="text-link" href="#documents">Browse all ${catalogue.reports.length} documents</a></div></section><section class="system-section"><div class="section-heading"><h2>Your assessments <span class="muted">${own.length}</span></h2><div><button class="text-link" data-action="import">Import JSON</button> <button class="text-link" data-action="register">Export register</button></div></div>${own.length ? `<div class="system-grid">${own.map(card).join("")}</div>` : '<div class="empty-state">Your workspace is ready. Add a system or copy an example to begin. Your drafts stay on this device.</div>'}</section><section class="case-invitation"><div><h2>A guided introduction</h2><p>Investigate a health insurer’s conflicting evidence.</p></div><a class="button secondary" href="./case.html">Open case study ↗</a></section>`
   );
 }
 function exampleView() {
@@ -134,7 +168,7 @@ function exampleView() {
       "Example systems",
       "Explore the complete toolkit across health insurance, recruitment, infrastructure, and general-purpose AI.",
     ) +
-    `<h2>Realistic review dossiers</h2><p class="status-line">Fictional organisations. Inspect their documents, review proposed answers, and work through the open decisions.</p>${scenarioCards(catalogue.scenarios || [])}<details class="reference-library" open><summary>Reference profile library · 9 systems</summary><p class="status-line">These are shipped reference profiles. Copy one to your workspace to edit it.</p><div class="system-grid">${all()
+    `<section class="review-box"><h2>Start with Meridian Health</h2><p>Follow a five-minute review from conflicting evidence to an exported handoff. You can reset your demo copy at any time.</p><button class="button primary" data-action="start-tour">Start the guided review</button></section><h2>Realistic review dossiers</h2><p class="status-line">Fictional organisations. Inspect their documents, review proposed answers, and work through the open decisions.</p>${scenarioCards(catalogue.scenarios || [])}<details class="reference-library" open><summary>Reference profile library · 9 systems</summary><p class="status-line">These are shipped reference profiles. Copy one to your workspace to edit it.</p><div class="system-grid">${all()
       .filter((s) => s.source === "example")
       .map(card)
       .join("")}</div></details>`
@@ -161,6 +195,7 @@ function profile() {
   const a = selected.answers,
     r = selected.result;
   return (
+    (editable() ? workPlan(selected, catalogue) : '') +
     caseContext(selected, catalogue.scenarios || []) +
     `<div class="profile-grid">${[
       ["Purpose", a.intended_purpose],
@@ -256,7 +291,7 @@ function findings() {
       dossierFindings(selected) +
       '<div class="empty-state">Complete and run the assessment for the separate rule-engine findings. No risk tier is inferred from an incomplete profile.</div><div class="toolbar"><button class="button primary" data-action="intake">Continue assessment</button></div>'
     );
-  return `<h2>Classification findings</h2>${(r.classification.findings || []).map((f) => `<article class="finding-detail"><h3>${esc(f.title)}</h3><p>${esc(f.rationale)}</p><small>${esc((f.refs || []).join(", "))}</small></article>`).join("") || '<p class="status-line">No determining finding beyond the recorded classification.</p>'}<section class="detail-block"><h2>AI security</h2><p>Architecture-aware findings from the existing security engine.</p>${(r.security?.risks || []).map((f) => `<article class="finding-detail"><span class="status-pill ${severityClass(f.severity)}">${esc(f.severity || "Review")}</span><h3>${esc(f.title || f.name || f.id)}</h3><p>${esc(f.rationale || f.description || f.summary || "")}</p></article>`).join("") || '<p class="status-line">No security risks returned for the recorded inputs.</p>'}</section><div class="toolbar"><button class="button secondary" data-report="security">Full security assessment</button><button class="button secondary" data-report="redteam">Red-team plan</button><button class="button secondary" data-report="controls">Control catalogue</button></div><details class="trace-detail"><summary>Inspect the complete result</summary><pre>${esc(JSON.stringify(r, null, 2))}</pre></details>`;
+  return dossierFindings(selected) + `<h2>Classification findings</h2>${(r.classification.findings || []).map((f) => `<article class="finding-detail"><h3>${esc(f.title)}</h3><p>${esc(f.rationale)}</p><small>${esc((f.refs || []).join(", "))}</small></article>`).join("") || '<p class="status-line">No determining finding beyond the recorded classification.</p>'}<section class="detail-block"><h2>AI security</h2><p>Architecture-aware findings from the existing security engine.</p>${(r.security?.risks || []).map((f) => `<article class="finding-detail"><span class="status-pill ${severityClass(f.severity)}">${esc(f.severity || "Review")}</span><h3>${esc(f.title || f.name || f.id)}</h3><p>${esc(f.rationale || f.description || f.summary || "")}</p></article>`).join("") || '<p class="status-line">No security risks returned for the recorded inputs.</p>'}</section><div class="toolbar"><button class="button secondary" data-report="security">Full security assessment</button><button class="button secondary" data-report="redteam">Red-team plan</button><button class="button secondary" data-report="controls">Control catalogue</button></div><details class="trace-detail"><summary>Inspect the complete result</summary><pre>${esc(JSON.stringify(r, null, 2))}</pre></details>`;
 }
 const reportDescriptions = {
   risk: "Risk tier, reasoning, and cited rules",
@@ -269,15 +304,15 @@ const reportDescriptions = {
   forensics: "Evidence capture and incident readiness",
 };
 function documents() {
-  return `${!selected ? heading("The complete document toolkit", `All ${catalogue.reports.length} document types from the existing engine, organised around your selected system.`) : '<p class="status-line">Generate a document from this system’s current assessment inputs. All outputs remain drafts for review.</p>'}<label class="status-line" for="report-system">System</label><select id="report-system" class="system-picker"><option value="">Choose a system</option>${all()
-    .map(
-      (s) =>
-        `<option value="${esc(s.id)}"${selected?.id === s.id ? " selected" : ""}>${esc(s.answers.sys_name)}${s.source === "example" ? " (example)" : ""}</option>`,
-    )
-    .join(
-      "",
-    )}</select><div class="toolbar"><label for="report-language">Language</label><select id="report-language"><option value="en">English</option><option value="nl">Dutch summary</option></select></div><div class="report-grid">${catalogue.reports.map((r) => `<button class="report-tile" data-report="${r.id}"><strong>${esc(r.label)}</strong><small>${esc(reportDescriptions[r.id] || "Generate, review, and export a draft")}</small></button>`).join("")}</div>`;
+  const recommended = selected ? recommendedReports(selected, catalogue) : [];
+  const tile = r => `<button class="report-tile" data-report="${r.id}"><strong>${esc(r.label)}</strong><small>${esc(reportDescriptions[r.id] || "Generate, review, and export a draft")}</small></button>`;
+  return `${!selected ? heading("Document toolkit", "Choose a system to see its recommended documents, or browse the full toolkit.") : '<p class="status-line">All generated documents remain drafts for human review.</p>'}
+  <label class="status-line" for="report-system">System</label><select id="report-system" class="system-picker"><option value="">Choose a system</option>${all().map(s => `<option value="${esc(s.id)}"${selected?.id === s.id ? ' selected' : ''}>${esc(s.answers.sys_name)}${s.source === 'example' ? ' (example)' : ''}</option>`).join('')}</select>
+  <div class="toolbar"><label for="report-language">Language</label><select id="report-language"><option value="en">English</option><option value="nl">Dutch summary</option></select></div>
+  ${selected ? `<h2>Suggested for this review</h2><p class="status-line">${selected.review?.caseId ? 'Selected for this fictional case.' : 'A starting set for a general governance review.'} Document suggestions are not a determination of legal obligations.</p><div class="report-grid">${catalogue.reports.filter(r => recommended.includes(r.id)).map(tile).join('')}</div>` : ''}
+  <details class="full-toolkit" ${selected ? '' : 'open'}><summary>All ${catalogue.reports.length} document types</summary><div class="report-grid">${catalogue.reports.map(tile).join('')}</div></details>`;
 }
+
 function activity() {
   return selected.activity?.length
     ? selected.activity
@@ -305,12 +340,12 @@ function about() {
     "Describe a system. Investigate its evidence. Prepare a review you can explain.",
   ) + `<article class="about-page">
     <p class="about-intro">AI Act Companion connects structured assessments, security findings and source documents in one workspace. Built by Jesse van de Kasteele as a portfolio project exploring practical, accountable AI assistance.</p>
-    <div class="toolbar"><a class="button primary" href="#examples">Explore the cases</a><a class="button secondary" href="https://jessekasteele-ai-act-companion.hf.space/" target="_blank" rel="noreferrer">Open live demo ↗</a><a class="text-link" href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noreferrer">View source ↗</a></div>
+    <div class="toolbar"><button class="button primary" data-action="start-tour">Try the five-minute review</button><a class="button secondary" href="#examples">Explore the cases</a><a class="button secondary" href="https://jessekasteele-ai-act-companion.hf.space/" target="_blank" rel="noreferrer">Open live demo ↗</a><a class="text-link" href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noreferrer">View source ↗</a></div>
     <figure class="about-photo"><a href="./assets/workspace-overview.png" target="_blank" rel="noreferrer"><img src="./assets/workspace-overview.png" alt="GridSentinel system workspace showing its high-risk assessment, review tabs and Companion sidebar" width="1440" height="1000"></a><figcaption>The actual workspace: a system profile, its engine result and the next review steps. <a class="text-link" href="./assets/workspace-tour.gif" target="_blank" rel="noreferrer">Watch the animated walkthrough ↗</a></figcaption></figure>
     <div class="about-gallery"><figure class="about-photo"><a href="./assets/workspace-evidence.png" target="_blank" rel="noreferrer"><img src="./assets/workspace-evidence.png" alt="Source-linked intake proposals awaiting human review in the Meridian Health fictional dossier" width="1440" height="1000" loading="lazy"></a><figcaption>Review each proposed answer alongside its source quotation.</figcaption></figure><figure class="about-photo"><a href="./assets/workspace-report.png" target="_blank" rel="noreferrer"><img src="./assets/workspace-report.png" alt="Generated AI security report open in the app with draft and export controls" width="1440" height="1000" loading="lazy"></a><figcaption>Inspect a generated report before exporting a draft. Click any screenshot to view full size.</figcaption></figure></div>
     <section class="about-section"><h2>Start with a realistic decision</h2><div class="about-sectors"><div><h3>Healthcare</h3><p>A member assistant, sensitive claim details and conflicting evidence about where data goes.</p></div><div><h3>Water operations</h3><p>An operations copilot, critical infrastructure and the boundary between advice and control.</p></div><div><h3>Recruitment</h3><p>A shortlisting workflow, consequential decisions and the evidence needed for meaningful oversight.</p></div></div><p>Each dossier includes source documents, proposed intake answers, findings and follow-up actions. <a class="text-link" href="#examples">Open a dossier</a> or <a class="text-link" href="./case.html">follow the guided insurer case</a>.</p></section>
     <section class="about-section about-work"><h2>From a question to a review pack</h2><ol><li><strong>Describe the system.</strong> Work through 13 intake sections, keeping unanswered questions explicit.</li><li><strong>Investigate the evidence.</strong> Compare source passages, inspect classification and security findings, and record what needs clarification.</li><li><strong>Prepare the next decision.</strong> Assign follow-up actions and generate any of the ${catalogue.reports.length} draft reports for human review.</li></ol></section>
-    <section class="about-section"><h2>What the AI does</h2><p>Companion guides you to the relevant tools without requiring a model. When live AI is configured, it can read selected evidence and propose intake answers with source quotations. You review and accept each proposal.</p><p>The Python rule engine computes the risk tier. A model cannot change it, close a finding or approve launch. The guided case and authored dossier proposals are labelled separately from live AI.</p></section>
+    <section class="about-section"><h2>What the AI does</h2><p>Keep a conversation with each system, open cited passages and ask for a review plan. Live action suggestions show their source and required evidence; you decide which become open follow-up actions.</p><p>Companion guides you to the relevant tools without requiring a model. When live AI is configured, it can read selected evidence and propose intake answers with source quotations. You review and accept each proposal.</p><p>The Python rule engine computes the risk tier. A model cannot change it, close a finding or approve launch. The guided case and authored dossier proposals are labelled separately from live AI.</p></section>
     <section class="about-section"><h2>Your work and your data</h2><p>Your workspace drafts and notes stay in this browser. Export JSON or a review pack to keep a portable copy. ${backend ? "Assessment and report requests are processed by the Python server. Live AI requests send the selected information to the configured provider." : "Assessment and report generation run on this device using the bundled Python engine; the first operation loads the runtime. This preview does not call a hosted model."}</p><p>The public demo is a shared sandbox: use synthetic data only. Its server lists shipped examples and does not add visitor assessments to a shared inventory.</p></section>
     <details class="about-details"><summary>Full toolkit, integrations and review boundaries</summary><p>Nine reference profiles, all 13 intake sections and all ${catalogue.reports.length} reports remain available. The CLI and MCP server are included in the <a class="text-link" href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noreferrer">repository</a>. The original web toolkit is ${backend ? '<a class="text-link" href="/classic">available here</a>' : 'available at /classic in a local Python installation'}.</p><p>All reports are drafts. Reference profiles retain their supplied inputs and are labelled as snapshots; edited copies require complete screening. Evidence notes are reviewer statements, not verified controls. This is a self-assessment aid, not legal advice or certification.</p></details>
   </article>`;
@@ -326,12 +361,14 @@ function render() {
       ? scenarioBrief(c)
       : heading("Case not found", "Open Example systems to choose a dossier.");
     $("#crumb").textContent = c?.organisation || "Example systems";
+    renderConversation();
     return;
   }
   if (view === "system") {
     selected = all().find((s) => s.id === (parts[1] || ""));
     view = parts[2] || "overview";
   }
+  syncLiveMode();
   if (parts[0] === "system" && !selected) {
     $("#main").innerHTML =
       heading(
@@ -384,10 +421,8 @@ function render() {
           selected.source
             ? '<button class="button primary" data-action="copy">Copy to workspace</button>'
             : "",
-        ) + tabs(view)
+        ) + tourPanel(selected, view) + tabs(view)
       : "") + fn();
-  if (view === "findings" && selected?.result?.classification)
-    $("#main").insertAdjacentHTML("beforeend", dossierFindings(selected));
   if (view === "documents" && editable())
     $("#main").insertAdjacentHTML(
       "afterbegin",
@@ -413,6 +448,13 @@ function render() {
       a.dataset.nav === view || (selected && a.dataset.nav === "systems");
     a.classList.toggle("active", !!active);
     a.toggleAttribute("aria-current", !!active);
+  });
+  renderConversation();
+  if (selected && ['actions', 'findings'].includes(view) && parts[3]) requestAnimationFrame(() => {
+    const id = view === 'actions' && /^\d+$/.test(parts[3]) ? `action-${parts[3]}` : `finding-${decodeURIComponent(parts[3])}`;
+    const node = document.getElementById(id);
+    node?.scrollIntoView({block: 'center'});
+    if (node) { node.tabIndex = -1; node.focus({preventScroll: true}); }
   });
 }
 function setBusy(value, label = "") {
@@ -555,6 +597,25 @@ async function generateReport(type) {
   }
 }
 async function action(name) {
+  if (name === 'start-tour') {
+    if (systems.length >= 100) { toast('Export and remove a draft before adding another.'); return; }
+    const c = catalogue.scenarios.find(c => c.id === 'meridian');
+    const s = startCase(newSystem({sys_name: `${c.organisation} — five-minute review`, sys_description: c.brief, sys_owner: c.owner}), c);
+    s.review.tour = true;
+    systems.push(s); persist(); navigate('overview', s.id); return;
+  }
+  if (name === 'reset-tour' && editable() && selected.review.tour) {
+    if (!confirm('Reset this demo working copy? Its answers, notes, actions and conversation will be replaced. Other systems are kept.')) return;
+    const c = catalogue.scenarios.find(c => c.id === selected.review.caseId);
+    const s = startCase(newSystem({sys_name: `${c.organisation} — five-minute review`, sys_description: c.brief, sys_owner: c.owner}, selected.id), c);
+    s.review.tour = true;
+    systems = systems.map(old => old.id === s.id ? s : old);
+    persist(); navigate('overview', s.id); return;
+  }
+  if (name === 'clear-chat' && selected) {
+    chatRecord(selected).conversation = []; persist(); renderConversation(); return;
+  }
+  if (name === 'suggest-plan') return suggestPlan();
   if (name === "review-pack") return preparePack();
   if (name === "suggest-intake") return suggestIntake();
   if (name === "upload-evidence" && editable()) {
@@ -688,11 +749,35 @@ async function preparePack() {
     setBusy(false);
   }
 }
+async function suggestPlan() {
+  if (!editable() || busy || $('#live-mode').disabled) return;
+  const target = selected;
+  const snapshot = JSON.stringify({answers: target.answers, evidence: target.evidence, review: target.review});
+  setBusy(true, 'Companion is reading evidence to prepare follow-up work…');
+  try {
+    const response = await fetch('/api/workspace/system-chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({
+      message: 'Prepare grounded follow-up actions, focused clarification questions and relevant document recommendations. Do not repeat existing actions.',
+      intent: 'plan', answers: target.answers, evidence: target.evidence,
+      history: requestHistory(chatRecord(target)), review_notes: JSON.stringify({actions: target.review.actions, notes: target.review.decisions}).slice(0, 6000),
+    })});
+    const result = await response.json();
+    if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'The review plan could not be prepared.');
+    if (snapshot !== JSON.stringify({answers: target.answers, evidence: target.evidence, review: target.review})) throw new Error('The review changed. Request a new plan using the current evidence.');
+    if (target.review.actionProposals.filter(p => p.status === 'pending').length + result.actions.length > 12) throw new Error('Review the existing action proposals before requesting more.');
+    target.review.actionProposals = [...target.review.actionProposals.filter(p => p.status === 'pending'), ...result.actions.map(p => ({...p, status: 'pending'}))];
+    target.review.planQuestions = result.questions;
+    target.review.planReports = result.reports;
+    log(target, `Prepared ${result.actions.length} action proposals; no actions applied.`);
+    persist();
+    message(result.answer + (result.questions.length ? '\n\nClarify next:\n' + result.questions.map(q => '• ' + q).join('\n') : '') + (result.reports.length ? '\n\nSuggested documents: ' + result.reports.join(', ') : ''), [{action: 'actions', label: 'Review proposed actions'}, {action: 'documents', label: 'Choose documents'}], true, result.sources, target);
+    if (selected?.id === target.id) navigate('actions', target.id);
+  } catch (e) { toast(e.message); } finally { setBusy(false); }
+}
 async function suggestIntake() {
   if (!editable() || busy) return;
   if ($("#live-mode").disabled) {
     toast(
-      "Live intake requires a configured local AI provider. Realistic cases include authored proposals.",
+      "Live intake requires a working provider in the public or local app. Realistic cases include authored proposals.",
     );
     return;
   }
@@ -757,6 +842,18 @@ async function suggestIntake() {
   }
 }
 document.addEventListener("click", async (event) => {
+  const acceptAction = event.target.closest('[data-accept-action]');
+  const skipAction = event.target.closest('[data-skip-action]');
+  if ((acceptAction || skipAction) && editable() && !busy) {
+    try {
+      const i = Number(acceptAction?.dataset.acceptAction ?? skipAction.dataset.skipAction);
+      if (acceptAction) acceptActionProposal(selected, i);
+      else selected.review.actionProposals[i].status = 'rejected';
+      log(selected, acceptAction ? 'Accepted an AI proposal as an open action; evidence remains unverified.' : 'Skipped an AI action proposal.');
+      persist(); render();
+    } catch (e) { toast(e.message); }
+    return;
+  }
   const start = event.target.closest("[data-start-case]");
   if (start) {
     if (systems.length >= 100) {
@@ -1040,6 +1137,9 @@ $("#chat-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const text = $("#message").value.trim();
   if (!text || busy) return;
+  const target = selected;
+  const history = target ? requestHistory(chatRecord(target)) : [];
+  remember(target, {role: 'user', content: text});
   $("#message").value = "";
   const el = document.createElement("div");
   el.className = "agent-message user";
@@ -1058,6 +1158,8 @@ $("#chat-form").addEventListener("submit", async (event) => {
           evidence: selected.evidence || [],
           example_id: selected.exampleId || "",
           assessment_confirmed: !!selected.result?.classification,
+          history,
+          review_notes: JSON.stringify({actions: target.review?.actions || [], notes: target.review?.decisions || []}).slice(0, 6000),
         }),
       });
       const body = await r.json();
@@ -1072,13 +1174,14 @@ $("#chat-form").addEventListener("submit", async (event) => {
           body.answer +
           "\n\n" +
           (body.events || []).map((e) => "✓ " + e.label).join("\n") +
-          "\n\nSources read: " +
-          (body.sources || []).join(", "),
+          "\n\nRead the linked sources below.",
         [],
         true,
+        body.sources || [],
+        target,
       );
     } catch (e) {
-      message(e.message);
+      message(e.message, [], false, [], target);
     } finally {
       setBusy(false);
     }
@@ -1126,6 +1229,18 @@ $("#live-mode").addEventListener(
       ? "Live AI · selected system · drafts"
       : "Workflow guidance · no live model"),
 );
+const companionToggle = $('#companion-toggle');
+function toggleCompanion(open) {
+  document.body.classList.toggle('companion-open', open);
+  companionToggle.setAttribute('aria-expanded', String(open));
+  companionToggle.textContent = open ? 'Close Companion' : 'Open Companion';
+  if (open) $('#message').focus();
+  else companionToggle.focus();
+}
+companionToggle.addEventListener('click', () => toggleCompanion(!document.body.classList.contains('companion-open')));
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && document.body.classList.contains('companion-open')) toggleCompanion(false);
+});
 $("#close-document").addEventListener("click", () =>
   $("#document-dialog").close(),
 );
@@ -1162,7 +1277,8 @@ async function init() {
         ]);
         publicDemo = appConfig.demo_mode === true;
         $("#public-demo-notice").hidden = !publicDemo;
-        $("#live-mode").disabled = !status.live_configured;
+        liveAvailable = status.live_configured === true;
+        syncLiveMode();
         for (const item of inventory.slice(0, 100)) {
           const r = await fetch(
             `/api/assessments/${encodeURIComponent(item.id)}`,

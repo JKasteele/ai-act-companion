@@ -6,10 +6,22 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [1.0.0rc2] - 2026-09-05
+
+- Added a resettable five-minute Meridian review, contextual next steps and suggested reports.
+- Added side-by-side source comparison and bidirectional finding/action links.
+- Added per-system conversation context, linked citations and mobile Companion toggle.
+- Added bounded live action, clarification and document proposals with individual human acceptance.
+- Added a synthetic live-evaluation runner and independent review protocol; the final run passed six target-field checks after protocol fixes; independent semantic quality remains unmeasured.
+- Clarified operational provider errors and corrected stale deployment/release documentation.
+- Added provider JSON output grammar, explicit final-turn instructions and truncation detection after live probes exposed response-format failures.
+- Preserved the full toolkit and classification/review boundaries.
+
+
 ## [1.0.0rc1] - 2026-09-05
 
-Candidate for product review in the existing draft PR. No final release tag or
-merge is created. Live-model evaluation and browser interaction QA remain
+Original candidate for product review; the overhaul was subsequently merged.
+No final 1.0 release tag was created. Live-model evaluation and browser interaction QA remain
 acceptance work; see `docs/RELEASE_1_0.md`.
 
 ### Added

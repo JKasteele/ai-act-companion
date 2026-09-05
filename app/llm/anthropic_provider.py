@@ -34,7 +34,7 @@ class AnthropicProvider(LLMProvider):
     def status(self):
         """No network call here - status is a local availability check only."""
         info = {"provider": self.name, "interactive": False, "available": False,
-                 "model": self.model, "budget": budget.state()}
+                 "model": self.model, "budget": budget.state(), "availability_check": "configuration_only"}
         try:
             import anthropic  # noqa: F401
         except ImportError as e:
@@ -50,7 +50,10 @@ class AnthropicProvider(LLMProvider):
         info["workspace_routing_configured"] = bool(self.workspace_id)
         return info
 
-    def generate(self, system, user, as_json=True):
+    def generate_structured(self, system, user, schema):
+        return self.generate(system, user, as_json=True, schema=schema)
+
+    def generate(self, system, user, as_json=True, schema=None):
         import anthropic
 
         # Lazy client construction: importing this module (or building the
@@ -78,9 +81,11 @@ class AnthropicProvider(LLMProvider):
                 # Haiku 4.5 rejects the effort parameter; the larger models accept it
                 # and "low" keeps a draft-extraction call cheap.
                 kwargs["output_config"] = {"effort": "low"}
+            if schema is not None:
+                kwargs.setdefault("output_config", {})["format"] = {"type": "json_schema", "schema": schema}
             response = client.messages.create(
                 model=self.model,
-                max_tokens=2048,
+                max_tokens=4096,
                 system=system_blocks,
                 messages=[{"role": "user", "content": user_part}],
                 **kwargs,
@@ -95,6 +100,9 @@ class AnthropicProvider(LLMProvider):
             raise
 
         budget.record(response.usage, self.model)
+
+        if response.stop_reason == "max_tokens":
+            raise RuntimeError("Model output limit reached; request fewer proposals.")
 
         if response.stop_reason == "refusal":
             return ""

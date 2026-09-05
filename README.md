@@ -38,13 +38,20 @@ depends on the demo's configured provider and available budget.
 - **Documents:** all 21 reports, including DPIA, FRIA, governance, security,
   red teaming and forensic readiness. Preview drafts, download Markdown, print to
   PDF, or export a system with its notes and a CSV inventory.
-- **Companion:** workflow guidance without a model, or optional live investigation
-  of the selected system and its evidence in a configured local app.
+- **Companion:** per-system conversation, clickable sources and review-plan proposals
+  that become open actions only after individual acceptance. Contextual workflow guidance without a model, or optional live investigation
+  of the selected system and its evidence in a configured public or local app.
 - **Review work:** accept source-linked intake proposals individually, assign
   actions and evidence requirements, record human review notes, and export one
   review pack. Ready for review never means verified or approved.
 
-## Try the guided case
+## Try the five-minute review
+
+Choose **Try the five-minute Meridian review** on the workspace home. Follow the
+numbered route from evidence comparison to a draft review pack, and reset only
+your demo working copy whenever you want to start again.
+
+## The review decision
 
 Meridian Health wants to expand a member-service assistant. Its business proposal
 says health data never reaches the model; its architecture describes sending
@@ -56,8 +63,8 @@ claim details. Proposed write access lacks demonstrated approval enforcement.
 4. Inspect the rule engine's result for the synthetic read-only pilot.
 5. Export the evidence, findings, actions, and review history as a Markdown draft.
 
-**Guided mode is a labelled, authored walkthrough, not live AI.** The local app
-also supports optional live model investigation through read-only evidence tools
+**Guided mode is a labelled, authored walkthrough, not live AI.** The public and local apps
+also support optional live model investigation through read-only evidence tools
 using the existing Ollama or Anthropic provider. Live responses are drafts; they
 cannot change the risk tier, close findings, or approve launch.
 
@@ -97,6 +104,9 @@ authored case proposals and clearly labels them separately from live AI.
 | `examples/` and `tests/` | Synthetic assessments and regression/evaluation cases |
 | `docs/` | Architecture, reference, deployment, and generated reports |
 | `scripts/` | Portable launcher and reproducible demo builds |
+
+Live provider configuration is not proof of a successful request. See the
+[evaluation protocol and initial operational check](docs/EVIDENCE-EVALUATION.md).
 
 ## Development checks
 

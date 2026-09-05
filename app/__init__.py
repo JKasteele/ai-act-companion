@@ -11,4 +11,4 @@ Package layout:
   llm/           (phase 4) optional AI agent layer
 """
 
-__version__ = "1.0.0rc1"
+__version__ = "1.0.0rc2"

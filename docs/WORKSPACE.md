@@ -47,7 +47,7 @@ Workflow guidance routes a small set of intents to the selected system's tools.
 It is labelled as guidance without a live model. The case dossiers provide authored
 intake proposals and findings; these are never labelled as model discoveries.
 
-The local app's explicit live intake action supplies the field schema to the
+The public/local FastAPI app's explicit live intake action supplies the field schema to the
 bounded agent. Each proposed answer must have a valid field/value, a source the
 agent actually read, and an exact quotation from that source. A response contains
 at most 12 proposals; unsupported tools, fields, values, sources and quotations
@@ -67,7 +67,7 @@ provenance/status, findings, actions and human notes. It adds a scenario-specifi
 selection of existing engine reports only when the system has been assessed.
 An incomplete system can export a clearly labelled work-in-progress review record.
 
-Live AI is opt-in in the local FastAPI app through the existing Ollama or Anthropic
+Live AI is opt-in in the public/local FastAPI app through the existing Ollama or Anthropic
 provider. `/api/workspace/system-chat` supplies only the selected system profile
 and its evidence catalogue. The bounded tools are `read_evidence(source_id)` and
 `inspect_review()`: at most four tool calls and five model calls per request.
@@ -86,8 +86,12 @@ remain compatible and isolated from general system evidence.
 The existing spend guard runs before every live model call; client cooldown/caps
 apply once per request. This is best-effort local accounting, not an atomic
 multi-worker reservation. Cancellation can leave a provider call running until
-its timeout. The model sees the current question and structured state, not durable
-conversation history. Citation validation establishes source access, not semantic
+its timeout. The model receives the current question, structured state and up to eight prior
+messages from the selected system (2,000 characters each), labelled untrusted.
+Browser drafts retain the last twelve messages locally; reference-profile chats
+last for the session. JSON imports deliberately omit conversations. Clear a
+conversation from Companion to remove its local history. History never grants
+source access: the model must read current evidence again. Citation validation establishes source access, not semantic
 entailment. Mock-provider tests check orchestration, not live reasoning quality.
 
 ## Native and browser execution
@@ -123,5 +127,32 @@ browser's origin. Use synthetic or generic data only.
 ## Next increments
 
 - Evaluation of live evidence extraction and contradiction detection on held-out cases.
-- A deployed live provider and durable multi-user storage if the product needs them.
+- Restore and verify public provider operation; configuration checks do not prove live availability.
+- Durable multi-user storage only if the product needs it.
 - PDF/Word extraction with passage provenance and document version management.
+
+## Guided review and action planning
+
+The five-minute Meridian route creates an isolated, resettable working copy. Its
+steps link the decision, compared source passages, answer proposals, actions and
+review-pack export. A suggested next step derives from recorded work, not a model
+verdict. All eight system views and all 21 reports remain available; a small
+case-specific document selection precedes the complete catalogue.
+
+On mobile, Companion opens in a collapsible panel with a persistent toggle and
+Escape-to-close support. System-specific conversations have clickable citations.
+The explicit live review-plan action produces at most three grounded action drafts,
+three questions and three allowlisted document IDs. Source quotations must match
+current evidence. The user accepts each action into an open state with no owner,
+due date or verified evidence. Requests reject stale review snapshots.
+
+See [live evidence evaluation](EVIDENCE-EVALUATION.md) for the probe suite,
+independent review protocol and initial operational result.
+
+The Anthropic agent path uses a JSON output schema for tool/final response envelopes.
+The final turn omits tools from the output grammar. Other providers keep the
+validated JSON protocol. The grammar enforces structure, not factual correctness;
+all server citation, type, size and acceptance checks remain in force.
+Provider responses allow up to 4,096 output tokens; truncated responses are
+rejected after their usage is recorded. See the provider's
+[structured-output documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).

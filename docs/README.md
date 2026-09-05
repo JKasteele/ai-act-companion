@@ -8,6 +8,7 @@
 
 ## Architecture and reference
 
+- [Live evidence evaluation](EVIDENCE-EVALUATION.md): probes, human review and operational results
 - [Engine design](DESIGN.md)
 - [Threat model](THREAT_MODEL.md) and [security policy](../SECURITY.md)
 - [Toolkit reference](TOOLKIT.md): original intake, CLI, reports, configuration

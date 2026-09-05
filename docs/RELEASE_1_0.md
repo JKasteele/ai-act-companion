@@ -1,12 +1,13 @@
 # 1.0 release candidate
 
-Version `1.0.0rc1` (Python) / `1.0.0-rc.1` (frontend) is a candidate for review,
-not a claim that all acceptance work is complete. The existing PR remains draft
-and unmerged. No final release tag is created by the candidate build.
+Version `1.0.0rc2` (Python) / `1.0.0-rc.2` (frontend) is a candidate for review.
+The original overhaul has been merged. Final 1.0 still requires the acceptance
+work below; no final release tag is implied by this candidate.
 
 ## Product journey
 
-1. Open Example systems and choose a realistic fictional dossier.
+1. Start the five-minute Meridian review, or choose another fictional dossier.
+   The numbered steps guide navigation; they never certify that review work is complete.
 2. Read the brief and source documents; start a working copy.
 3. Inspect the quoted evidence behind each intake proposal. Accept or skip each
    answer yourself. Conflicting and unsupported screening questions stay open.
@@ -34,8 +35,9 @@ changes are part of this release candidate.
 
 The private static preview runs the original Python engine locally in a browser
 worker and supplies authored case proposals. It makes no live model calls.
-The local FastAPI app can use the existing configured Ollama/Anthropic provider
-for evidence investigation and intake proposals. Proposals include exact quoted
+The public demo and local FastAPI app can use the existing configured Ollama/Anthropic provider
+for evidence investigation, intake proposals and proposed follow-up actions.
+Recent per-system conversation is untrusted context; sources must be read again. Proposals include exact quoted
 passages, and a human must accept each one before it changes the profile.
 
 Text/Markdown imports are supported; PDF/Word parsing and multi-user storage are
@@ -54,7 +56,9 @@ reference profiles and their 189 report combinations.
 These checks are protocol and regression evaluations. They do not measure live
 extraction accuracy, contradiction-detection recall, semantic grounding or legal
 correctness. Fabricated/unread quotations are rejected, but a valid quotation can
-still be interpreted incorrectly. No numerical live-model quality score is claimed.
+still be interpreted incorrectly. No numerical live-model quality score is claimed. The new [evaluation suite](EVIDENCE-EVALUATION.md)
+records target-field checks and human-review judgments separately. Initial live probes exposed protocol failures that were addressed during development;
+independently reviewed semantic quality remains unmeasured.
 
 Before promoting the candidate to final 1.0:
 
@@ -62,5 +66,4 @@ Before promoting the candidate to final 1.0:
   interaction, file imports, source navigation and print/PDF output.
 - Evaluate a configured live model against held-out, independently reviewed
   source/answer cases, including conflicts, omissions and injected instructions.
-- Review the candidate's product scope and documented limitations, then merge
-  and tag the final release explicitly.
+- Review the candidate's product scope and documented limitations, then tag the final release explicitly.

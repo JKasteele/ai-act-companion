@@ -1,4 +1,5 @@
 import { cleanReview } from "./casework-model.mjs";
+import { cleanConversation } from "./conversation.mjs";
 export const INVENTORY_KEY = "ai-act-companion:systems:v1";
 export function newSystem(answers = {}, id = crypto.randomUUID()) {
   return {
@@ -8,6 +9,7 @@ export function newSystem(answers = {}, id = crypto.randomUUID()) {
     evidence: [],
     activity: [],
     review: cleanReview(),
+    conversation: [],
     updated: new Date().toISOString(),
   };
 }
@@ -93,6 +95,7 @@ export function restoreInventory(raw) {
       evidence: cleanEvidence(s.evidence),
       activity: cleanActivity(s.activity),
       review: cleanReview(s.review),
+      conversation: cleanConversation(s.conversation),
     }));
 }
 export function requiredMissing(answers, catalogue) {
