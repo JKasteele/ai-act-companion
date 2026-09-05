@@ -1,18 +1,20 @@
 import { escapeHTML as esc } from "./markdown.mjs";
 import { sourceNote, cleanReview } from "./casework-model.mjs";
+import { severityClass } from "./risk-style.mjs";
 export function scenarioCards(cases) {
   return `<div class="scenario-list">${cases.map((c) => `<a class="scenario-card" href="#case/${c.id}"><div class="scenario-sector">${esc(c.sector)}<span>${esc(c.stage)}</span></div><h2>${esc(c.organisation)}</h2><h3>${esc(c.name)}</h3><p>${esc(c.brief)}</p><div class="scenario-bottom"><span>${c.documents.length} documents · ${c.findings.length} review findings</span><strong>Read the brief ↗</strong></div></a>`).join("")}</div>`;
 }
 export function scenarioBrief(c) {
   return `<div class="page-heading"><div><p class="context">Realistic fictional case · ${esc(c.sector)}</p><h1>${esc(c.organisation)}</h1><p class="subheading">${esc(c.name)}</p></div></div><section class="case-brief"><h2>The situation</h2><p>${esc(c.brief)}</p><h2>Your review question</h2><p class="case-question">${esc(c.decision)}</p><dl class="profile-grid"><div><dt>Accountable owner</dt><dd>${esc(c.owner)}</dd></div><div><dt>Review date</dt><dd>${esc(c.date)}</dd></div></dl><button class="button primary" data-start-case="${c.id}">Start a working copy</button><p class="status-line">A new draft with this document pack and authored review material. You choose which intake proposals to accept.</p></section><h2>Inside the evidence pack</h2><div class="dossier-index">${c.documents.map((d) => `<details><summary><strong>${esc(d.title)}</strong><span>${esc(d.owner)} · v${esc(d.version)} · ${esc(d.date)}</span></summary>${d.sections.map((s) => `<section><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></section>`).join("")}</details>`).join("")}</div><p class="notice">All organisations, documents and observations are fictional. Findings and proposals are authored case material, not discoveries by a model.</p>`;
 }
-function sourceLinks(system, sources) {
+export function sourceLinks(system, sources) {
   return sources
     .map((source) => {
       const note = sourceNote(system, source),
         match = /^evidence(\d+):passage$/.exec(source);
       return match && note
         ? `<a class="text-link" href="#system/${system.id}/evidence/${match[1]}">${esc(note.title)}</a>`
+        : source === 'system:profile' ? `<a class="text-link" href="#system/${system.id}/intake">Recorded system profile</a>`
         : `<span>${esc(note?.title || "Source unavailable")}</span>`;
     })
     .join("");
@@ -46,7 +48,7 @@ export function proposalsView(system, catalogue, live) {
               )}</p><blockquote>${esc(p.quote)}</blockquote><p>${esc(p.reason)}</p><div class="source-links">${sourceLinks(system, [p.source])}</div>${p.status === "pending" ? `<div class="toolbar"><button class="button primary" data-accept-proposal="${i}">Accept this answer</button><button class="button secondary" data-reject-proposal="${i}">Keep current answer / skip</button></div>` : ""}</article>`,
           )
           .join("")
-      : `<div class="empty-state">Attach evidence and use live AI in a configured local app to propose answers. The realistic cases include authored proposals you can review without a model.</div>`
+      : `<div class="empty-state">Attach evidence and use live AI in a configured public or local app to propose answers. The realistic cases include authored proposals you can review without a model.</div>`
   }`;
 }
 function displayValue(value, q) {
@@ -62,14 +64,21 @@ function displayValue(value, q) {
 export function dossierFindings(system) {
   const findings = system.review?.findings || [];
   if (!findings.length) return "";
-  return `<section class="detail-block"><h2>Evidence review findings</h2><p>Authored scenario findings, separate from the rule engine. A task marked ready for review does not close a finding.</p>${findings.map((f) => `<article class="finding-detail"><span class="status-pill amber">${esc(f.priority)} · Open</span><h3>${esc(f.title)}</h3><p>${esc(f.description)}</p><small>${esc(f.basis)} · ${esc(f.provenance)}</small><div class="source-links">${sourceLinks(system, f.sources)}</div></article>`).join("")}<button class="button primary" data-action="actions">Work on follow-up actions</button></section>`;
+  return `<section class="detail-block"><h2>Evidence review findings</h2><p>Authored scenario findings, separate from the rule engine. Ready for review does not close a finding.</p>${findings.map((f) => {
+    const actionIndex = (system.review.actions || []).findIndex(a => a.id === f.id);
+    return `<article class="finding-detail" id="finding-${esc(f.id)}"><span class="status-pill ${severityClass(f.priority)}">${esc(f.priority)} · Open</span><h3>${esc(f.title)}</h3><p>${esc(f.description)}</p><small>${esc(f.basis)} · ${esc(f.provenance)}</small><div class="source-links">${sourceLinks(system, f.sources)}</div><details class="evidence-comparison"><summary>Compare original passages (${f.sources.length})</summary><div>${f.sources.map(s => { const note = sourceNote(system, s); return `<section><h4>${esc(note?.title || 'Source unavailable')}</h4><blockquote>${esc(note?.text || 'This source is no longer available.')}</blockquote><small>${esc(note?.reference || '')}</small></section>`; }).join('')}</div></details>${actionIndex >= 0 ? `<a class="button secondary" href="#system/${system.id}/actions/${actionIndex}">Open related action</a>` : ''}</article>`;
+  }).join("")}<button class="button primary" data-action="actions">Record actions and review notes</button></section>`;
+}
+export function actionProposalsView(system) {
+  const items = system.review?.actionProposals || [];
+  return (items.length || system.review?.planQuestions?.length || system.review?.planReports?.length) ? `<section><h2>Companion’s proposed review plan</h2>${system.review.planQuestions?.length ? `<h3>Clarify next</h3><ul>${system.review.planQuestions.map(q => `<li>${esc(q)}</li>`).join('')}</ul>` : ''}${system.review.planReports?.length ? `<h3>Suggested documents</h3><div class="toolbar">${system.review.planReports.map(r => `<button class="button secondary" data-report="${r}">Prepare ${esc(r)}</button>`).join('')}</div><p class="status-line">AI suggestions, not a determination of legal obligations. Complete screening before generating reports.</p>` : ''}<h3>Proposed follow-up actions</h3><p>Live AI drafts. Accepting adds an open action with no owner, due date or verified evidence.</p>${items.map((p, i) => `<article class="proposal-card"><span class="status-pill">${esc(p.status)}</span><h3>${esc(p.title)}</h3><p>${esc(p.reason)}</p><p><strong>Required evidence:</strong> ${esc(p.completion)}</p><blockquote>${esc(p.quote)}</blockquote><div class="source-links">${sourceLinks(system, [p.source])}</div>${p.status === 'pending' ? `<button class="button primary" data-accept-action="${i}">Add this open action</button> <button class="button secondary" data-skip-action="${i}">Skip</button>` : ''}</article>`).join('')}</section>` : '';
 }
 export function actionsView(system) {
   const review = cleanReview(system.review);
-  return `<h2>Follow-up actions</h2><p class="status-line">Record the work, accountable roles and evidence needed for a human review. Ready for review is not approval.</p>${review.actions
+  return `${actionProposalsView(system)}<h2>Follow-up actions</h2><p class="status-line">Record the work, accountable roles and evidence needed for a human review. Ready for review is not approval.</p>${review.actions
     .map(
       (a, i) =>
-        `<form class="action-card" data-action-form="${i}"><div class="source-meta"><span>${esc(a.priority)} priority</span><span class="status-pill">${esc(a.status.replaceAll("_", " "))}</span></div><h3>${esc(a.title)}</h3><p><strong>Evidence needed:</strong> ${esc(a.completion)}</p><div class="action-fields"><label>Owner<input name="owner" maxlength="200" value="${esc(a.owner)}"></label><label>Due date<input name="due" type="date" value="${esc(a.due)}"></label><label>Status<select name="status">${[
+        `<form class="action-card" id="action-${i}" tabindex="-1" data-action-form="${i}"><div class="source-meta"><span>${esc(a.priority)} priority</span><span class="status-pill">${esc(a.status.replaceAll("_", " "))}</span></div><h3>${esc(a.title)}</h3>${a.source ? `<p>${esc(a.provenance)}</p><blockquote>${esc(a.quote)}</blockquote><div class="source-links">${sourceLinks(system, [a.source])}</div>` : ""}${review.findings.some(f => f.id === a.id) ? `<a class="text-link" href="#system/${system.id}/findings/${encodeURIComponent(a.id)}">Read the linked finding and sources</a>` : ""}<p><strong>Evidence needed:</strong> ${esc(a.completion)}</p><div class="action-fields"><label>Owner<input name="owner" maxlength="200" value="${esc(a.owner)}"></label><label>Due date<input name="due" type="date" value="${esc(a.due)}"></label><label>Status<select name="status">${[
           ["open", "Open"],
           ["in_progress", "In progress"],
           ["ready_for_review", "Ready for evidence review"],

@@ -119,7 +119,8 @@
               >
             </section>
           </main>
-          <aside class="agent-panel" aria-label="Companion assistant">
+          <button class="companion-toggle button primary" id="companion-toggle" aria-expanded="false" aria-controls="companion-panel">Open Companion</button>
+          <aside class="agent-panel" id="companion-panel" aria-label="Companion assistant">
             <div class="agent-heading">
               <span class="companion-mark" aria-hidden="true">✳</span>
               <div>
@@ -171,8 +172,7 @@
               </div>
             </form>
             <p class="agent-note">
-              Your decisions remain yours. Drafts and tool outputs are available
-              for review.
+              Recent conversations stay with browser drafts. Live AI receives recent messages for this system. You can clear them at any time.
             </p>
           </aside>
         </div>

@@ -39,7 +39,14 @@ class SystemChatRequest(BaseModel):
     evidence: list[EvidenceNote] = Field(default_factory=list, max_length=30)
     assessment_confirmed: bool = False
     example_id: str = Field(default="", max_length=100)
-    intent: Literal["review", "intake"] = "review"
+    intent: Literal["review", "intake", "plan"] = "review"
+    history: list["HistoryMessage"] = Field(default_factory=list, max_length=8)
+    review_notes: str = Field(default="", max_length=6000)
+
+
+class HistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2000)
 
 
 @router.post("/system-chat")
@@ -57,10 +64,12 @@ def system_chat(req: SystemChatRequest, request: Request):
              "text": note.text},
         ]} for i, note in enumerate(req.evidence)]
         review_data = {"missing_screening": missing_screening(answers),
+                       "reviewer_notes_and_actions": req.review_notes,
                        "assessment": assess_answers(answers) if req.assessment_confirmed else None,
                        "notice": "Reviewer-provided profile and evidence; no approval or verified controls."}
         return run_agent(req.message, ReviewState(), request.client.host if request.client else None,
-                         documents=documents, review_data=review_data, intake=req.intent == "intake")
+                         documents=documents, review_data=review_data, intake=req.intent == "intake",
+                         history=[m.model_dump() for m in req.history], plan=req.intent == "plan")
     except AgentUnavailable as exc:
         raise HTTPException(503, str(exc)) from exc
     except (ValueError, TypeError) as exc:

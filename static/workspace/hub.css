@@ -711,3 +711,35 @@
     animation: none;
   }
 }
+.next-work { display: grid; grid-template-columns: minmax(0, 2fr) minmax(170px, 1fr); gap: 28px; padding: 24px; margin: 0 0 28px; border-left: 4px solid var(--teal); background: var(--teal-soft); }
+.next-work h2 { font-size: 22px; margin: 8px 0; }
+.next-work p { max-width: 65ch; margin-bottom: 16px; font-size: 16px; }
+.work-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0; }
+.work-counts dt { font-size: 14px; color: var(--muted); }
+.work-counts dd { font-size: 24px; margin: 4px 0; }
+.review-tour { margin: 0 0 24px; padding: 20px; background: white; border: 1px solid var(--line); }
+.review-tour nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.review-tour nav a { flex: 1 1 120px; font-size: 14px; padding: 10px; border-bottom: 3px solid var(--line); text-decoration: none; }
+.review-tour nav a[aria-current] { border-color: var(--teal); background: var(--teal-soft); font-weight: 600; }
+.review-tour nav span { display: block; font-size: 18px; margin-bottom: 6px; }
+.review-tour p { font-size: 16px; max-width: 75ch; }
+.evidence-comparison { margin: 20px 0; }
+.evidence-comparison summary, .full-toolkit summary { cursor: pointer; font-size: 16px; font-weight: 600; padding: 12px 0; }
+.evidence-comparison > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 16px; }
+.evidence-comparison section { border: 1px solid var(--line); padding: 18px; overflow-wrap: anywhere; }
+.evidence-comparison h4 { font-size: 16px; }
+.evidence-comparison blockquote { margin: 14px 0; font-size: 16px; }
+.source-links { flex-wrap: wrap; overflow-wrap: anywhere; }
+.agent-message p { white-space: pre-line; }
+.companion-toggle { display: none; }
+.full-toolkit { margin: 28px 0; }
+@media (max-width: 760px) {
+  .next-work, .evidence-comparison > div { grid-template-columns: 1fr; }
+  .review-tour { padding: 16px; }
+  .review-tour nav a { flex-basis: 90px; }
+  #companion-panel { display: none; }
+  .companion-toggle { display: block; position: fixed; right: 16px; bottom: 16px; z-index: 41; }
+  .companion-open #companion-panel { display: flex; position: fixed; inset: auto 12px 72px; height: min(600px, calc(100dvh - 100px)); width: auto; z-index: 40; box-shadow: 0 8px 32px #153c4630; border: 1px solid var(--line); background: white; }
+  .workspace-footer { padding-bottom: 84px; }
+}
+@media print { .review-tour, .next-work, .companion-toggle, #companion-panel { display: none !important; } }

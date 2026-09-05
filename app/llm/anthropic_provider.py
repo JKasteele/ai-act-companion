@@ -34,7 +34,7 @@ class AnthropicProvider(LLMProvider):
     def status(self):
         """No network call here - status is a local availability check only."""
         info = {"provider": self.name, "interactive": False, "available": False,
-                 "model": self.model, "budget": budget.state()}
+                 "model": self.model, "budget": budget.state(), "availability_check": "configuration_only"}
         try:
             import anthropic  # noqa: F401
         except ImportError as e:

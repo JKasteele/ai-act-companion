@@ -3,6 +3,12 @@ export const statuses = ["open", "in_progress", "ready_for_review"];
 export function cleanReview(raw = {}) {
   raw ||= {};
   return {
+    tour: raw.tour === true && raw.caseId === 'meridian',
+    planQuestions: (Array.isArray(raw.planQuestions) ? raw.planQuestions : []).filter(q => typeof q === 'string').slice(0, 3).map(q => q.slice(0, 500)),
+    planReports: (Array.isArray(raw.planReports) ? raw.planReports : []).filter(r => ['risk', 'security', 'governance', 'dpia', 'fria', 'redteam', 'controls', 'datagov', 'forensics'].includes(r)).slice(0, 3),
+    actionProposals: (Array.isArray(raw.actionProposals) ? raw.actionProposals : [])
+      .filter(p => p && typeof p.title === 'string').slice(0, 12)
+      .map(p => ({ title: text(p.title, 200), completion: text(p.completion, 2000), reason: text(p.reason, 1000), source: text(p.source, 100), quote: text(p.quote, 1000), status: ['accepted', 'rejected'].includes(p.status) ? p.status : 'pending' })),
     caseId: text(raw.caseId, 80),
     findings: (Array.isArray(raw.findings) ? raw.findings : [])
       .filter((f) => f && typeof f.title === "string")
@@ -48,6 +54,9 @@ export function cleanReview(raw = {}) {
           : "High",
         completion: text(a.completion, 2000),
         evidence: text(a.evidence, 2000),
+        source: text(a.source, 100),
+        quote: text(a.quote, 1000),
+        provenance: text(a.provenance, 150),
         due: /^\d{4}-\d{2}-\d{2}$/.test(a.due || "") ? a.due : "",
         status:
           statuses.includes(a.status) &&
@@ -94,7 +103,7 @@ export function startCase(system, scenario) {
       id: f.id,
       title: f.action,
       owner: f.owner,
-      priority: "High",
+      priority: f.priority,
       completion: f.completion,
       status: "open",
     })),
@@ -146,6 +155,14 @@ export function saveAction(system, index, patch) {
     cleanReview({ actions: [{ ...action, ...patch }] }).actions[0],
   );
 }
+export function acceptActionProposal(system, index) {
+  const p = system.review.actionProposals[index];
+  if (!p || p.status !== 'pending' || !p.quote || !sourceNote(system, p.source)?.text.includes(p.quote))
+    throw new Error('The source changed or the proposal was already reviewed. Request a fresh proposal.');
+  if (system.review.actions.length >= 50) throw new Error('A system can contain up to 50 actions.');
+  system.review.actions.push(cleanReview({actions: [{id: crypto.randomUUID(), title: p.title, completion: p.completion, status: 'open', priority: 'Medium', source: p.source, quote: p.quote, provenance: 'Live AI proposal accepted by reviewer'}]}).actions[0]);
+  p.status = 'accepted';
+}
 const md = (v) =>
   String(v ?? "").replace(/[\\`*_{}\[\]<>|#]/g, (c) => "\\" + c);
 export function reviewPack(system, reports = []) {
@@ -193,6 +210,9 @@ export function reviewPack(system, reports = []) {
     ),
   );
   lines.push("## Follow-up actions");
+  lines.push("### Unverified AI plan suggestions", ...r.planQuestions.map(q => `- Clarification: ${md(q)}`));
+  r.actionProposals.forEach(p => lines.push(`- ${md(p.status)} action proposal: ${md(p.title)}. Required evidence: ${md(p.completion)}. Source: ${md(p.source)}. Quote: ${md(p.quote)}`));
+  if (r.planReports.length) lines.push(`Suggested document IDs: ${md(r.planReports.join(', '))}`);
   r.actions.forEach((a) =>
     lines.push(
       `### ${md(a.title)}`,
@@ -200,6 +220,7 @@ export function reviewPack(system, reports = []) {
       `Status: ${md(a.status)} — ready for review does not mean verified.`,
       `Required evidence: ${md(a.completion)}`,
       `Submitted evidence: ${md(a.evidence || "Not supplied")}`,
+      `Origin: ${md(a.provenance || 'Reviewer action / authored scenario')} · ${md(a.source)} · ${md(a.quote)}`,
     ),
   );
   lines.push("## Human review notes");
