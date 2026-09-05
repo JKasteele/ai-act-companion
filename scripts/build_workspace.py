@@ -24,11 +24,12 @@ def build():
     out.mkdir(exist_ok=True)
     # Deliberate allowlist: never copy .env, data/, server code, or credentials.
     for name in ("index.html", "case.html", "workspace.css", "workspace.js", "model.mjs", "favicon.svg",
-                 "hub.css", "hub.js", "hub-model.mjs", "casework.mjs", "casework-model.mjs", "engine-worker.mjs", "engine-client.mjs", "markdown.mjs"):
+                 "hub.css", "hub.js", "hub-model.mjs", "casework.mjs", "casework-model.mjs", "engine-worker.mjs", "engine-client.mjs", "markdown.mjs", "risk-style.mjs"):
         shutil.copy2(public / name, out / name)
     (out / "notices").mkdir(exist_ok=True)
     (out / "assets").mkdir(exist_ok=True)
-    shutil.copy2(public / "assets/about-context.png", out / "assets/about-context.png")
+    for name in ("workspace-overview.png", "workspace-evidence.png", "workspace-report.png", "workspace-tour.gif"):
+        shutil.copy2(public / "assets" / name, out / "assets" / name)
     for name in ("README.md", "PYODIDE-LICENSE.txt", "PYTHON-LICENSE.txt"):
         shutil.copy2(public / "notices" / name, out / "notices" / name)
     for directory in (public, out):

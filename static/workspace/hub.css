@@ -8,6 +8,9 @@
 .about-intro { max-width: 68ch; font-size: 18px; }
 .about-photo { margin: 30px 0 36px; }
 .about-photo img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.about-photo img { border: 1px solid var(--line); }
+.about-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.about-gallery .about-photo { margin: 0 0 24px; }
 .about-photo figcaption { margin-top: 10px; font-size: 13px; color: var(--muted); }
 .about-section { margin: 32px 0; }
 .about-section > p { max-width: 72ch; margin-top: 14px; }
@@ -24,6 +27,7 @@
 .public-demo-notice { padding: 12px 28px; background: #eaf4f1; border-bottom: 1px solid var(--line); font-size: 14px; }
 @media (max-width: 760px) {
   .about-sectors { grid-template-columns: 1fr; gap: 20px; }
+  .about-gallery { grid-template-columns: 1fr; }
   .about-photo { margin: 24px 0; }
   .about-intro { font-size: 16px; }
 }

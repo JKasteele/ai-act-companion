@@ -106,17 +106,10 @@ small {
   font-weight: 650;
 }
 .brand-mark {
-  display: grid;
-  place-items: center;
-  background: #153c46;
-  color: white;
-  width: 39px;
-  height: 43px;
-  border-radius: 12px;
-  font-size: 36px;
-  font-weight: 450;
-  line-height: 1;
-  padding-bottom: 7px;
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
 }
 .workspace-name {
   display: flex;
@@ -282,6 +275,11 @@ main > section + section {
   align-items: center;
   gap: 6px;
 }
+.status-pill.risk-prohibited { color: #fff; background: #991b1b; border: 1px solid #991b1b; }
+.status-pill.risk-high { color: #991b1b; background: #fee2e2; border: 1px solid #eaa3a3; }
+.status-pill.risk-limited { color: #854d0e; background: #fef3c7; border: 1px solid #e7c86c; }
+.status-pill.risk-minimal { color: #166534; background: #dcfce7; border: 1px solid #86caa0; }
+.status-pill.risk-unassessed { color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; }
 .amber {
   color: var(--amber);
   background: var(--amber-soft);
@@ -1080,9 +1078,7 @@ dialog::backdrop {
   }
   .brand-mark {
     height: 32px;
-    width: 31px;
-    font-size: 28px;
-    border-radius: 8px;
+    width: 32px;
   }
   .brand > span:last-child {
     display: block;
