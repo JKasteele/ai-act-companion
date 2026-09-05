@@ -57,8 +57,8 @@ These checks are protocol and regression evaluations. They do not measure live
 extraction accuracy, contradiction-detection recall, semantic grounding or legal
 correctness. Fabricated/unread quotations are rejected, but a valid quotation can
 still be interpreted incorrectly. No numerical live-model quality score is claimed. The new [evaluation suite](EVIDENCE-EVALUATION.md)
-records target-field checks and human-review judgments separately. Initial public
-provider probes failed, so live quality remains unmeasured.
+records target-field checks and human-review judgments separately. Initial live probes exposed protocol failures that were addressed during development;
+independently reviewed semantic quality remains unmeasured.
 
 Before promoting the candidate to final 1.0:
 

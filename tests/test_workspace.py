@@ -112,6 +112,28 @@ def test_agent_reads_sources_and_returns_real_tool_trace(monkeypatch):
     assert state == ReviewState()
 
 
+def test_structured_provider_gets_final_only_grammar_after_all_sources_are_read(monkeypatch):
+    schemas = []
+    provider = FakeProvider([
+        {"tool": "read_evidence", "source_id": "only:passage"},
+        {"answer": "Review this gap.", "sources": ["only:passage"], "actions": [], "questions": ["Who will test it?"], "reports": ["security"]},
+    ])
+
+    def structured(system, user, schema):
+        schemas.append(schema)
+        return provider.generate(system, user)
+
+    provider.generate_structured = structured
+    monkeypatch.setattr(agent, "provider_for", lambda ip=None: provider)
+    result = agent.run_agent("Plan the review", ReviewState(), plan=True, documents=[{
+        "id": "only", "title": "Design", "sections": [{"id": "passage", "text": "Approval has not been tested."}],
+    }])
+    assert "tool" in schemas[0]["properties"]
+    assert "tool" not in schemas[1]["properties"]
+    assert set(schemas[1]["required"]) == {"answer", "sources", "actions", "questions", "reports"}
+    assert result["draft"] and result["questions"] == ["Who will test it?"]
+
+
 @pytest.mark.parametrize("reply", [
     {"tool": "save_assessment"}, {"tool": "read_evidence", "source_id": "../../.env"},
     {"tool": "read_evidence", "source_id": False}, [], "not json",

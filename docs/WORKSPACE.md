@@ -148,3 +148,11 @@ due date or verified evidence. Requests reject stale review snapshots.
 
 See [live evidence evaluation](EVIDENCE-EVALUATION.md) for the probe suite,
 independent review protocol and initial operational result.
+
+The Anthropic agent path uses a JSON output schema for tool/final response envelopes.
+The final turn omits tools from the output grammar. Other providers keep the
+validated JSON protocol. The grammar enforces structure, not factual correctness;
+all server citation, type, size and acceptance checks remain in force.
+Provider responses allow up to 4,096 output tokens; truncated responses are
+rejected after their usage is recorded. See the provider's
+[structured-output documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).

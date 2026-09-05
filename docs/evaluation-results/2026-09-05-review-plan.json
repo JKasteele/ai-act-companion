@@ -1,0 +1,34 @@
+{
+  "mode": "live",
+  "provider": "anthropic",
+  "answer": "The system is a member-service assistant with a contact-update tool that can write to a backend API. Screening shows 26 missing properties across governance, legal exemptions, and AI risk categories. The primary concern is that approval enforcement for the contact-update tool has not yet been tested. Before proceeding, we need foundational intake: intended purpose, provider role, and territorial scope. Then, approval-boundary testing should verify that contact changes are only executed after documented human authorization.",
+  "sources": [
+    "system:profile",
+    "evidence0:passage"
+  ],
+  "events": [
+    {
+      "tool": "read_evidence",
+      "label": "Read system:profile"
+    },
+    {
+      "tool": "read_evidence",
+      "label": "Read evidence0:passage"
+    }
+  ],
+  "draft": true,
+  "actions": [
+    {
+      "title": "Verify contact-update approval enforcement",
+      "completion": "Obtain test evidence that the contact-update tool blocks unauthorized changes and logs approval decisions. Document API call traces showing that modifications require prior human authorization before backend execution. Include test cases for rejected requests.",
+      "reason": "The evidence states approval enforcement has not been tested. This is a mandatory control for any system modifying user data via API backend access. Without verification, unauthorized contact modifications are possible.",
+      "source": "evidence0:passage",
+      "quote": "The contact-update tool can write to the backend API. Approval enforcement has not yet been tested."
+    }
+  ],
+  "questions": [
+    "What is the intended purpose of this member-service assistant, and which organization or role will deploy and operate it?",
+    "Does this system process personal data (member contact details), and is it subject to GDPR, AI Act territorial scope, or other regulatory frameworks?"
+  ],
+  "reports": []
+}

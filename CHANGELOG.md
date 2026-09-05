@@ -12,8 +12,9 @@ All notable changes are documented here. Format based on
 - Added side-by-side source comparison and bidirectional finding/action links.
 - Added per-system conversation context, linked citations and mobile Companion toggle.
 - Added bounded live action, clarification and document proposals with individual human acceptance.
-- Added a synthetic live-evaluation runner and independent review protocol; initial provider requests failed, so model quality remains unmeasured.
+- Added a synthetic live-evaluation runner and independent review protocol; the final run passed six target-field checks after protocol fixes; independent semantic quality remains unmeasured.
 - Clarified operational provider errors and corrected stale deployment/release documentation.
+- Added provider JSON output grammar, explicit final-turn instructions and truncation detection after live probes exposed response-format failures.
 - Preserved the full toolkit and classification/review boundaries.
 
 

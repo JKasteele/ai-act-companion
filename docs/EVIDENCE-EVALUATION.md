@@ -9,6 +9,8 @@ Tests of the tool protocol do not establish that the model interprets evidence c
 `tests/eval/evidence_cases.json` contains six synthetic probes kept outside the
 shipped dossiers and agent prompt: explicit role, explicit absence of write access,
 missing permissions, contradictory permissions, injected instructions, and unknown role.
+These are development regression probes: failures were used to improve the
+agent protocol, so subsequent reruns are not a held-out benchmark.
 Expected values are provisional author labels. They are not independently reviewed
 ground truth and the set is too small for general model-quality claims.
 
@@ -41,10 +43,23 @@ report provider availability separately from extraction quality.
 ## Initial operational check — 5 September 2026
 
 The public demo reported Anthropic `claude-haiku-4-5` configured. Two initial live
-intake requests returned HTTP 503 and the run was stopped. No usable model responses
-were obtained, so no semantic accuracy, conflict recall or injection-resistance
-score can be reported. Provider configuration alone is not a successful live test.
+intake requests returned HTTP 503 and the run was stopped. A subsequent review-plan request succeeded, while intake requests exposed tool-loop
+and response-format failures. The implementation now tracks completed reads,
+requires a final response and uses a provider JSON grammar. These observations
+do not establish semantic accuracy, conflict recall or injection resistance. Provider configuration alone is not a successful live test.
 
 Safe operational errors now distinguish provider authentication, permissions,
 rate limits and insufficient credit without exposing exception text or credentials.
-Resolve the provider issue, then run the full suite and perform independent review.
+The final structured-output run answered all six probes and passed all six
+target-field checks, with zero failed requests. Response times ranged from
+8.03 to 18.78 seconds (including first-use schema overhead).
+The [complete development record](evaluation-results/2026-09-05-development-probes.json)
+includes earlier failed runs and every returned synthetic response.
+
+This is one development run against provisional labels, not a general accuracy
+score. Independent semantic review and a fresh held-out set remain outstanding.
+
+A separate [live review-plan smoke result](evaluation-results/2026-09-05-review-plan.json)
+returned one unapplied action proposal and two clarification questions with read
+sources. The request included prior conversation about contact-update approval.
+This verifies the live protocol path; it does not quantify conversation quality.
