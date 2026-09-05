@@ -3,7 +3,7 @@
 ## Start here
 
 - [Project overview](../README.md)
-- [Evidence workspace](WORKSPACE.md): case, interaction model, agent tools, limitations
+- [System workspace](WORKSPACE.md): full toolkit, browser engine, case, agent tools, limitations
 - [Contributing](../CONTRIBUTING.md) and [shared assistant instructions](../AGENTS.md)
 
 ## Architecture and reference
@@ -23,5 +23,6 @@ These describe the original questionnaire, still available at `/classic`.
 - [Screenshots](img/README.md)
 - [Earlier roadmap review](ROADMAP-REVIEW.md)
 
-Build workspace assets with `python scripts/build_workspace.py`.
+Build workspace assets with `npm ci` then `python scripts/build_workspace.py`.
+Verify the browser engine with `npm run test:engine`.
 Build the original report gallery with `python scripts/build_gallery.py`.

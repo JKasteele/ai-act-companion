@@ -10,7 +10,7 @@ from typing import Any
 from ..llm import budget
 from ..llm.base import extract_json
 from ..llm.service import provider_for
-from .case import get_case, read_evidence, valid_sources
+from .case import get_case, read_evidence
 from .review import ReviewState, review_summary
 
 SYSTEM = """You are Companion, an evidence-led AI governance assistant reviewing a
@@ -37,13 +37,29 @@ class AgentUnavailable(RuntimeError):
     pass
 
 
-def run_agent(message: str, state: ReviewState, ip=None):
+def run_agent(message: str, state: ReviewState, ip=None, *, documents=None, review_data=None):
+    source_documents = documents if documents is not None else get_case()["documents"]
+    allowed_sources = {f"{d['id']}:{s['id']}" for d in source_documents for s in d["sections"]}
+
+    def read_source(source_id):
+        if documents is None:
+            return read_evidence(source_id)
+        doc_id, _, section_id = source_id.partition(":")
+        for doc in source_documents:
+            if doc["id"] == doc_id:
+                if not section_id:
+                    return doc
+                for part in doc["sections"]:
+                    if part["id"] == section_id:
+                        return {"source": source_id, "document": doc["title"], **part}
+        raise ValueError("Unknown evidence source")
+
     catalogue = [
         {"id": d["id"], "title": d["title"],
          "sections": [f"{d['id']}:{s['id']}" for s in d["sections"]]}
-        for d in get_case()["documents"]
+        for d in source_documents
     ]
-    context: dict[str, Any] = {"question": message, "review_state": state.model_dump(),
+    context: dict[str, Any] = {"question": message, "review_state": review_data if review_data is not None else state.model_dump(),
                "catalogue": catalogue, "tool_results": []}
     events: list[dict[str, str]] = []
     seen_sources = set()
@@ -57,7 +73,10 @@ def run_agent(message: str, state: ReviewState, ip=None):
             # lifetime/day token-spend caps are checked at each subsequent step.
             budget.note_ip(ip)
         try:
-            result = extract_json(provider.generate(SYSTEM, json.dumps(context), as_json=True))
+            prompt = SYSTEM if documents is None else SYSTEM.replace(
+                "fictional health-insurer case", "selected user-provided synthetic AI system",
+            ).replace("curated\ncase findings", "recorded\nsystem assessment")
+            result = extract_json(provider.generate(prompt, json.dumps(context), as_json=True))
         except Exception as exc:
             raise AgentUnavailable("The live model could not complete this request. Your review is unchanged.") from exc
         if not isinstance(result, dict):
@@ -68,7 +87,7 @@ def run_agent(message: str, state: ReviewState, ip=None):
             if not isinstance(answer, str) or not answer.strip() or len(answer) > 8000:
                 raise AgentUnavailable("The model returned an invalid answer.")
             if not isinstance(sources, list) or not sources or any(
-                not isinstance(s, str) or s not in valid_sources() or s not in seen_sources
+                not isinstance(s, str) or s not in allowed_sources or s not in seen_sources
                 for s in sources
             ):
                 raise AgentUnavailable("The model cited evidence it had not read. No answer was accepted.")
@@ -82,17 +101,17 @@ def run_agent(message: str, state: ReviewState, ip=None):
             if not isinstance(source_id, str):
                 raise AgentUnavailable("The model requested an invalid evidence source.")
             try:
-                output = read_evidence(source_id)
+                output = read_source(source_id)
             except ValueError as exc:
                 raise AgentUnavailable("The model requested an unknown evidence source.") from exc
             if ":" in source_id:
                 seen_sources.add(source_id)
             else:
-                seen_sources.update(s for s in valid_sources() if s.startswith(source_id + ":"))
+                seen_sources.update(s for s in allowed_sources if s.startswith(source_id + ":"))
             label = f"Read {source_id}"
         elif tool == "inspect_review":
-            output = review_summary(state)
-            label = "Inspected review state and curated case findings"
+            output = review_data if review_data is not None else review_summary(state)
+            label = "Inspected recorded system assessment" if documents is not None else "Inspected review state and curated case findings"
         else:
             raise AgentUnavailable("The model requested an unsupported action. Nothing was changed.")
         context["tool_results"].append({"tool": tool, "result": output})

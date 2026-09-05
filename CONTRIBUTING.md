@@ -13,7 +13,8 @@ pull requests are welcome.
 
 - Follow the shared instructions in [AGENTS.md](AGENTS.md).
 - For workspace changes, run `node --test tests/frontend/*.test.mjs` and
-  `python scripts/build_workspace.py`. Generated case assets must match their sources.
+  `npm ci`, `python scripts/build_workspace.py`, and `npm run test:engine`.
+  Generated case assets must match their sources; browser and native engines must agree.
 
 - `ruff check .` is clean.
 - `pytest` passes — including the golden-set accuracy eval

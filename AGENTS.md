@@ -23,7 +23,9 @@ mypy app mcp_server.py
 pytest
 node --check static/workspace/workspace.js
 node --test tests/frontend/*.test.mjs
+npm ci
 python scripts/build_workspace.py
+npm run test:engine
 ```
 
 When changing classification logic, independently label an appropriate golden
@@ -33,3 +35,8 @@ are not proof of legal correctness.
 
 See `docs/WORKSPACE.md`, `docs/DESIGN.md`, and `docs/TOOLKIT.md`. Keep shared
 instructions here rather than duplicating them in assistant-specific files.
+
+The browser build packages the existing pure Python engine. Keep classification
+logic out of JavaScript. `app/workspace/toolkit.py` validates complete screening
+before custom assessments/reports. Reference examples use immutable shipped inputs;
+editing or importing one starts a new draft and must not bypass this gate.

@@ -7,16 +7,21 @@ All notable changes are documented here. Format based on
 ## [Unreleased]
 
 ### Added
+- Full system workspace with all 13 intake sections and 21 report types, nine
+  examples, per-system evidence/findings/activity, JSON import/export, and CSV register.
+- Browser execution of the original Python engine through a pinned Pyodide worker;
+  native/browser parity and report integration checks.
+- Required and conditional screening gates; profile edits invalidate earlier results.
 - Evidence workspace for a fictional health-insurer case, with inspectable source
   passages, explicit unknowns, reviewer clarifications, action owners, and draft export.
 - Optional live AI investigation through bounded, read-only evidence tools; the
   guided walkthrough remains available without a model and is labelled as such.
-- Reproducible static preview generated from the curated case and existing engine.
+- Reproducible static workspace with an optional guided case introduction.
 - Regression tests for provenance, tool limits, invalid citations, review-state
   boundaries, and browser-state/export logic.
 
 ### Changed
-- The application opens the evidence workspace; the original toolkit remains at `/classic`.
+- The application opens the system workspace; the original toolkit remains at `/classic`.
 - Replaced the long front-page reference with a focused README and documentation index.
 - Moved design, threat-model, and toolkit reference material under `docs/`.
 - Consolidated coding-assistant guidance in `AGENTS.md`.

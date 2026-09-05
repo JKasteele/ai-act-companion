@@ -39,10 +39,18 @@ jobs:
         run: |
           node --check static/app.js
           node --check static/workspace/workspace.js
+          node --check static/workspace/hub.js
           node --test tests/frontend/*.test.mjs
 
-      - name: Build evidence workspace
+      - name: Install pinned browser runtime
+        run: npm ci
+
+      - name: Build complete workspace
         run: python scripts/build_workspace.py
+
+      - name: Browser Python engine parity and report integration
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
+        run: npm run test:engine
 
       - name: Generated artifact drift
         if: runner.os == 'Linux' && matrix.python-version == '3.12'

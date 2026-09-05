@@ -12,6 +12,7 @@ from ..security import assess_security
 from .agent import AgentUnavailable, run_agent
 from .case import get_case
 from .review import ReviewState, review_summary
+from .toolkit import assess_answers, catalogue, dispatch, missing_screening, validate_answers
 
 router = APIRouter(prefix="/api/workspace", tags=["Evidence workspace"])
 
@@ -23,6 +24,58 @@ class ChatRequest(BaseModel):
 
 class AssessmentRequest(BaseModel):
     confirm_synthetic_profile: bool = False
+
+
+class EvidenceNote(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    text: str = Field(min_length=1, max_length=10_000)
+    reference: str = Field(default="", max_length=300)
+
+
+class SystemChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    answers: dict = Field(default_factory=dict, max_length=300)
+    evidence: list[EvidenceNote] = Field(default_factory=list, max_length=30)
+    assessment_confirmed: bool = False
+    example_id: str = Field(default="", max_length=100)
+
+
+@router.post("/system-chat")
+def system_chat(req: SystemChatRequest, request: Request):
+    import json
+
+    try:
+        answers = validate_answers(req.answers)
+        documents = [{"id": "system", "title": "Recorded system profile", "sections": [
+            {"id": "profile", "title": "Structured answers (reviewer statements)",
+             "text": json.dumps(answers)},
+        ]}]
+        documents += [{"id": f"evidence{i}", "title": note.title, "sections": [
+            {"id": "passage", "title": note.reference or "Reviewer-provided evidence",
+             "text": note.text},
+        ]} for i, note in enumerate(req.evidence)]
+        review_data = {"missing_screening": missing_screening(answers),
+                       "assessment": assess_answers(answers) if req.assessment_confirmed else None,
+                       "notice": "Reviewer-provided profile and evidence; no approval or verified controls."}
+        return run_agent(req.message, ReviewState(), request.client.host if request.client else None,
+                         documents=documents, review_data=review_data)
+    except AgentUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.get("/catalogue")
+def toolkit_catalogue():
+    return catalogue()
+
+
+@router.post("/toolkit")
+def toolkit_request(payload: dict):
+    try:
+        return dispatch(payload)
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 def scenario_assessment():

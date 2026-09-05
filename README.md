@@ -2,14 +2,27 @@
 
 **An evidence-led workspace for AI governance and security.**
 
-Investigate a fictional health insurer's AI assistant: compare documents, clarify
-unknowns, prepare follow-up actions, and export a review record. The existing EU
-AI Act classifier and security toolkit provide a reproducible assessment foundation.
+Manage AI systems, complete structured assessments, investigate evidence and
+security findings, and prepare documents with Companion alongside your work.
+The existing EU AI Act classifier and security toolkit remain the foundation.
 
 Built by Jesse van de Kasteele as a portfolio project connecting AI governance,
 data governance, security engineering, and practical agent design.
 
-## Explore the case
+## Explore the workspace
+
+- **Your systems:** create a draft, import an assessment, or copy one of nine examples.
+- **Assessment:** all 13 intake sections, explicit unknowns, automatic draft saving,
+  and classification only after complete screening. Edits clear old results.
+- **Evidence and findings:** source notes and the original classification and
+  architecture-aware security results, organised per system.
+- **Documents:** all 21 reports, including DPIA, FRIA, governance, security,
+  red teaming and forensic readiness. Preview drafts, download Markdown, print to
+  PDF, or export a system with its notes and a CSV inventory.
+- **Companion:** workflow guidance without a model, or optional live investigation
+  of the selected system and its evidence in a configured local app.
+
+## Try the guided case
 
 Meridian Health wants to expand a member-service assistant. Its business proposal
 says health data never reaches the model; its architecture describes sending
@@ -28,7 +41,7 @@ cannot change the risk tier, close findings, or approve launch.
 
 ## Run locally
 
-Requires Python 3.10+. No frontend package installation is needed.
+Requires Python 3.10+. The local app works without a frontend build.
 
 ```bash
 python -m venv .venv
@@ -38,7 +51,7 @@ pip install -e ".[dev,mcp]"
 uvicorn app.main:app --reload
 ```
 
-Open **http://127.0.0.1:8000** for the evidence workspace. The original intake,
+Open **http://127.0.0.1:8000** for the full workspace. The original intake,
 inventory, and report toolkit remains at **http://127.0.0.1:8000/classic**.
 On Windows, `scripts/serve-local.ps1` starts a loopback-only server from any directory.
 
@@ -50,8 +63,8 @@ provider in `.env` using [.env.example](.env.example), then explicitly select
 
 | Location | Responsibility |
 | --- | --- |
-| `static/workspace/` | Evidence UI, guided walkthrough, local review state, draft export |
-| `app/workspace/` | Curated evidence, validated state, bounded live agent tools |
+| `static/workspace/` | System workspace, browser engine adapter, optional case walkthrough |
+| `app/workspace/` | Shared toolkit dispatcher, validated state, bounded live agent tools |
 | `app/` and `app/knowledge/` | Rule engine, governance/security lenses, reports |
 | `static/` | Original questionnaire and report interface |
 | `mcp_server.py` and `skills/` | Agent access to the existing toolkit through MCP |
@@ -66,12 +79,16 @@ ruff check .
 mypy app mcp_server.py
 pytest
 node --test tests/frontend/*.test.mjs
+npm ci
 python scripts/build_workspace.py
+npm run test:engine
 ```
 
-The static build is a guided preview with an engine result computed at build time.
-It does not run Python or a live model in the browser. Review state is stored on
-the visitor's device; this is not a shared case-management service.
+The static build requires Node.js 22+ and bundles the original Python engine
+through Pyodide. Custom classification and all reports run in a browser worker;
+the first operation loads the runtime. It uses no hosted model or API key.
+The local app calls Python directly and also lists its previously saved assessments.
+Browser drafts stay on your device; this is not a shared case-management service.
 
 ## Documentation
 

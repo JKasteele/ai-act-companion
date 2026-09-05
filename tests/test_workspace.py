@@ -169,3 +169,33 @@ def test_generated_case_and_assessment_match_sources():
     public = Path(__file__).resolve().parents[1] / "static/workspace"
     assert json.loads((public / "case.json").read_text(encoding="utf-8")) == get_case()
     assert json.loads((public / "assessment.json").read_text(encoding="utf-8")) == scenario_assessment()
+
+
+def test_selected_system_agent_sources_are_isolated(monkeypatch):
+    documents = [{"id": "system", "title": "Selected system", "sections": [
+        {"id": "profile", "title": "Profile", "text": "Synthetic infrastructure model"},
+    ]}]
+    provider = use_provider(monkeypatch, [
+        {"tool": "read_evidence", "source_id": "system"},
+        {"tool": "inspect_review"},
+        {"answer": "Review the infrastructure profile.", "sources": ["system:profile"]},
+    ])
+    review_data = {"assessment": None, "missing_screening": ["eu_market"]}
+    result = agent.run_agent("Review", ReviewState(), documents=documents, review_data=review_data)
+    assert result["sources"] == ["system:profile"]
+    assert provider.calls[-1]["tool_results"][1]["result"] == review_data
+    assert "business" not in str(provider.calls)
+    use_provider(monkeypatch, [{"tool": "read_evidence", "source_id": "business:data"}])
+    with pytest.raises(agent.AgentUnavailable, match="unknown evidence"):
+        agent.run_agent("Review", ReviewState(), documents=documents)
+    use_provider(monkeypatch, [
+        {"tool": "read_evidence", "source_id": "system:profile"},
+        {"answer": "Review the profile", "sources": ["system:profile"]},
+    ])
+    assert agent.run_agent("Review", ReviewState(), documents=documents)["draft"]
+
+
+def test_selected_system_live_mode_unavailable_is_explicit(monkeypatch):
+    monkeypatch.setattr(agent, "provider_for", lambda ip=None: None)
+    response = client.post("/api/workspace/system-chat", json={"message": "Review"})
+    assert response.status_code == 503
