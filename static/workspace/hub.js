@@ -29,6 +29,7 @@ import {
 const $ = (s) => document.querySelector(s);
 let catalogue,
   backend = false,
+  publicDemo = false,
   systems = [],
   serverSystems = [],
   selected = null,
@@ -298,13 +299,19 @@ function newView() {
   );
 }
 function about() {
-  return (
-    heading(
-      "One workspace, the full toolkit",
-      "The agent helps you move through the work. The assessment engine stays inspectable.",
-    ) +
-    `<article class="about-copy"><h2>What is available</h2><p>Create and edit systems, complete all 13 intake sections, inspect classification and security findings, attach evidence notes, and generate all ${catalogue.reports.length} reports. Three realistic fictional dossiers provide document packs, intake proposals, findings and review actions. Nine reference examples and the guided insurer case also remain available.</p><h2>Where your work lives</h2><p>Your new drafts and evidence notes stay in this browser. Export a system as JSON or download documents to keep a portable copy. The local app also lists its existing saved assessments without overwriting them.</p><h2>Engine and AI</h2><p>${backend ? "This local app calls the Python toolkit directly." : "The Python classifier and report generators run on this device using a bundled browser runtime. The first operation may take a few seconds to load."} The same rule code produces both results. This is a working engine, not a recorded outcome.</p><p>Workflow guidance routes requests to the relevant tools without a model. Optional live AI in a configured local app can inspect the selected system and evidence, and propose intake answers with matching source quotations for you to accept individually. It cannot edit answers, decide the tier, or approve launch.</p><h2>Existing integrations</h2><p>The CLI and MCP server remain available in the repository. The original web toolkit is ${backend ? '<a class="text-link" href="/classic">available here</a>' : "available at /classic in a local Python installation"}. The guided case study remains <a class="text-link" href="./case.html">a separate introduction</a>.</p><h2>Review boundaries</h2><p>All reports are drafts. Reference examples retain their original supplied inputs and are labelled as snapshots; edited copies require complete screening. Evidence notes are statements requiring review. Use synthetic data only.</p></article>`
-  );
+  return heading(
+    "AI governance, grounded in the work",
+    "Describe a system. Investigate its evidence. Prepare a review you can explain.",
+  ) + `<article class="about-page">
+    <p class="about-intro">AI Act Companion connects structured assessments, security findings and source documents in one workspace. Built by Jesse van de Kasteele as a portfolio project exploring practical, accountable AI assistance.</p>
+    <div class="toolbar"><a class="button primary" href="#examples">Explore the cases</a><a class="button secondary" href="https://jessekasteele-ai-act-companion.hf.space/" target="_blank" rel="noreferrer">Open live demo ↗</a><a class="text-link" href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noreferrer">View source ↗</a></div>
+    <figure class="about-photo"><img src="./assets/about-context.png" alt="Illustrated scenes of member support, water infrastructure and a recruitment conversation" width="2172" height="724"><figcaption>Three fictional settings, realistic review questions. AI-generated editorial illustration.</figcaption></figure>
+    <section class="about-section"><h2>Start with a realistic decision</h2><div class="about-sectors"><div><h3>Healthcare</h3><p>A member assistant, sensitive claim details and conflicting evidence about where data goes.</p></div><div><h3>Water operations</h3><p>An operations copilot, critical infrastructure and the boundary between advice and control.</p></div><div><h3>Recruitment</h3><p>A shortlisting workflow, consequential decisions and the evidence needed for meaningful oversight.</p></div></div><p>Each dossier includes source documents, proposed intake answers, findings and follow-up actions. <a class="text-link" href="#examples">Open a dossier</a> or <a class="text-link" href="./case.html">follow the guided insurer case</a>.</p></section>
+    <section class="about-section about-work"><h2>From a question to a review pack</h2><ol><li><strong>Describe the system.</strong> Work through 13 intake sections, keeping unanswered questions explicit.</li><li><strong>Investigate the evidence.</strong> Compare source passages, inspect classification and security findings, and record what needs clarification.</li><li><strong>Prepare the next decision.</strong> Assign follow-up actions and generate any of the ${catalogue.reports.length} draft reports for human review.</li></ol></section>
+    <section class="about-section"><h2>What the AI does</h2><p>Companion guides you to the relevant tools without requiring a model. When live AI is configured, it can read selected evidence and propose intake answers with source quotations. You review and accept each proposal.</p><p>The Python rule engine computes the risk tier. A model cannot change it, close a finding or approve launch. The guided case and authored dossier proposals are labelled separately from live AI.</p></section>
+    <section class="about-section"><h2>Your work and your data</h2><p>Your workspace drafts and notes stay in this browser. Export JSON or a review pack to keep a portable copy. ${backend ? "Assessment and report requests are processed by the Python server. Live AI requests send the selected information to the configured provider." : "Assessment and report generation run on this device using the bundled Python engine; the first operation loads the runtime. This preview does not call a hosted model."}</p><p>The public demo is a shared sandbox: use synthetic data only. Its server lists shipped examples and does not add visitor assessments to a shared inventory.</p></section>
+    <details class="about-details"><summary>Full toolkit, integrations and review boundaries</summary><p>Nine reference profiles, all 13 intake sections and all ${catalogue.reports.length} reports remain available. The CLI and MCP server are included in the <a class="text-link" href="https://github.com/JKasteele/ai-act-companion" target="_blank" rel="noreferrer">repository</a>. The original web toolkit is ${backend ? '<a class="text-link" href="/classic">available here</a>' : 'available at /classic in a local Python installation'}.</p><p>All reports are drafts. Reference profiles retain their supplied inputs and are labelled as snapshots; edited copies require complete screening. Evidence notes are reviewer statements, not verified controls. This is a self-assessment aid, not legal advice or certification.</p></details>
+  </article>`;
 }
 function render() {
   if (!catalogue) return;
@@ -1146,10 +1153,13 @@ async function init() {
     }
     if (backend) {
       try {
-        const [inventory, status] = await Promise.all([
+        const [inventory, status, appConfig] = await Promise.all([
           fetch("/api/assessments").then((r) => r.json()),
           fetch("/api/workspace/case").then((r) => r.json()),
+          fetch("/api/config").then((r) => r.json()),
         ]);
+        publicDemo = appConfig.demo_mode === true;
+        $("#public-demo-notice").hidden = !publicDemo;
         $("#live-mode").disabled = !status.live_configured;
         for (const item of inventory.slice(0, 100)) {
           const r = await fetch(
@@ -1174,7 +1184,7 @@ async function init() {
       }
     }
     $("#engine-label").innerHTML =
-      `<span></span> ${backend ? "Local Python engine" : "Python engine on this device"}`;
+      `<span></span> ${backend ? (publicDemo ? "Public demo · Python engine" : "Python server engine") : "Python engine on this device"}`;
     persist();
     render();
   } catch (e) {

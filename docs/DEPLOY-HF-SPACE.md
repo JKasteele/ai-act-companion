@@ -52,6 +52,18 @@ docker run --rm -p 8000:8000 -e DEMO_MODE=1 -e LLM_PROVIDER=replay \
 
 ## Steps (you run these — they need your Hugging Face login)
 
+GitHub merges do **not** deploy the Space. After every release, publish the
+same source to the Space using the steps below; the private Sites review URL
+is a separate deployment. Keep the live-demo link in the GitHub README and
+the workspace About page pointed at the public Space.
+
+For the 1.0 workspace, verify `/api/health` reports the intended version,
+`/` opens `/static/workspace/index.html`, and `/api/workspace/catalogue`
+contains three dossiers, nine reference profiles and 21 reports. Check that
+the served `hub.js`, `hub.css` and `assets/about-context.png` match the release
+files. The public sandbox notice must remain visible. A GitHub merge or a
+successful private preview alone is not evidence that the public demo updated.
+
 1. **Create the Space.** On <https://huggingface.co/new-space>: pick a name (e.g.
    `ai-act-companion`), **SDK = Docker** (blank template), visibility **Public**.
 2. **Set the variables.** Space → *Settings* → *Variables and secrets* → add the

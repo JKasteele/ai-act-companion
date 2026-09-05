@@ -2,6 +2,14 @@
 
 **An evidence-led workspace for AI governance and security.**
 
+**[Open the live demo](https://jessekasteele-ai-act-companion.hf.space/)** ·
+[Explore realistic cases](https://jessekasteele-ai-act-companion.hf.space/static/workspace/index.html#examples) ·
+[About the app](https://jessekasteele-ai-act-companion.hf.space/static/workspace/index.html#about)
+
+![Illustrated settings for the fictional healthcare, water operations and recruitment cases](static/workspace/assets/about-context.png)
+
+*AI-generated editorial illustration of the fictional case settings.*
+
 Manage AI systems, complete structured assessments, investigate evidence and
 security findings, and prepare documents with Companion alongside your work.
 The existing EU AI Act classifier and security toolkit remain the foundation.
@@ -13,6 +21,11 @@ data governance, security engineering, and practical agent design.
 proposals, follow-up actions, and review packs. [Release scope and remaining review](docs/RELEASE_1_0.md).
 
 ## Explore the workspace
+
+The public demo runs this workspace and the Python assessment engine. No account
+is required. Drafts stay in your browser; assessment and document requests are
+processed by the demo server. Use synthetic data only. Live AI is optional and
+depends on the demo's configured provider and available budget.
 
 - **Your systems:** create a draft, import an assessment, or copy one of nine examples.
 - **Realistic dossiers:** investigate Meridian Health's member assistant, Boreal

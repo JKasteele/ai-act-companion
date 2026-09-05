@@ -4,6 +4,29 @@
   background: #eaf4f1;
   border-radius: 10px;
 }
+.about-page { font-size: 16px; line-height: 1.65; }
+.about-intro { max-width: 68ch; font-size: 18px; }
+.about-photo { margin: 30px 0 36px; }
+.about-photo img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.about-photo figcaption { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.about-section { margin: 32px 0; }
+.about-section > p { max-width: 72ch; margin-top: 14px; }
+.about-section h2 { font-size: 23px; margin-bottom: 18px; }
+.about-sectors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.about-sectors h3 { font-size: 17px; margin-bottom: 8px; }
+.about-sectors p { color: var(--muted); }
+.about-work { padding: 24px; border-left: 3px solid var(--teal); background: var(--teal-soft); }
+.about-work ol { padding-left: 22px; }
+.about-work li + li { margin-top: 16px; }
+.about-details { border-top: 1px solid var(--line); padding-top: 20px; }
+.about-details summary { cursor: pointer; font-weight: 600; }
+.about-details p { margin-top: 16px; max-width: 72ch; }
+.public-demo-notice { padding: 12px 28px; background: #eaf4f1; border-bottom: 1px solid var(--line); font-size: 14px; }
+@media (max-width: 760px) {
+  .about-sectors { grid-template-columns: 1fr; gap: 20px; }
+  .about-photo { margin: 24px 0; }
+  .about-intro { font-size: 16px; }
+}
 .start-panel > .companion-mark {
   float: right;
 }
