@@ -111,6 +111,12 @@ silence. Do not resolve conflicting evidence by choosing the convenient value.
 Leave conflicting or unsupported fields out and explain the missing information.
 Return proposals: [] if the sources support no answers. Never assert verification
 or determine a risk tier. A human must individually accept each proposal."""
+            if step == 4 or allowed_sources.issubset(seen_sources):
+                prompt += """\nFINAL RESPONSE REQUIRED NOW. Tools are no longer available for this turn.
+Return exactly one JSON object with answer and sources, using the completed
+tool_results above. Include proposals for intake or actions/questions/reports for
+a plan as requested. Keep the answer under 150 words, reasons brief, and quotations
+to the shortest relevant passage. No analysis outside the JSON, no tool requests."""
             result = extract_json(provider.generate(prompt, json.dumps(context), as_json=True))
         except Exception as exc:
             raise AgentUnavailable(provider_failure(exc)) from exc
@@ -209,4 +215,6 @@ def provider_failure(exc):
         return "The provider is rate-limited. Try again later; your review is unchanged."
     if any("credit balance" in str(e).lower() for e in causes):
         return "The provider has insufficient credit. The demo owner needs to check billing. Your review is unchanged."
+    if any("Model output limit reached" in str(e) for e in causes):
+        return "The model response was cut short. Request fewer proposals or a shorter review. Nothing was applied."
     return "The live model could not complete this request. Your review is unchanged."

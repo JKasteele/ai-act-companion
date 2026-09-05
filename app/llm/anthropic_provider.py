@@ -80,7 +80,7 @@ class AnthropicProvider(LLMProvider):
                 kwargs["output_config"] = {"effort": "low"}
             response = client.messages.create(
                 model=self.model,
-                max_tokens=2048,
+                max_tokens=4096,
                 system=system_blocks,
                 messages=[{"role": "user", "content": user_part}],
                 **kwargs,
@@ -95,6 +95,9 @@ class AnthropicProvider(LLMProvider):
             raise
 
         budget.record(response.usage, self.model)
+
+        if response.stop_reason == "max_tokens":
+            raise RuntimeError("Model output limit reached; request fewer proposals.")
 
         if response.stop_reason == "refusal":
             return ""
