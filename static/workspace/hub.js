@@ -34,6 +34,7 @@ import {
 const $ = (s) => document.querySelector(s);
 let catalogue,
   backend = false,
+  liveAvailable = false,
   publicDemo = false,
   systems = [],
   serverSystems = [],
@@ -78,11 +79,17 @@ function turnHTML(turn, target) {
   return `<div class="agent-message ${turn.role === 'user' ? 'user' : ''}"><span class="message-label">${turn.role === 'user' ? 'You' : turn.live ? 'Companion · live AI draft' : 'Companion · workflow guidance'}</span>${turn.content.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}${turn.sources?.length ? `<div class="source-links">${sourceLinks(target, turn.sources)}</div>` : ''}</div>`;
 }
 function renderConversation() {
+  syncLiveMode();
   const turns = chatRecord(selected)?.conversation || [];
   const next = selected ? nextWork(selected, catalogue) : null;
   $('#messages').innerHTML = `<div class="agent-message"><p>${selected ? `Reviewing ${esc(selected.answers.sys_name)}. Earlier replies are context, not verified evidence.` : 'Start the five-minute Meridian review, or select a system to work with Companion.'}</p>${next ? `<button class="suggestion" data-action="${next.view}">${esc(next.title)}</button>` : '<button class="suggestion" data-action="start-tour">Start the Meridian review</button>'}</div>` + turns.map(t => turnHTML(t, selected)).join('');
   if (selected) $('#messages').insertAdjacentHTML('beforeend', `<div class="companion-tools"><button class="suggestion" data-action="clear-chat">Clear this conversation</button>${editable() && !$('#live-mode').disabled ? '<button class="suggestion" data-action="suggest-plan">Ask live AI for a review plan</button>' : ''}</div>`);
   $('#messages').scrollTop = $('#messages').scrollHeight;
+}
+function syncLiveMode() {
+  $('#live-mode').disabled = !liveAvailable || !selected;
+  if ($('#live-mode').disabled) $('#live-mode').checked = false;
+  $('#agent-mode').textContent = $('#live-mode').checked ? 'Live AI · selected system · drafts' : 'Workflow guidance · no live model';
 }
 function persist() {
   try {
@@ -361,6 +368,7 @@ function render() {
     selected = all().find((s) => s.id === (parts[1] || ""));
     view = parts[2] || "overview";
   }
+  syncLiveMode();
   if (parts[0] === "system" && !selected) {
     $("#main").innerHTML =
       heading(
@@ -1269,7 +1277,8 @@ async function init() {
         ]);
         publicDemo = appConfig.demo_mode === true;
         $("#public-demo-notice").hidden = !publicDemo;
-        $("#live-mode").disabled = !status.live_configured;
+        liveAvailable = status.live_configured === true;
+        syncLiveMode();
         for (const item of inventory.slice(0, 100)) {
           const r = await fetch(
             `/api/assessments/${encodeURIComponent(item.id)}`,
