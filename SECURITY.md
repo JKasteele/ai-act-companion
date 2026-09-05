@@ -2,7 +2,7 @@
 
 AI Act Companion is a local-first, single-user self-assessment tool with a
 stateless public showcase, intended for synthetic/example data (see
-[THREAT_MODEL.md](THREAT_MODEL.md)). It is not a persistent multi-user records
+[THREAT_MODEL.md](docs/THREAT_MODEL.md)). It is not a persistent multi-user records
 service and should not receive personal, confidential or production data.
 
 ## Reporting a vulnerability

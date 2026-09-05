@@ -32,3 +32,8 @@ coverage.xml
 htmlcov/
 dist/
 build/
+node_modules/
+work/
+static/workspace/engine.zip
+static/workspace/runtime/
+static/workspace/catalogue.json

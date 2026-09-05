@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-act-companion"
-version = "0.10.0"
+version = "1.0.0rc1"
 description = "Local, rule-based EU AI Act risk classifier with an AI security lens (NIST AI RMF, OWASP LLM Top 10, MITRE ATLAS) and document generation."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -50,7 +50,7 @@ Homepage = "https://github.com/JKasteele/ai-act-companion"
 Repository = "https://github.com/JKasteele/ai-act-companion"
 
 [tool.setuptools]
-packages = ["app", "app.knowledge", "app.llm"]
+packages = ["app", "app.knowledge", "app.llm", "app.workspace"]
 py-modules = ["mcp_server"]
 
 [tool.ruff]

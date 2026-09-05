@@ -1,4 +1,10 @@
 .venv/
+node_modules/
+dist/
+work/
+static/workspace/runtime/
+static/workspace/engine.zip
+static/workspace/catalogue.json
 __pycache__/
 *.pyc
 .git/

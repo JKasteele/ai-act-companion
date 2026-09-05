@@ -9,6 +9,14 @@ optional Ollama/manual/replay/Anthropic drafting providers. Last reviewed
 
 ## 1. Deployment profiles and assumptions
 
+The evidence workspace adds a guided static preview and optional local live-agent
+endpoint. Its source documents are fixed synthetic fixtures. Review drafts stay
+in browser storage; API requests are stateless. Live tools can read allowlisted
+evidence and inspect supplied review state, but cannot write files, fetch external
+URLs, classify, or approve launch. Citation checks verify source access, not that
+every model claim follows from the source. See [WORKSPACE.md](WORKSPACE.md) for
+tool limits, billing/cancellation limitations, and provenance boundaries.
+
 - **Local profile:** single-user FastAPI app, CLI and MCP server. Assessments are
   plain JSON under `data/`; there is no authentication because the default bind
   address is loopback and the product is not a multi-user records service.
@@ -83,4 +91,4 @@ untrusted.
 - No legal, security or privacy guarantee is made. Review generated drafts and
   obtain qualified advice for real decisions.
 
-See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
+See [SECURITY.md](../SECURITY.md) for private vulnerability reporting.

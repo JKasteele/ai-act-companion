@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Act Companion · Evidence workspace</title>
+    <meta
+      name="description"
+      content="Assess your AI systems, investigate governance and security, and prepare evidence-led documentation with AI Act Companion."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./workspace.css" />
+    <link rel="stylesheet" href="./hub.css" />
+    <script type="module" src="./hub.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to workspace</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Workspace navigation">
+        <a class="brand" href="#systems"
+          ><span class="brand-mark" aria-hidden="true">a</span
+          ><span>AI Act<br /><strong>Companion</strong></span></a
+        >
+        <div class="workspace-name">
+          <span class="org-mark">JK</span>
+          <div>My workspace<small>Governance & security</small></div>
+        </div>
+        <nav id="navigation">
+          <a href="#systems" data-nav="systems" class="nav-link active"
+            ><span aria-hidden="true">◫</span> Your systems
+            <span id="system-count" class="nav-count">0</span></a
+          >
+          <a href="#new" data-nav="new" class="nav-link"
+            ><span aria-hidden="true">＋</span> New assessment</a
+          >
+          <a href="#documents" data-nav="documents" class="nav-link"
+            ><span aria-hidden="true">▧</span> Document toolkit</a
+          >
+          <a href="#examples" data-nav="examples" class="nav-link"
+            ><span aria-hidden="true">▤</span> Example systems</a
+          >
+          <a href="./case.html" class="nav-link"
+            ><span aria-hidden="true">◎</span> Guided case study</a
+          >
+        </nav>
+        <div class="sidebar-bottom">
+          <a href="#about" data-nav="about" class="nav-link"
+            ><span aria-hidden="true">ⓘ</span> About & integrations</a
+          >
+          <div class="author">
+            <span class="avatar">JK</span>
+            <div>
+              Jesse van de Kasteele<small>AI governance & security</small>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <div class="workspace-shell">
+        <header class="topbar">
+          <div>
+            <span class="breadcrumb">My workspace</span
+            ><span class="crumb-slash">/</span
+            ><span id="crumb">Your systems</span>
+          </div>
+          <span class="demo-label" id="engine-label"
+            ><span></span> Local drafts</span
+          >
+        </header>
+        <div
+          id="engine-status"
+          class="engine-status"
+          role="status"
+          hidden
+        ></div>
+        <div class="work-area">
+          <main id="main" tabindex="-1">
+            <div class="page-heading">
+              <div>
+                <p class="context">Your workspace</p>
+                <h1>Your AI systems</h1>
+                <p class="subheading">
+                  Pick up an assessment, investigate a risk, or prepare your
+                  next document.
+                </p>
+              </div>
+              <a href="#new" class="button primary">Add system</a>
+            </div>
+            <section class="start-panel">
+              <span class="companion-mark" aria-hidden="true">✳</span>
+              <h2>What would you like to work on?</h2>
+              <p>
+                Describe a system to start an assessment, or explore the full
+                toolkit through an example.
+              </p>
+              <div class="toolbar">
+                <a class="button primary" href="#new">Assess a new system</a
+                ><a class="button secondary" href="#examples"
+                  >Explore example systems</a
+                ><a class="text-link" href="#documents">Browse documents</a>
+              </div>
+            </section>
+            <section class="system-section">
+              <div class="section-heading">
+                <h2>Your assessments</h2>
+                <span class="muted">Saved on this device</span>
+              </div>
+              <div class="empty-state">Opening your workspace…</div>
+            </section>
+            <section class="case-invitation">
+              <div>
+                <h2>A guided introduction</h2>
+                <p>
+                  Investigate a health insurer’s conflicting data-flow
+                  documents.
+                </p>
+              </div>
+              <a class="button secondary" href="./case.html"
+                >Open case study ↗</a
+              >
+            </section>
+          </main>
+          <aside class="agent-panel" aria-label="Companion assistant">
+            <div class="agent-heading">
+              <span class="companion-mark" aria-hidden="true">✳</span>
+              <div>
+                <h2>Companion</h2>
+                <span id="agent-mode">Workflow guidance · no live model</span>
+              </div>
+            </div>
+            <div
+              class="agent-messages"
+              id="messages"
+              role="log"
+              aria-live="polite"
+              aria-label="Conversation"
+            >
+              <div class="agent-message">
+                <p>
+                  Your full toolkit is here. Start with a system, then move
+                  between its assessment, evidence, findings, and documents.
+                </p>
+                <button class="suggestion" data-action="new">
+                  Start an assessment ↗</button
+                ><button class="suggestion" data-action="examples">
+                  Review an example ↗
+                </button>
+              </div>
+            </div>
+            <form id="chat-form" class="composer">
+              <label for="message">Ask Companion</label>
+              <div class="input-row">
+                <textarea
+                  id="message"
+                  rows="2"
+                  maxlength="2000"
+                  placeholder="Assess a system, review security, draft a DPIA…"
+                ></textarea
+                ><button
+                  type="submit"
+                  class="send-button"
+                  aria-label="Send message"
+                >
+                  ↑
+                </button>
+              </div>
+              <div class="composer-meta">
+                <label class="live-switch"
+                  ><input type="checkbox" id="live-mode" disabled /> Live
+                  AI</label
+                ><span id="connection-status">Opening workspace…</span>
+              </div>
+            </form>
+            <p class="agent-note">
+              Your decisions remain yours. Drafts and tool outputs are available
+              for review.
+            </p>
+          </aside>
+        </div>
+        <footer class="workspace-footer">
+          <span>1.0 release candidate · Synthetic or generic systems only.</span
+          ><a href="#about">Privacy & integrations</a
+          ><a href="./notices/README.md" target="_blank" rel="noreferrer"
+            >Runtime notices</a
+          ><a
+            href="https://github.com/JKasteele/ai-act-companion"
+            target="_blank"
+            rel="noreferrer"
+            >View source ↗</a
+          >
+        </footer>
+      </div>
+    </div>
+    <input
+      id="evidence-file"
+      type="file"
+      accept=".txt,.md,text/plain,text/markdown"
+      hidden
+    />
+    <input
+      type="file"
+      id="import-file"
+      accept="application/json,.json"
+      hidden
+    />
+    <dialog id="document-dialog" aria-labelledby="document-title">
+      <div class="dialog-heading">
+        <h2 id="document-title">Document draft</h2>
+        <button
+          class="icon-button"
+          id="close-document"
+          aria-label="Close document"
+        >
+          ×
+        </button>
+      </div>
+      <div id="document-content"></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </body>
+</html>

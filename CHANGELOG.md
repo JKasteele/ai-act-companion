@@ -6,6 +6,43 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [1.0.0rc1] - 2026-09-05
+
+Candidate for product review in the existing draft PR. No final release tag or
+merge is created. Live-model evaluation and browser interaction QA remain
+acceptance work; see `docs/RELEASE_1_0.md`.
+
+### Added
+- Three realistic fictional review dossiers for health insurance, water operations,
+  and recruitment, with versioned document packs and sourced authored findings.
+- Individual acceptance of source-linked intake proposals. Optional local live AI
+  produces schema-validated proposals with exact quotations from sources it read.
+- Text/Markdown evidence import, per-system review actions, owners, dates, evidence
+  references, human review notes, and combined review-pack export.
+- Protocol and provenance tests for unsupported fields, fabricated quotations,
+  source isolation, human acceptance, persistence and action-review boundaries.
+
+- Full system workspace with all 13 intake sections and 21 report types, nine
+  examples, per-system evidence/findings/activity, JSON import/export, and CSV register.
+- Browser execution of the original Python engine through a pinned Pyodide worker;
+  native/browser parity and report integration checks.
+- Required and conditional screening gates; profile edits invalidate earlier results.
+- Evidence workspace for a fictional health-insurer case, with inspectable source
+  passages, explicit unknowns, reviewer clarifications, action owners, and draft export.
+- Optional live AI investigation through bounded, read-only evidence tools; the
+  guided walkthrough remains available without a model and is labelled as such.
+- Reproducible static workspace with an optional guided case introduction.
+- Regression tests for provenance, tool limits, invalid citations, review-state
+  boundaries, and browser-state/export logic.
+
+### Changed
+- The application opens the system workspace; the original toolkit remains at `/classic`.
+- Replaced the long front-page reference with a focused README and documentation index.
+- Moved design, threat-model, and toolkit reference material under `docs/`.
+- Consolidated coding-assistant guidance in `AGENTS.md`.
+- Moved the Windows launcher under `scripts/` and removed machine-specific paths
+  and network addresses; it now binds to loopback by default.
+
 ## [0.10.0] - 2026-09-04
 
 ### Added

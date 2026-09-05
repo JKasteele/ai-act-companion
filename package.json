@@ -1,0 +1,14 @@
+{
+  "name": "ai-act-companion-workspace",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "python scripts/build_workspace.py",
+    "test": "node --test tests/frontend/*.test.mjs",
+    "test:engine": "node scripts/test_browser_engine.mjs"
+  },
+  "devDependencies": {
+    "pyodide": "314.0.6"
+  }
+}

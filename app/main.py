@@ -42,6 +42,7 @@ from .models import (
 )
 from .questionnaire import QUESTIONNAIRE
 from .security import assess_security
+from .workspace.routes import router as workspace_router
 
 logger = logging.getLogger("ai_act_companion")
 
@@ -67,6 +68,7 @@ app = FastAPI(
     version=__version__,
     description="Local EU AI Act / NIST AI RMF assessment toolkit.",
 )
+app.include_router(workspace_router)
 
 
 @app.get("/api/health")
@@ -428,6 +430,12 @@ def get_report(assessment_id: str, type: str = "risk", lang: str = "en"):
 if STATIC_DIR.exists():
     @app.get("/")
     def index():
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse("/static/workspace/index.html")
+
+    @app.get("/classic")
+    def classic():
         return FileResponse(STATIC_DIR / "index.html")
 
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

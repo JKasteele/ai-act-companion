@@ -36,14 +36,28 @@ jobs:
         run: ruff check .
 
       - name: Frontend syntax check
-        run: node --check static/app.js
+        run: |
+          node --check static/app.js
+          node --check static/workspace/workspace.js
+          node --check static/workspace/hub.js
+          node --test tests/frontend/*.test.mjs
+
+      - name: Install pinned browser runtime
+        run: npm ci
+
+      - name: Build complete workspace
+        run: python scripts/build_workspace.py
+
+      - name: Browser Python engine parity and report integration
+        if: runner.os == 'Linux' && matrix.python-version == '3.12'
+        run: npm run test:engine
 
       - name: Generated artifact drift
         if: runner.os == 'Linux' && matrix.python-version == '3.12'
         run: |
           python scripts/build_gallery.py
           python scripts/build_demo_assets.py
-          git diff --exit-code -- docs/examples static/demo/mcp_transcript.json
+          git diff --exit-code -- docs/examples static/demo/mcp_transcript.json static/workspace/case.json static/workspace/assessment.json
 
       - name: Type check (mypy)
         run: mypy app mcp_server.py

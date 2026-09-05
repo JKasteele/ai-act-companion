@@ -1,7 +1,11 @@
 # Design notes — AI Act Companion
 
+For the evidence workspace and bounded live agent added after this original
+engine design, see [WORKSPACE.md](WORKSPACE.md). The classifier remains unchanged;
+the application root now opens the workspace and the original UI is at `/classic`.
+
 This document explains *why* AI Act Companion is built the way it is. The
-[README](README.md) covers what it does and how to run it; this is the design
+[README](../README.md) covers what it does and how to run it; this is the design
 rationale a reviewer or interviewer would want: the architecture, the central
 safety pattern, the framework-mapping methodology, and the trade-offs behind the
 decisions.
@@ -417,7 +421,7 @@ headlines:
   no `eval`; excessive agency is covered because the AI layer has no tools and no
   side effects. This is [§3](#3-the-core-safety-pattern) seen from the attacker's
   side.
-- A [SECURITY.md](SECURITY.md) policy, blocking quality/security CI gates and an
+- A [SECURITY.md](../SECURITY.md) policy, blocking quality/security CI gates and an
   explicit boundary: the hosted sandbox is a stateless showcase, not an
   authenticated multi-user records service.
 
