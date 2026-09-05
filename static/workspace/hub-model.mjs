@@ -1,3 +1,4 @@
+import { cleanReview } from "./casework-model.mjs";
 export const INVENTORY_KEY = "ai-act-companion:systems:v1";
 export function newSystem(answers = {}, id = crypto.randomUUID()) {
   return {
@@ -6,6 +7,7 @@ export function newSystem(answers = {}, id = crypto.randomUUID()) {
     result: null,
     evidence: [],
     activity: [],
+    review: cleanReview(),
     updated: new Date().toISOString(),
   };
 }
@@ -42,6 +44,7 @@ export function importSystem(raw, id) {
   const system = newSystem(answers, id);
   system.evidence = cleanEvidence(raw?.evidence);
   system.activity = cleanActivity(raw?.activity);
+  system.review = cleanReview(raw?.review);
   log(system, "Imported as a draft; classification requires review.");
   return system;
 }
@@ -81,7 +84,7 @@ export function restoreInventory(raw) {
         s.answers &&
         typeof s.answers === "object" &&
         !Array.isArray(s.answers) &&
-        JSON.stringify(s).length < 500000,
+        JSON.stringify(s).length < 2000000,
     )
     .map((s) => ({
       ...newSystem(s.answers, s.id),
@@ -89,6 +92,7 @@ export function restoreInventory(raw) {
       updated: typeof s.updated === "string" ? s.updated : "",
       evidence: cleanEvidence(s.evidence),
       activity: cleanActivity(s.activity),
+      review: cleanReview(s.review),
     }));
 }
 export function requiredMissing(answers, catalogue) {
@@ -102,6 +106,8 @@ export function requiredMissing(answers, catalogue) {
 }
 export function routeIntent(text) {
   const q = text.toLowerCase();
+  if (/next|action|task|follow.up/.test(q)) return { view: "actions" };
+  if (/intake|propos|extract/.test(q)) return { view: "proposals" };
   if (/dpia|privacy impact/.test(q))
     return { view: "documents", report: "dpia" };
   if (/red.?team/.test(q)) return { view: "documents", report: "redteam" };

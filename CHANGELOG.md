@@ -6,7 +6,22 @@ All notable changes are documented here. Format based on
 
 ## [Unreleased]
 
+## [1.0.0rc1] - 2026-09-05
+
+Candidate for product review in the existing draft PR. No final release tag or
+merge is created. Live-model evaluation and browser interaction QA remain
+acceptance work; see `docs/RELEASE_1_0.md`.
+
 ### Added
+- Three realistic fictional review dossiers for health insurance, water operations,
+  and recruitment, with versioned document packs and sourced authored findings.
+- Individual acceptance of source-linked intake proposals. Optional local live AI
+  produces schema-validated proposals with exact quotations from sources it read.
+- Text/Markdown evidence import, per-system review actions, owners, dates, evidence
+  references, human review notes, and combined review-pack export.
+- Protocol and provenance tests for unsupported fields, fabricated quotations,
+  source isolation, human acceptance, persistence and action-review boundaries.
+
 - Full system workspace with all 13 intake sections and 21 report types, nine
   examples, per-system evidence/findings/activity, JSON import/export, and CSV register.
 - Browser execution of the original Python engine through a pinned Pyodide worker;

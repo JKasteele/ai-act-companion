@@ -1,6 +1,7 @@
 """Stateless workspace API. Each visitor supplies their own bounded review state."""
 
 from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -38,6 +39,7 @@ class SystemChatRequest(BaseModel):
     evidence: list[EvidenceNote] = Field(default_factory=list, max_length=30)
     assessment_confirmed: bool = False
     example_id: str = Field(default="", max_length=100)
+    intent: Literal["review", "intake"] = "review"
 
 
 @router.post("/system-chat")
@@ -58,7 +60,7 @@ def system_chat(req: SystemChatRequest, request: Request):
                        "assessment": assess_answers(answers) if req.assessment_confirmed else None,
                        "notice": "Reviewer-provided profile and evidence; no approval or verified controls."}
         return run_agent(req.message, ReviewState(), request.client.host if request.client else None,
-                         documents=documents, review_data=review_data)
+                         documents=documents, review_data=review_data, intake=req.intent == "intake")
     except AgentUnavailable as exc:
         raise HTTPException(503, str(exc)) from exc
     except (ValueError, TypeError) as exc:

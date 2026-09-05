@@ -3,6 +3,10 @@
 The primary interface is an inventory of AI systems. Each system has Overview,
 Assessment, Evidence, Findings, Documents, and Activity views. The insurer case
 remains an optional introduction at `case.html` with its separate review state.
+Working systems also have Intake proposals and Actions views. Three realistic
+fictional dossiers are prominent in Example systems, above the nine original
+reference profiles. `app/workspace/scenarios.py` owns their documents, authored
+findings, source-linked proposals and internal review criteria.
 
 ## Data and assessment boundaries
 
@@ -40,8 +44,28 @@ answers or presented as verified controls.
 ## Companion and the guided case
 
 Workflow guidance routes a small set of intents to the selected system's tools.
-It is labelled as guidance without a live model. It does not extract structured
-answers from descriptions, discover contradictions, or perform autonomous writes.
+It is labelled as guidance without a live model. The case dossiers provide authored
+intake proposals and findings; these are never labelled as model discoveries.
+
+The local app's explicit live intake action supplies the field schema to the
+bounded agent. Each proposed answer must have a valid field/value, a source the
+agent actually read, and an exact quotation from that source. A response contains
+at most 12 proposals; unsupported tools, fields, values, sources and quotations
+are rejected. No answer is applied until the human accepts it individually.
+Acceptance clears any previous classification. Quotation checks do not establish
+semantic entailment; conflicts and unknowns require human interpretation.
+
+UTF-8 text/Markdown imports (60 KB maximum) become bounded source passages.
+PDF/Word parsing is not included. Review actions retain owners, due dates, status,
+required evidence and submitted references. Ready-for-review requires an owner
+and evidence reference and never closes the underlying finding. Human notes are
+kept separately. System JSON export/import preserves this review work (2 MB file
+limit); an imported classification is still discarded.
+
+A review-pack export includes context, inputs, all source passages, proposal
+provenance/status, findings, actions and human notes. It adds a scenario-specific
+selection of existing engine reports only when the system has been assessed.
+An incomplete system can export a clearly labelled work-in-progress review record.
 
 Live AI is opt-in in the local FastAPI app through the existing Ollama or Anthropic
 provider. `/api/workspace/system-chat` supplies only the selected system profile
@@ -49,7 +73,7 @@ and its evidence catalogue. The bounded tools are `read_evidence(source_id)` and
 `inspect_review()`: at most four tool calls and five model calls per request.
 Citation IDs must resolve to sources actually read. Unknown tools, unread sources,
 invalid responses, provider errors, and tool exhaustion explicitly stop the request.
-No tool can change answers, decide a risk tier, verify a control, or approve launch.
+No model tool can change answers, decide a risk tier, verify a control, or approve launch.
 The structured assessment is computed for chat only when the user has already
 requested classification; incomplete profiles still return no classification.
 
@@ -98,6 +122,6 @@ browser's origin. Use synthetic or generic data only.
 
 ## Next increments
 
-- Model-assisted intake with passage provenance and explicit reviewer acceptance.
 - Evaluation of live evidence extraction and contradiction detection on held-out cases.
 - A deployed live provider and durable multi-user storage if the product needs them.
+- PDF/Word extraction with passage provenance and document version management.

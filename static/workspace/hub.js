@@ -11,6 +11,21 @@ import {
 } from "./hub-model.mjs";
 import { escapeHTML as esc, markdownHTML } from "./markdown.mjs";
 import { browserEngine } from "./engine-client.mjs";
+import {
+  cleanReview,
+  startCase,
+  acceptProposal,
+  saveAction,
+  reviewPack,
+} from "./casework-model.mjs";
+import {
+  scenarioCards,
+  scenarioBrief,
+  caseContext,
+  proposalsView,
+  dossierFindings,
+  actionsView,
+} from "./casework.mjs";
 const $ = (s) => document.querySelector(s);
 let catalogue,
   backend = false,
@@ -73,7 +88,7 @@ function message(text, actions = [], live = false) {
       "",
     )}${actions.map((a) => `<button class="suggestion" data-action="${esc(a.action)}">${esc(a.label)} ↗</button>`).join("")}`;
   $("#messages").append(box);
-  box.scrollIntoView({ block: "nearest" });
+  $("#messages").scrollTop = $("#messages").scrollHeight;
 }
 function heading(title, description, action = "") {
   return `<div class="page-heading"><div><p class="context">${selected ? esc(selected.source === "example" ? "Reference example" : "System workspace") : "My workspace"}</p><h1>${esc(title)}</h1><p class="subheading">${esc(description)}</p></div>${action}</div>`;
@@ -117,18 +132,20 @@ function exampleView() {
       "Example systems",
       "Explore the complete toolkit across health insurance, recruitment, infrastructure, and general-purpose AI.",
     ) +
-    `<p class="status-line">These are shipped reference profiles. Copy one to your workspace to edit it.</p><div class="system-grid">${all()
+    `<h2>Realistic review dossiers</h2><p class="status-line">Fictional organisations. Inspect their documents, review proposed answers, and work through the open decisions.</p>${scenarioCards(catalogue.scenarios || [])}<details class="reference-library" open><summary>Reference profile library · 9 systems</summary><p class="status-line">These are shipped reference profiles. Copy one to your workspace to edit it.</p><div class="system-grid">${all()
       .filter((s) => s.source === "example")
       .map(card)
-      .join("")}</div>`
+      .join("")}</div></details>`
   );
 }
 function tabs(view) {
   return `<nav class="detail-tabs" aria-label="System sections">${[
     ["overview", "Overview"],
     ["intake", "Assessment"],
+    ["proposals", "Intake proposals"],
     ["evidence", "Evidence"],
     ["findings", "Findings"],
+    ["actions", "Actions"],
     ["documents", "Documents"],
     ["activity", "Activity"],
   ]
@@ -141,19 +158,22 @@ function tabs(view) {
 function profile() {
   const a = selected.answers,
     r = selected.result;
-  return `<div class="profile-grid">${[
-    ["Purpose", a.intended_purpose],
-    ["Accountable owner", a.sys_owner],
-    ["Role", a.provider_role],
-    ["Lifecycle", a.lifecycle_stage],
-  ]
-    .map(
-      ([k, v]) =>
-        `<div><dt>${k}</dt><dd>${esc(v || "Not recorded")}</dd></div>`,
-    )
-    .join(
-      "",
-    )}</div><section class="detail-block"><h2>System description</h2><p>${esc(a.sys_description || "Add a description in Assessment.")}</p></section>${r?.classification ? `<section class="result-panel"><span class="status-pill blue">${esc(r.classification.tier_label)}</span><h2>Current assessment</h2><p>${esc(r.classification.summary)}</p><p class="status-line">${esc(r.provenance || "Existing saved assessment")} · ${esc(r.knowledge_version || "Recorded engine result")}</p><div class="toolbar"><button class="button primary" data-action="documents">Prepare documents</button><button class="button secondary" data-action="findings">Investigate findings</button></div></section>` : `<section class="review-box"><h2>${r?.status === "incomplete" ? "Screening needs clarification" : "Ready to describe this system?"}</h2><p>${requiredMissing(a, catalogue).length} baseline screening answers remain unknown. Complete the structured assessment before a risk tier is produced.</p><button class="button primary" data-action="intake">Continue assessment</button></section>`}<div class="toolbar"><button class="button secondary" data-action="export-system">Export system JSON</button>${editable() ? '<button class="text-link remove-button" data-action="delete">Remove draft</button>' : '<button class="button primary" data-action="copy">Copy to your workspace</button>'}</div>`;
+  return (
+    caseContext(selected, catalogue.scenarios || []) +
+    `<div class="profile-grid">${[
+      ["Purpose", a.intended_purpose],
+      ["Accountable owner", a.sys_owner],
+      ["Role", a.provider_role],
+      ["Lifecycle", a.lifecycle_stage],
+    ]
+      .map(
+        ([k, v]) =>
+          `<div><dt>${k}</dt><dd>${esc(v || "Not recorded")}</dd></div>`,
+      )
+      .join(
+        "",
+      )}</div><section class="detail-block"><h2>System description</h2><p>${esc(a.sys_description || "Add a description in Assessment.")}</p></section>${r?.classification ? `<section class="result-panel"><span class="status-pill blue">${esc(r.classification.tier_label)}</span><h2>Current assessment</h2><p>${esc(r.classification.summary)}</p><p class="status-line">${esc(r.provenance || "Existing saved assessment")} · ${esc(r.knowledge_version || "Recorded engine result")}</p><div class="toolbar"><button class="button primary" data-action="documents">Prepare documents</button><button class="button secondary" data-action="findings">Investigate findings</button></div></section>` : `<section class="review-box"><h2>${r?.status === "incomplete" ? "Screening needs clarification" : "Ready to describe this system?"}</h2><p>${requiredMissing(a, catalogue).length} baseline screening answers remain unknown. Complete the structured assessment before a risk tier is produced.</p><button class="button primary" data-action="intake">Continue assessment</button></section>`}<div class="toolbar"><button class="button secondary" data-action="export-system">Export system JSON</button>${editable() ? '<button class="text-link remove-button" data-action="delete">Remove draft</button>' : '<button class="button primary" data-action="copy">Copy to your workspace</button>'}</div>`
+  );
 }
 function field(q) {
   const a = selected.answers,
@@ -225,12 +245,15 @@ function collect() {
   persist();
 }
 function evidence() {
-  return `<section class="detail-block"><h2>Evidence for this system</h2><p>Record a passage or evidence reference. These are source notes, not verified controls.</p></section>${selected.evidence?.length ? selected.evidence.map((e, i) => `<article class="evidence-entry"><h3>${esc(e.title)}</h3><blockquote>${esc(e.text)}</blockquote><small>Source ${i + 1} · ${esc(e.reference || "Reviewer-provided note")}</small></article>`).join("") : '<div class="empty-state">No evidence has been attached to this system. The guided insurer case has its own separate evidence pack.</div>'}${editable() ? `<form id="evidence-form" class="review-box evidence-form"><div class="field"><label for="e-title">Source title</label><input id="e-title" required maxlength="200"></div><div class="field"><label for="e-reference">Source reference (optional)</label><input id="e-reference" maxlength="300"></div><div class="field"><label for="e-text">Relevant passage or evidence note</label><textarea id="e-text" required maxlength="10000"></textarea></div><button class="button primary">Attach evidence</button></form>` : '<p class="status-line">Copy this system to attach your own evidence.</p>'}`;
+  return `<section class="detail-block"><h2>Evidence for this system</h2><p>Read the source passages and record additional evidence. Source notes are not verified controls.</p>${editable() ? '<div class="toolbar"><button class="button secondary" data-action="upload-evidence">Import text / Markdown document</button><button class="button secondary" data-action="proposals">Review intake proposals</button></div>' : ""}</section>${selected.evidence?.length ? selected.evidence.map((e, i) => `<article class="evidence-entry" id="evidence-${i}" tabindex="-1"><h3>${esc(e.title)}</h3><blockquote>${esc(e.text)}</blockquote><small>Source ${i + 1} · ${esc(e.reference || "Reviewer-provided note")}</small></article>`).join("") : '<div class="empty-state">Attach a document or note, or start a realistic case from Example systems.</div>'}${editable() ? `<form id="evidence-form" class="review-box evidence-form"><div class="field"><label for="e-title">Source title</label><input id="e-title" required maxlength="200"></div><div class="field"><label for="e-reference">Source reference (optional)</label><input id="e-reference" maxlength="300"></div><div class="field"><label for="e-text">Relevant passage or evidence note</label><textarea id="e-text" required maxlength="10000"></textarea></div><button class="button primary">Attach evidence</button></form>` : '<p class="status-line">Copy this system to attach your own evidence.</p>'}`;
 }
 function findings() {
   const r = selected.result;
   if (!r?.classification)
-    return '<div class="empty-state">Complete and run the assessment to see findings for this system. No risk tier is inferred from an incomplete profile.</div><div class="toolbar"><button class="button primary" data-action="intake">Continue assessment</button></div>';
+    return (
+      dossierFindings(selected) +
+      '<div class="empty-state">Complete and run the assessment for the separate rule-engine findings. No risk tier is inferred from an incomplete profile.</div><div class="toolbar"><button class="button primary" data-action="intake">Continue assessment</button></div>'
+    );
   return `<h2>Classification findings</h2>${(r.classification.findings || []).map((f) => `<article class="finding-detail"><h3>${esc(f.title)}</h3><p>${esc(f.rationale)}</p><small>${esc((f.refs || []).join(", "))}</small></article>`).join("") || '<p class="status-line">No determining finding beyond the recorded classification.</p>'}<section class="detail-block"><h2>AI security</h2><p>Architecture-aware findings from the existing security engine.</p>${(r.security?.risks || []).map((f) => `<article class="finding-detail"><span class="status-pill amber">${esc(f.severity || "Review")}</span><h3>${esc(f.title || f.name || f.id)}</h3><p>${esc(f.rationale || f.description || f.summary || "")}</p></article>`).join("") || '<p class="status-line">No security risks returned for the recorded inputs.</p>'}</section><div class="toolbar"><button class="button secondary" data-report="security">Full security assessment</button><button class="button secondary" data-report="redteam">Red-team plan</button><button class="button secondary" data-report="controls">Control catalogue</button></div><details class="trace-detail"><summary>Inspect the complete result</summary><pre>${esc(JSON.stringify(r, null, 2))}</pre></details>`;
 }
 const reportDescriptions = {
@@ -280,7 +303,7 @@ function about() {
       "One workspace, the full toolkit",
       "The agent helps you move through the work. The assessment engine stays inspectable.",
     ) +
-    `<article class="about-copy"><h2>What is available</h2><p>Create and edit systems, complete all 13 intake sections, inspect classification and security findings, attach evidence notes, and generate all ${catalogue.reports.length} reports. Nine reference examples and the guided insurer case remain available.</p><h2>Where your work lives</h2><p>Your new drafts and evidence notes stay in this browser. Export a system as JSON or download documents to keep a portable copy. The local app also lists its existing saved assessments without overwriting them.</p><h2>Engine and AI</h2><p>${backend ? "This local app calls the Python toolkit directly." : "The Python classifier and report generators run on this device using a bundled browser runtime. The first operation may take a few seconds to load."} The same rule code produces both results. This is a working engine, not a recorded outcome.</p><p>Workflow guidance routes requests to the relevant tools without a model. Optional live AI in a configured local app can inspect the selected system and evidence. It cannot edit answers, decide the tier, or approve launch.</p><h2>Existing integrations</h2><p>The CLI and MCP server remain available in the repository. The original web toolkit is ${backend ? '<a class="text-link" href="/classic">available here</a>' : "available at /classic in a local Python installation"}. The guided case study remains <a class="text-link" href="./case.html">a separate introduction</a>.</p><h2>Review boundaries</h2><p>All reports are drafts. Reference examples retain their original supplied inputs and are labelled as snapshots; edited copies require complete screening. Evidence notes are statements requiring review. Use synthetic data only.</p></article>`
+    `<article class="about-copy"><h2>What is available</h2><p>Create and edit systems, complete all 13 intake sections, inspect classification and security findings, attach evidence notes, and generate all ${catalogue.reports.length} reports. Three realistic fictional dossiers provide document packs, intake proposals, findings and review actions. Nine reference examples and the guided insurer case also remain available.</p><h2>Where your work lives</h2><p>Your new drafts and evidence notes stay in this browser. Export a system as JSON or download documents to keep a portable copy. The local app also lists its existing saved assessments without overwriting them.</p><h2>Engine and AI</h2><p>${backend ? "This local app calls the Python toolkit directly." : "The Python classifier and report generators run on this device using a bundled browser runtime. The first operation may take a few seconds to load."} The same rule code produces both results. This is a working engine, not a recorded outcome.</p><p>Workflow guidance routes requests to the relevant tools without a model. Optional live AI in a configured local app can inspect the selected system and evidence, and propose intake answers with matching source quotations for you to accept individually. It cannot edit answers, decide the tier, or approve launch.</p><h2>Existing integrations</h2><p>The CLI and MCP server remain available in the repository. The original web toolkit is ${backend ? '<a class="text-link" href="/classic">available here</a>' : "available at /classic in a local Python installation"}. The guided case study remains <a class="text-link" href="./case.html">a separate introduction</a>.</p><h2>Review boundaries</h2><p>All reports are drafts. Reference examples retain their original supplied inputs and are labelled as snapshots; edited copies require complete screening. Evidence notes are statements requiring review. Use synthetic data only.</p></article>`
   );
 }
 function render() {
@@ -288,6 +311,14 @@ function render() {
   const parts = location.hash.slice(1).split("/");
   let view = parts[0] || "systems";
   selected = null;
+  if (view === "case") {
+    const c = (catalogue.scenarios || []).find((c) => c.id === parts[1]);
+    $("#main").innerHTML = c
+      ? scenarioBrief(c)
+      : heading("Case not found", "Open Example systems to choose a dossier.");
+    $("#crumb").textContent = c?.organisation || "Example systems";
+    return;
+  }
   if (view === "system") {
     selected = all().find((s) => s.id === (parts[1] || ""));
     view = parts[2] || "overview";
@@ -307,6 +338,14 @@ function render() {
     about,
     overview: profile,
     intake,
+    proposals: () =>
+      editable()
+        ? proposalsView(selected, catalogue, !$("#live-mode").disabled)
+        : '<p class="notice">Copy this reference profile to review proposals.</p>',
+    actions: () =>
+      editable()
+        ? actionsView(selected)
+        : '<p class="notice">Copy this reference profile to track review actions.</p>',
     evidence,
     findings,
     documents,
@@ -314,7 +353,15 @@ function render() {
   };
   if (
     !selected &&
-    ["overview", "intake", "evidence", "findings", "activity"].includes(view)
+    [
+      "overview",
+      "intake",
+      "evidence",
+      "findings",
+      "activity",
+      "proposals",
+      "actions",
+    ].includes(view)
   )
     view = "systems";
   const fn = renderers[view] || home;
@@ -330,6 +377,19 @@ function render() {
             : "",
         ) + tabs(view)
       : "") + fn();
+  if (view === "findings" && selected?.result?.classification)
+    $("#main").insertAdjacentHTML("beforeend", dossierFindings(selected));
+  if (view === "documents" && editable())
+    $("#main").insertAdjacentHTML(
+      "afterbegin",
+      '<div class="toolbar"><button class="button primary" data-action="review-pack">Prepare review pack</button><span class="status-line">Includes evidence, actions and review notes; adds recommended engine reports after classification.</span></div>',
+    );
+  if (view === "evidence" && /^\d+$/.test(parts[3] || ""))
+    requestAnimationFrame(() => {
+      const node = $(`#evidence-${Number(parts[3])}`);
+      node?.scrollIntoView({ block: "center" });
+      node?.focus({ preventScroll: true });
+    });
   $("#crumb").textContent = selected
     ? selected.answers.sys_name
     : {
@@ -486,6 +546,12 @@ async function generateReport(type) {
   }
 }
 async function action(name) {
+  if (name === "review-pack") return preparePack();
+  if (name === "suggest-intake") return suggestIntake();
+  if (name === "upload-evidence" && editable()) {
+    $("#evidence-file").click();
+    return;
+  }
   if (["import", "copy", "new"].includes(name) && systems.length >= 100) {
     toast(
       "This workspace holds up to 100 drafts. Export and remove a draft before adding another.",
@@ -533,6 +599,7 @@ async function action(name) {
           answers: selected.answers,
           evidence: selected.evidence,
           activity: selected.activity,
+          review: selected.review,
         },
         null,
         2,
@@ -564,6 +631,274 @@ async function action(name) {
   }
   navigate(name);
 }
+async function preparePack() {
+  if (!editable() || busy) return;
+  const target = selected,
+    snapshot = structuredClone(selected),
+    reports = [];
+  setBusy(
+    true,
+    "Preparing the evidence register, review notes and recommended documents…",
+  );
+  $("#document-title").textContent = "Review pack";
+  $("#document-content").innerHTML =
+    '<p class="busy-indicator">Preparing a draft from the current system snapshot…</p>';
+  $("#document-dialog").showModal();
+  try {
+    if (snapshot.result?.classification) {
+      const types = (catalogue.scenarios || []).find(
+        (c) => c.id === snapshot.review?.caseId,
+      )?.reports || ["risk", "security", "governance"];
+      for (const report_type of types) {
+        const report = await engine({
+          operation: "report",
+          answers: snapshot.answers,
+          report_type,
+        });
+        if (!report.markdown)
+          throw new Error(
+            "Screening is incomplete. Return to Assessment before attaching engine reports.",
+          );
+        reports.push(report);
+      }
+    }
+    currentDocument = {
+      markdown: reviewPack(snapshot, reports),
+      filename: "ai-governance-review-pack.md",
+    };
+    $("#document-content").innerHTML =
+      `<p class="notice">Draft snapshot · ${reports.length} engine reports attached · no approval granted</p><div class="toolbar"><button class="button primary" data-action="download-report">Download review pack</button><button class="button secondary" data-action="print-report">Print / PDF</button></div><article class="document-body">${markdownHTML(currentDocument.markdown)}</article>`;
+    log(
+      target,
+      `Prepared a review pack with ${reports.length} engine reports.`,
+    );
+    persist();
+  } catch (e) {
+    $("#document-content").textContent = e.message;
+  } finally {
+    setBusy(false);
+  }
+}
+async function suggestIntake() {
+  if (!editable() || busy) return;
+  if ($("#live-mode").disabled) {
+    toast(
+      "Live intake requires a configured local AI provider. Realistic cases include authored proposals.",
+    );
+    return;
+  }
+  const target = selected,
+    snapshot = JSON.stringify({
+      answers: target.answers,
+      evidence: target.evidence,
+    });
+  setBusy(true, "Companion is reading sources and preparing intake proposals…");
+  try {
+    const response = await fetch("/api/workspace/system-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message:
+          "Read the relevant sources and propose supported intake answers. Keep conflicts and missing evidence explicit.",
+        answers: target.answers,
+        evidence: target.evidence,
+        intent: "intake",
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok)
+      throw new Error(
+        typeof result.detail === "string"
+          ? result.detail
+          : "The intake request failed.",
+      );
+    if (
+      JSON.stringify({ answers: target.answers, evidence: target.evidence }) !==
+      snapshot
+    )
+      throw new Error(
+        "The profile or evidence changed during the request. Ask again using the current version.",
+      );
+    const proposals = (result.proposals || []).map((p) => ({
+      ...p,
+      provenance: "Live AI proposal",
+      status: "pending",
+    }));
+    target.review = cleanReview({
+      ...target.review,
+      proposals: [...target.review.proposals, ...proposals],
+    });
+    log(
+      target,
+      `Live AI proposed ${proposals.length} answers for human review; none applied.`,
+    );
+    persist();
+    navigate("proposals", target.id);
+    message(
+      result.answer +
+        "\n\n" +
+        (result.events || []).map((e) => e.label).join("\n"),
+      [],
+      true,
+    );
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    setBusy(false);
+  }
+}
+document.addEventListener("click", async (event) => {
+  const start = event.target.closest("[data-start-case]");
+  if (start) {
+    if (systems.length >= 100) {
+      toast("Export and remove a draft before adding another.");
+      return;
+    }
+    const c = (catalogue.scenarios || []).find(
+      (c) => c.id === start.dataset.startCase,
+    );
+    if (!c) return;
+    const s = startCase(
+      newSystem({
+        sys_name: `${c.organisation} — ${c.name}`,
+        sys_description: c.brief,
+        sys_owner: c.owner,
+      }),
+      c,
+    );
+    log(
+      s,
+      `Started the fictional ${c.organisation} dossier. No intake proposals accepted.`,
+    );
+    systems.push(s);
+    persist();
+    navigate("overview", s.id);
+    return;
+  }
+  const accept = event.target.closest("[data-accept-proposal]"),
+    reject = event.target.closest("[data-reject-proposal]");
+  if ((accept || reject) && editable() && !busy) {
+    const target = selected,
+      index = Number(
+        (accept || reject).dataset[
+          accept ? "acceptProposal" : "rejectProposal"
+        ],
+      );
+    try {
+      if (accept) {
+        const originalAnswers = JSON.stringify(target.answers);
+        const candidate = structuredClone(target);
+        acceptProposal(candidate, index);
+        setBusy(true, "Validating the proposed answer…");
+        const checked = await engine({
+          operation: "validate",
+          answers: candidate.answers,
+        });
+        if (!(candidate.review.proposals[index].field in checked.answers))
+          throw new Error(
+            "This proposal does not name an available intake field.",
+          );
+        // Do not apply a response if another input changed while validation ran.
+        if (
+          JSON.stringify(target.answers) !== originalAnswers ||
+          selected !== target
+        )
+          throw new Error("System changed. Review the proposal again.");
+        updateAnswers(target, checked.answers);
+        target.review.proposals[index].status = "accepted";
+        log(
+          target,
+          `Accepted proposal for ${candidate.review.proposals[index].field}; source remains a reviewer statement.`,
+        );
+      } else {
+        target.review.proposals[index].status = "rejected";
+        log(target, "Skipped an intake proposal; current answer unchanged.");
+      }
+      persist();
+      render();
+    } catch (e) {
+      toast(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+});
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (
+    !editable() ||
+    !form.matches("[data-action-form], #add-action-form, #decision-form")
+  )
+    return;
+  event.preventDefault();
+  const values = Object.fromEntries(new FormData(form));
+  try {
+    if (form.matches("[data-action-form]")) {
+      saveAction(selected, Number(form.dataset.actionForm), values);
+      log(selected, "Updated follow-up action; evidence remains unverified.");
+    }
+    if (form.id === "add-action-form") {
+      if (selected.review.actions.length >= 50)
+        throw new Error("A system can contain up to 50 review actions.");
+      if (!values.title.trim() || !values.completion.trim())
+        throw new Error("Describe the action and required evidence.");
+      selected.review.actions.push(
+        cleanReview({ actions: [{ ...values, id: crypto.randomUUID() }] })
+          .actions[0],
+      );
+      log(selected, "Added a follow-up action.");
+    }
+    if (form.id === "decision-form") {
+      if (!values.note.trim() || !values.reviewer.trim())
+        throw new Error("Add a reviewer and a review note.");
+      selected.review.decisions.push({
+        ...values,
+        at: new Date().toISOString(),
+      });
+      selected.review = cleanReview(selected.review);
+      log(selected, "Recorded a human review note.");
+    }
+    persist();
+    render();
+    toast("Review draft saved.");
+  } catch (e) {
+    toast(e.message);
+  }
+});
+$("#evidence-file").addEventListener("change", async (event) => {
+  const target = selected,
+    file = event.target.files[0];
+  try {
+    if (!file || !editable()) return;
+    if (file.size > 60000 || !/\.(txt|md)$/i.test(file.name))
+      throw new Error("Choose a UTF-8 .txt or .md document up to 60 KB.");
+    const content = await file.text();
+    if (!content.trim() || content.includes("\u0000"))
+      throw new Error("Choose a readable text document.");
+    const chunks = content.match(/[\s\S]{1,9000}/g) || [];
+    if (target.evidence.length + chunks.length > 30)
+      throw new Error(
+        "This document would exceed the limit of 30 source passages.",
+      );
+    target.evidence.push(
+      ...chunks.map((text, i) => ({
+        title: `${file.name.slice(0, 150)} — passage ${i + 1}`,
+        text,
+        reference: `Uploaded text document | ${file.name.slice(0, 160)} | passage ${i + 1} | unverified`,
+      })),
+    );
+    log(
+      target,
+      `Imported ${file.name.slice(0, 100)} as ${chunks.length} source passages.`,
+    );
+    persist();
+    navigate("evidence", target.id);
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    event.target.value = "";
+  }
+});
 document.addEventListener("click", (event) => {
   const b = event.target.closest("[data-action]");
   if (b) {
@@ -674,8 +1009,8 @@ $("#import-file").addEventListener("change", async (event) => {
       );
       return;
     }
-    if (file.size > 500000)
-      throw new Error("Choose a JSON file smaller than 500 KB.");
+    if (file.size > 2000000)
+      throw new Error("Choose a JSON file smaller than 2 MB.");
     const s = importSystem(JSON.parse(await file.text()));
     setBusy(true, "Checking the imported system profile…");
     s.answers = (

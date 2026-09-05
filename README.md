@@ -9,9 +9,15 @@ The existing EU AI Act classifier and security toolkit remain the foundation.
 Built by Jesse van de Kasteele as a portfolio project connecting AI governance,
 data governance, security engineering, and practical agent design.
 
+**1.0 release candidate:** realistic review dossiers, evidence-grounded intake
+proposals, follow-up actions, and review packs. [Release scope and remaining review](docs/RELEASE_1_0.md).
+
 ## Explore the workspace
 
 - **Your systems:** create a draft, import an assessment, or copy one of nine examples.
+- **Realistic dossiers:** investigate Meridian Health's member assistant, Boreal
+  Water's operations copilot, or Northstar Services' recruitment workflow. Read the
+  fictional document packs and start your own working copy.
 - **Assessment:** all 13 intake sections, explicit unknowns, automatic draft saving,
   and classification only after complete screening. Edits clear old results.
 - **Evidence and findings:** source notes and the original classification and
@@ -21,6 +27,9 @@ data governance, security engineering, and practical agent design.
   PDF, or export a system with its notes and a CSV inventory.
 - **Companion:** workflow guidance without a model, or optional live investigation
   of the selected system and its evidence in a configured local app.
+- **Review work:** accept source-linked intake proposals individually, assign
+  actions and evidence requirements, record human review notes, and export one
+  review pack. Ready for review never means verified or approved.
 
 ## Try the guided case
 
@@ -58,6 +67,10 @@ On Windows, `scripts/serve-local.ps1` starts a loopback-only server from any dir
 The guided case requires no API key. To use live AI, configure an existing
 provider in `.env` using [.env.example](.env.example), then explicitly select
 **Live AI** in the workspace. Hosted requests can incur provider charges.
+In a working system, **Intake proposals → Ask live AI to read evidence** generates
+reviewable suggestions using that configured provider. You can attach UTF-8 text
+or Markdown documents; PDF/Word parsing is not included. The static preview offers
+authored case proposals and clearly labels them separately from live AI.
 
 ## Repository map
 

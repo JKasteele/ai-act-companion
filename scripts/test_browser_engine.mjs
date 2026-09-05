@@ -2,6 +2,12 @@
 import { loadPyodide } from "pyodide";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
+import { newSystem } from "../static/workspace/hub-model.mjs";
+import {
+  startCase,
+  acceptProposal,
+  reviewPack,
+} from "../static/workspace/casework-model.mjs";
 async function main() {
   const python = await loadPyodide();
   python.unpackArchive(
@@ -18,6 +24,26 @@ async function main() {
     readFileSync("static/workspace/catalogue.json", "utf8"),
   );
   assert.deepEqual(browserCatalogue, nativeCatalogue);
+  for (const scenario of browserCatalogue.scenarios) {
+    const system = startCase(
+      newSystem({ sys_name: scenario.name }, scenario.id),
+      scenario,
+    );
+    for (let i = 0; i < system.review.proposals.length; i++)
+      acceptProposal(system, i);
+    python.globals.set(
+      "request_json",
+      JSON.stringify({ operation: "validate", answers: system.answers }),
+    );
+    assert.deepEqual(
+      JSON.parse(
+        python.runPython("json.dumps(dispatch(json.loads(request_json)))"),
+      ).answers,
+      system.answers,
+    );
+    assert.ok(reviewPack(system).includes(scenario.findings[0].title));
+    assert.equal(system.result, null);
+  }
   let reports = 0;
   for (const example of nativeCatalogue.examples) {
     for (const report of nativeCatalogue.reports) {
@@ -51,7 +77,7 @@ async function main() {
     null,
   );
   console.log(
-    `Browser Python matches the native catalogue: ${nativeCatalogue.examples.length} systems; ${reports} reports generated; unknown-input gate passed.`,
+    `Browser Python matches native: ${nativeCatalogue.scenarios.length} dossier workflows; ${nativeCatalogue.examples.length} reference systems; ${reports} reports; unknown-input gate passed.`,
   );
 }
 main().catch((error) => {

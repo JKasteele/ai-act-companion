@@ -16,6 +16,7 @@ from ..governance import governance_status
 from ..knowledge.eu_ai_act import KNOWLEDGE_VERSION
 from ..questionnaire import QUESTIONNAIRE
 from ..security import assess_security
+from .scenarios import scenarios
 
 QUESTIONS: dict[str, Any] = {q["id"]: q for s in cast(Any, QUESTIONNAIRE)["sections"] for q in s["questions"]}
 # These optional-in-the-legacy-form fields can change the classification.
@@ -115,9 +116,40 @@ def examples():
 
 
 def catalogue():
-    return {"questionnaire": QUESTIONNAIRE, "examples": examples(),
+    return {"questionnaire": QUESTIONNAIRE, "examples": examples(), "scenarios": scenarios(),
             "reports": [{"id": r, "label": label} for r, label in reports.REPORT_CATALOG],
             "screening": sorted(SCREENING), "knowledge_version": KNOWLEDGE_VERSION}
+
+
+def validate_proposals(raw, source_text):
+    """Validate a draft proposal's field, value and literal quotation of a read source.
+
+    Quotation validates provenance, not entailment. Only the human can accept it.
+    """
+    if not isinstance(raw, list) or len(raw) > 12:
+        raise ValueError("Return at most 12 intake proposals.")
+    result = []
+    fields = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("Invalid intake proposal.")
+        field, source, quote = item.get("field"), item.get("source"), item.get("quote")
+        reason = item.get("reason")
+        if not isinstance(field, str) or field not in QUESTIONS or field in fields:
+            raise ValueError("Unknown or duplicate proposal field.")
+        if not isinstance(source, str) or source not in source_text:
+            raise ValueError("The proposal cites an unread source.")
+        if not isinstance(quote, str) or not quote.strip() or len(quote) > 1000 or quote not in source_text[source]:
+            raise ValueError("The proposed quotation does not match the source.")
+        if not isinstance(reason, str) or not reason.strip() or len(reason) > 1000:
+            raise ValueError("Explain the proposed answer briefly.")
+        validated = validate_answers({field: item.get("value")})
+        if field not in validated:
+            raise ValueError("A proposal must contain an explicit answer.")
+        result.append({"field": field, "value": validated[field], "source": source,
+                       "quote": quote, "reason": reason})
+        fields.add(field)
+    return result
 
 
 def dispatch(payload):

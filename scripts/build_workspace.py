@@ -24,7 +24,7 @@ def build():
     out.mkdir(exist_ok=True)
     # Deliberate allowlist: never copy .env, data/, server code, or credentials.
     for name in ("index.html", "case.html", "workspace.css", "workspace.js", "model.mjs", "favicon.svg",
-                 "hub.css", "hub.js", "hub-model.mjs", "engine-worker.mjs", "engine-client.mjs", "markdown.mjs"):
+                 "hub.css", "hub.js", "hub-model.mjs", "casework.mjs", "casework-model.mjs", "engine-worker.mjs", "engine-client.mjs", "markdown.mjs"):
         shutil.copy2(public / name, out / name)
     (out / "notices").mkdir(exist_ok=True)
     for name in ("README.md", "PYODIDE-LICENSE.txt", "PYTHON-LICENSE.txt"):
@@ -45,7 +45,7 @@ def build():
                "security", "stride"]
     sources = [ROOT / "app" / f"{name}.py" for name in modules]
     sources += sorted((ROOT / "app/knowledge").glob("*.py"))
-    sources += [ROOT / "app/workspace/__init__.py", ROOT / "app/workspace/toolkit.py"]
+    sources += [ROOT / "app/workspace" / name for name in ("__init__.py", "toolkit.py", "scenarios.py", "case.py")]
     sources += [ROOT / "examples" / f"{e['id']}.json" for e in catalogue()["examples"]]
     with zipfile.ZipFile(out / "engine.zip", "w", zipfile.ZIP_DEFLATED) as archive:
         for source in sources:
